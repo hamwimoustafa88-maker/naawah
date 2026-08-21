@@ -1,20 +1,88 @@
 @import "tailwindcss";
+/* استبعاد مجلدات أدوات خارجية (لها package.json خاص بها) من فحص Tailwind التلقائي —
+   بدونه يلتقط نصوصاً عشوائية بداخلها تشبه أصناف Tailwind فيولّد CSS غير صالح
+   (يُسقِط next dev بالكامل رغم أنه مجرد تحذير أثناء next build). */
+@source not "../../agent-skills";
+@source not "../../.agents";
 
 :root {
-  --background: #0f172a; /* slate-900 */
-  --foreground: #f8fafc; /* slate-50 */
-  --accent: #10b981; /* cyber-green */
+  --background: #f7f5f0; /* عاجي فاتح لصفحة الموقع (ليس الكانفاس نفسه) */
+  --foreground: #201a12;
+  --accent: #8a6d1f; /* ذهبي محايد لعناصر الواجهة العامة */
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-accent: var(--accent);
   --font-sans: var(--font-cairo), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --font-amiri: var(--font-amiri), serif;
+  --font-amiri-quran: var(--font-amiri-quran), serif;
+  --font-aref-ruqaa: var(--font-aref-ruqaa), serif;
+  --font-reem-kufi: var(--font-reem-kufi), sans-serif;
+  --font-scheherazade: var(--font-scheherazade), serif;
+  --font-tajawal: var(--font-tajawal), sans-serif;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
+}
+
+/* مقاس A4 ثابت عند 96dpi — يُستعمل في الكانفاس والتصدير معاً حتى تتطابق المعاينة بالمخرج. */
+:root {
+  --a4-width: 794px;
+  --a4-height: 1123px;
+}
+
+/* لوحة الوضع المظلم — محصورة بصنف .home-scope (لا تمسّ --background/--foreground
+   العامّين). كانت مقصورة على الصفحة الرئيسية فقط، ثم أُعيد استعمالها لترويسة
+   CreateHeader.tsx في /create أيضاً (نفس الاسم عمداً — القيم متطابقة، وتجنّباً
+   لتكرار تعريف متغيّرات مطابقة باسم مختلف). أي عنصر جديد يريد الاستفادة من هذا
+   التبديل (نهاري/ليلي) يجب أن يكون هو نفسه (أو أحد أسلافه) داخل .home-scope.
+   الألوان الداكنة مطابقة عمداً لتوكنات قالب midnight-elegant (registry.ts) حتى
+   يتناغم الوضع المظلم مع القالب الداكن بصرياً. */
+.home-scope {
+  --home-bg: #f7f5f0;
+  --home-surface: #ffffff;
+  --home-fg: #201a12;
+  --home-muted: #6b5f4e;
+  --home-accent: #8a6d1f;
+  --home-border: rgb(0 0 0 / 0.1);
+}
+
+[data-theme="dark"] .home-scope {
+  --home-bg: #12100e;
+  --home-surface: #1b1815;
+  --home-fg: #f2e8d8;
+  --home-muted: #a89676;
+  --home-accent: #c9a94a;
+  --home-border: rgb(242 232 216 / 0.12);
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.reveal {
+  opacity: 0;
+}
+
+.reveal.is-visible {
+  animation: fade-up 0.6s ease-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1;
+    animation: none !important;
+  }
 }

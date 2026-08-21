@@ -3,8 +3,8 @@ import { prisma } from '../src/lib/prisma'
 
 async function main() {
   try {
-    const userCount = await prisma.user.count()
-    console.log('✅ Connected. User count:', userCount)
+    const statCount = await prisma.obituaryStat.count()
+    console.log('✅ Connected. ObituaryStat count:', statCount)
   } catch (error) {
     console.error('❌ Connection failed:', error)
     process.exit(1)

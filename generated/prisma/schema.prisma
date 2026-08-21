@@ -1,24 +1,30 @@
 generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["driverAdapters"]
-  output          = "../generated/prisma"
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
 }
 
-// Starter models — replace with your own
-model User {
-  id    Int     @id @default(autoincrement())
-  name  String?
-  email String  @unique
-  posts Post[]
+/// إحصاءات مجهولة الهوية عند كل تصدير — بلا أي بيان عن الفقيد أو محتوى النعوة.
+model ObituaryStat {
+  id         String   @id @default(cuid())
+  createdAt  DateTime @default(now())
+  ipHash     String?
+  country    String?
+  region     String?
+  templateId String
+
+  @@index([createdAt])
+  @@index([templateId])
 }
 
-model Post {
-  id       Int    @id @default(autoincrement())
-  title    String
-  author   User   @relation(fields: [authorId], references: [id])
-  authorId Int
+model Template {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  name      String
+  category  String
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
 }

@@ -36,6 +36,10 @@ yarn-error.log*
 # vercel
 .vercel
 
+# أدوات وكيل خارجية مثبَّتة بجانب المشروع (repos وتبعيات خاصة بها) — ليست جزءاً من التطبيق
+/.agents
+/agent-skills
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

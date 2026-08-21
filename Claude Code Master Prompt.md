@@ -51,7 +51,7 @@ model Template {
 ### **A. Landing Page (الصفحة الرئيسية)**
 
 1. **Hero Section:**  
-   * **Main Heading:** "تطبيق النعوة الإلكترونية \- إعلان مواساة بروح عصر رقمي وقور"  
+   * **Main Heading:** "تطبيق النعوة الإلكترونية"  
    * **Counter Badge:** Real-time dynamic counter showing "عدد النعوات المُنقذة للبيئة: \[Total Count from Prisma Stat Count\]".  
    * **Primary CTA Button:** "إنشاء نعوة الآن" (Scrolls to or opens Editor).  
    * **Feature Highlights (Bento Grid Layout):**  
