@@ -8,8 +8,9 @@ import { Button } from "@/components/ui/Button"
 import { TextSettingsPanel } from "@/components/editor/TextSettingsPanel"
 
 export function ExportBar() {
-  const templateId = useEditorStore((s) => s.data.templateId)
-  const deceasedName = useEditorStore((s) => s.data.deceased.name)
+  const data = useEditorStore((s) => s.data)
+  const templateId = data.templateId
+  const deceasedName = data.deceased.name
   const [busy, setBusy] = useState<ExportKind | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -29,7 +30,7 @@ export function ExportBar() {
 
   const handlePng = () => runExport("png", "تعذّر تصدير الصورة. حاول مجدداً.", () => exportPng(templateId, deceasedName))
   const handlePdf = () => runExport("pdf", "تعذّر تصدير PDF. حاول مجدداً.", () => exportPdf(templateId, deceasedName))
-  const handleShare = () => runExport("share", "تعذّرت المشاركة. حاول مجدداً.", () => exportShare(templateId, deceasedName))
+  const handleShare = () => runExport("share", "تعذّرت المشاركة. حاول مجدداً.", () => exportShare(templateId, data))
 
   return (
     <div className="flex flex-col gap-3 border-t border-black/10 pt-4">

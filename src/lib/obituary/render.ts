@@ -216,3 +216,17 @@ export function printFooterText(data: ObituaryData, templateSuggestsFooter: bool
   if (!enabled) return null
   return data.customTexts?.printFooterText ?? defaultPrintFooterText()
 }
+
+/**
+ * نص رسالة المشاركة (واتساب وغيره) — تُلحَق بصورة النعوة عبر Web Share API
+ * (`lib/export/actions.ts`، exportShare). مبنية من نفس محرك القواعد المستعمل في
+ * النعوة نفسها (لا نص مكرَّر يدوياً هنا): سطر افتتاحي باسم الفقيد الكامل، ثم فقرة
+ * التشييع والصلاة والدفن الكاملة (processionLine + funeralSentence معاً — نفس
+ * الجملتين المتلاصقتين بصرياً في الكانفاس، راجع ObituaryBlocks.tsx)، ثم توقيع الموقع.
+ */
+export function shareMessage(data: ObituaryData): string {
+  const name = deceasedNameLine(data.deceased)
+  const openingLine = name ? `انتقل إلى رحمته تعالى ${name}` : "انتقل إلى رحمته تعالى"
+  const funeralParagraph = [processionLine(data), funeralSentence(data)].filter(Boolean).join(" ")
+  return [openingLine, funeralParagraph, DEFAULT_PRINT_FOOTER_TEXT].filter(Boolean).join("\n\n")
+}

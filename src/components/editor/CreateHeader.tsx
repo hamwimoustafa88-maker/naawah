@@ -27,8 +27,9 @@ import { TextSettingsPanel } from "@/components/editor/TextSettingsPanel"
 import { BrandLogo } from "@/components/common/BrandLogo"
 
 export function CreateHeader() {
-  const templateId = useEditorStore((s) => s.data.templateId)
-  const deceasedName = useEditorStore((s) => s.data.deceased.name)
+  const data = useEditorStore((s) => s.data)
+  const templateId = data.templateId
+  const deceasedName = data.deceased.name
   const [busy, setBusy] = useState<ExportKind | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -47,7 +48,7 @@ export function CreateHeader() {
 
   const handlePng = () => runExport("png", "تعذّر التصدير", () => exportPng(templateId, deceasedName))
   const handlePdf = () => runExport("pdf", "تعذّر التصدير", () => exportPdf(templateId, deceasedName))
-  const handleShare = () => runExport("share", "تعذّرت المشاركة", () => exportShare(templateId, deceasedName))
+  const handleShare = () => runExport("share", "تعذّرت المشاركة", () => exportShare(templateId, data))
 
   const iconButtonClass =
     "inline-flex h-9 w-9 items-center justify-center rounded-full border border-(--home-border) text-(--home-fg) transition-colors hover:bg-(--home-bg) disabled:opacity-40 disabled:pointer-events-none"

@@ -5,6 +5,8 @@
 import { toBlob, toJpeg } from "html-to-image"
 import { jsPDF } from "jspdf"
 import { getTemplate } from "@/lib/templates/registry"
+import { shareMessage } from "@/lib/obituary/render"
+import type { ObituaryData } from "@/lib/obituary/types"
 
 export type ExportKind = "png" | "pdf" | "share"
 
@@ -89,12 +91,19 @@ export async function exportPdf(templateId: string, deceasedName: string) {
   void notifyStats(templateId)
 }
 
-export async function exportShare(templateId: string, deceasedName: string) {
+/**
+ * المشاركة (زر واتساب/مشاركة النظام) — تُرفق نص الرسالة (shareMessage) مع الصورة
+ * معاً في نفس استدعاء navigator.share() الواحد، فتُضيفهما تطبيقات مثل واتساب
+ * كصورة + تعليق نصي في رسالة واحدة (سلوك قياسي لـWeb Share API عند تمرير
+ * files وtext معاً). الاحتياط (متصفحات بلا دعم مشاركة ملفات، غالباً سطح المكتب)
+ * يبقى تنزيلاً صامتاً بلا نص — كما كان، خارج نطاق هذا التعديل.
+ */
+export async function exportShare(templateId: string, data: ObituaryData) {
   const blob = await capturePngBlob()
-  const filename = buildFileName(deceasedName, "png")
+  const filename = buildFileName(data.deceased.name, "png")
   const file = new File([blob], filename, { type: "image/png" })
   if (navigator.canShare?.({ files: [file] })) {
-    await navigator.share({ files: [file], title: "نعوة" })
+    await navigator.share({ files: [file], title: "نعوة", text: shareMessage(data) })
   } else {
     downloadBlob(blob, filename)
   }
