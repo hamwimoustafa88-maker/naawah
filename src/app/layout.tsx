@@ -1,4 +1,4 @@
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import Script from "next/script"
 import {
   Alexandria, Almarai, Amiri, Amiri_Quran, Aref_Ruqaa_Ink, Cairo, El_Messiri,
@@ -31,20 +31,62 @@ const ibmPlexArabic = IBM_Plex_Sans_Arabic({ variable: "--font-ibm-plex-arabic",
 const notoNaskh = Noto_Naskh_Arabic({ variable: "--font-noto-naskh", subsets: ["arabic"], weight: ["400", "700"] })
 const reemKufi = Reem_Kufi({ variable: "--font-reem-kufi-plain", subsets: ["arabic"], weight: ["400", "700"] })
 
+// نطاق الإنتاج — مصدر وحيد لكل روابط SEO المطلقة (metadataBase، sitemap.ts،
+// robots.ts، JSON-LD). عدّله هنا فقط إن تغيّر النطاق مستقبلاً.
+const SITE_URL = "https://enaawah.scouthub.dev"
+const SITE_NAME = "النعوة الإلكترونية"
+const SITE_DESCRIPTION =
+  "أنشئ نعوة إلكترونية عربية إسلامية وقورة تليق بمقام الفقيد خلال دقائق — اختر من ٧ قوالب احترافية، ودع محرك الصياغة يكتب نص النعي والأقارب تلقائياً بالتصريف الصحيح، ثم صدّرها PNG أو PDF جاهزة للطباعة والمشاركة. مجاناً وبلا تسجيل."
+
 export const metadata: Metadata = {
-  title: "النعوة الإلكترونية",
-  description: "أنشئ نعوة رقمية وقورة تليق بمقام الفقيد، وشاركها في لحظات — مجاناً وبلا تسجيل.",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: `${SITE_NAME} | مولّد نعوات إسلامية احترافية مجاناً`,
+    template: `%s | ${SITE_NAME}`,
+  },
+  description: SITE_DESCRIPTION,
+  keywords: [
+    "نعوة إلكترونية", "نعي إلكتروني", "تصميم نعوة", "مولد نعوات",
+    "نعوة إسلامية", "إنشاء نعوة أونلاين", "نعوة PDF", "نعي عربي",
+    "قوالب نعوة", "نعوة مجانية",
+  ],
+  authors: [{ name: SITE_NAME, url: SITE_URL }],
+  category: "lifestyle",
+  alternates: { canonical: "/" },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, "max-image-preview": "large" },
+  },
   openGraph: {
-    title: "النعوة الإلكترونية",
-    description: "أنشئ نعوة رقمية وقورة تليق بمقام الفقيد، وشاركها في لحظات — مجاناً وبلا تسجيل.",
+    title: `${SITE_NAME} | مولّد نعوات إسلامية احترافية مجاناً`,
+    description: SITE_DESCRIPTION,
+    url: SITE_URL,
+    siteName: SITE_NAME,
     locale: "ar",
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${SITE_NAME} | مولّد نعوات إسلامية احترافية مجاناً`,
+    description: SITE_DESCRIPTION,
   },
   icons: {
     icon: "/icon.png",
     shortcut: "/icon.png",
     apple: "/icon.png",
   },
+  manifest: "/manifest.webmanifest",
+  // ضع رمز تحقّق Google Search Console هنا بعد إنشائه (Property من نوع "URL prefix"):
+  // verification: { google: "xxxxxxxxxxxxxxxxxxxx" },
+}
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f7f5f0" },
+    { media: "(prefers-color-scheme: dark)", color: "#12100e" },
+  ],
+  colorScheme: "light dark",
 }
 
 const fontVariables = [

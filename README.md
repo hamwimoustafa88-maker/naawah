@@ -1,36 +1,134 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+<div dir="rtl">
 
-## Getting Started
+# النعوة الإلكترونية
 
-First, run the development server:
+مولّد نعوات (أوراق نعي) عربية إسلامية بجودة الطباعة — محرر بيانات بأربع خطوات، معاينة حيّة، ومحرك صياغة عربي يكتب نص النعي والأقارب تلقائياً بالتصريف الصحيح (جنساً وعدداً)، ثم تصدير PNG أو PDF جاهز للطباعة والمشاركة. مجاناً وبلا تسجيل.
+
+🔗 **الموقع المباشر**: [enaawah.scouthub.dev](https://enaawah.scouthub.dev)
+
+</div>
+
+---
+
+<div dir="rtl">
+
+## المزايا
+
+- **٧ قوالب متمايزة بنيوياً** (إطار، خط، تخطيط، كثافة زخرفة) — من الكلاسيكي الذهبي إلى الليلي الفخم بخلفيته الداكنة.
+- **محرك صياغة عربي حقيقي**: تجميع «المرحومين» لسلاسل الوفاة المتتالية، تفريد/تثنية/جمع تسميات فئات القرابة تلقائياً حسب عدد أفرادها وجنسها، وصيغ «زوجته» مقابل «زوجة».
+- **مخطوطات قرآنية بخط عربي حيّ** (Amiri Quran / Aref Ruqaa Ink) — لا مسارات SVG مولَّدة آلياً، فالحروف موصولة ومشكَّلة بصرياً بشكل صحيح دائماً.
+- **Auto-fit** يضبط حجم الخط تلقائياً كي تبقى النعوة داخل صفحة A4 واحدة، سواء كانت الأسرة صغيرة أو كثيفة الأقارب.
+- **تخصيص كامل**: خط اسم الفقيد وخط كل النصوص، لون القالب، عبارة «المرحوم/الشهيد»، نصوص كل فقرة قابلة للاستبدال بنص خاص.
+- **تصدير فوري** بصيغة PNG (بلا فقدان) أو PDF (مضغوط) أو مشاركة مباشرة عبر واجهة المشاركة في المتصفح.
+- **إحصاءات مجهولة الهوية بالكامل** — عدّاد استخدام لكل قالب فقط، بلا أي أثر لعنوان IP الحقيقي أو محتوى أي نعوة.
+
+## التقنيات المستخدمة
+
+| الطبقة | التقنية |
+|---|---|
+| إطار العمل | [Next.js 16](https://nextjs.org) (App Router, Turbopack) + React 19 + TypeScript |
+| التنسيق | Tailwind CSS v4 |
+| إدارة الحالة | Zustand |
+| قاعدة البيانات | PostgreSQL عبر [Prisma 7](https://www.prisma.io) (`@prisma/adapter-pg`) |
+| السحب والإفلات | dnd-kit |
+| التصدير | html-to-image + jsPDF |
+| الاختبارات | Vitest |
+
+## البدء السريع (تطوير محلي)
+
+### المتطلبات
+
+- Node.js ٢٠ فأكثر
+- قاعدة بيانات PostgreSQL (محلية أو مُستضافة، مثل [Prisma Postgres](https://www.prisma.io/postgres) أو Neon)
+
+### التثبيت
+
+```bash
+npm install
+```
+
+### متغيرات البيئة
+
+أنشئ ملف `.env` في جذر المشروع:
+
+```bash
+DATABASE_URL="postgresql://..."   # رابط اتصال Postgres
+IP_SALT="سلسلة عشوائية طويلة"      # يُخلط مع IP الزائر قبل تجزئته لإحصاء مجهول الهوية
+```
+
+> بلا `IP_SALT`، يتراجع الكود إلى قيمة افتراضية ثابتة في الكود — مقبول للتطوير المحلي فقط، غير مناسب للإنتاج.
+
+ثم زامن نموذج البيانات وازرع القوالب:
+
+```bash
+npx prisma db push --accept-data-loss
+npx tsx prisma/seed.ts
+```
+
+### التشغيل
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+افتح [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## الأوامر المتاحة
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| الأمر | الوصف |
+|---|---|
+| `npm run dev` | خادم التطوير (Turbopack) |
+| `npm run build` | بناء إنتاجي |
+| `npm run start` | تشغيل البناء الإنتاجي |
+| `npm run lint` | فحص ESLint |
+| `npm run test` | تشغيل اختبارات Vitest (محرك القواعد أساساً) |
+| `npx prisma db push --accept-data-loss` | مزامنة نموذج البيانات مع القاعدة (بديل `migrate dev` في بيئة غير تفاعلية) |
+| `npx tsx prisma/seed.ts` | زرع القوالب السبعة في جدول `Template` |
+| `npx tsx scripts/verify-prisma.ts` | تحقّق سريع من اتصال قاعدة البيانات |
 
-## Learn More
+## بنية المشروع (أهم المجلدات)
 
-To learn more about Next.js, take a look at the following resources:
+```
+src/
+  app/                    مسارات Next.js (الرئيسية، /create، API الإحصاءات)
+  components/
+    canvas/               الكانفاس القابل للتصدير + المخطوطات + auto-fit
+    editor/                خطوات المحرر الأربع + شريط التصدير
+    landing/               الصفحة الرئيسية
+  lib/
+    obituary/
+      grammar.ts          محرك القواعد العربي — قلب المشروع
+      render.ts           تجميع نص النعوة النهائي من grammar.ts
+      defaults.ts         القيم الافتراضية وثوابت المقاسات (بالسنتيمتر الفعلي)
+    templates/registry.ts القوالب السبعة (توكنات + إطار + خط لكل قالب)
+    export/actions.ts     منطق تصدير PNG/PDF/المشاركة المشترك
+  store/editorStore.ts    حالة المحرر (Zustand)
+prisma/                   نموذج البيانات والزرع
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+للقرارات التقنية غير البديهية وأسباب اختيارها، راجع [`CLAUDE.md`](./CLAUDE.md).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## قاعدة البيانات
 
-## Deploy on Vercel
+جدولان فقط، وبلا أي بيانات شخصية عن الفقيد أو محتوى أي نعوة:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- **`Template`** — كتالوج القوالب السبعة الثابت (اسم، فئة، أهو الافتراضي).
+- **`ObituaryStat`** — سطر واحد لكل عملية تصدير: القالب المُستعمل، بصمة `sha256(IP + IP_SALT)` لا يمكن الرجوع منها إلى العنوان الأصلي، وبلد/منطقة تقريبيان من رؤوس استضافة Vercel الجغرافية.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## السيو (SEO)
+
+- `src/app/robots.ts` و`src/app/sitemap.ts` — يُولَّدان تلقائياً عند البناء.
+- `src/app/manifest.ts` — Web App Manifest بأيقونات مربّعة مولَّدة من الشعار (`scripts/generate-manifest-icons.mjs`).
+- `src/app/opengraph-image.tsx` — صورة مشاركة اجتماعية مولَّدة بالكود، عمداً بلا نص عربي مُركَّب بها (محرك تشكيل Satori لا يدعم العربية بالكامل بعد) — العنوان والوصف يصلان عبر وسوم `og:title`/`og:description` النصية في `layout.tsx`.
+- بيانات JSON-LD (`WebApplication` + `Organization`) في الصفحة الرئيسية عبر `src/components/common/JsonLd.tsx`.
+
+## النشر على Vercel
+
+المشروع مُستضاف حالياً على [enaawah.scouthub.dev](https://enaawah.scouthub.dev). لنشر نسخة جديدة من مستودعك الخاص:
+
+1. استورد المستودع في [vercel.com/new](https://vercel.com/new).
+2. أضف متغيّري البيئة `DATABASE_URL` و`IP_SALT` في إعدادات المشروع.
+3. شغّل `npx prisma db push --accept-data-loss` على قاعدة بيانات الإنتاج (وليس `prisma migrate deploy`)، ثم `npx tsx prisma/seed.ts` مرة واحدة.
+4. اضغط Deploy — كل دفعة `git push` لاحقة على الفرع الرئيسي تُنشَر تلقائياً.
+
+</div>
