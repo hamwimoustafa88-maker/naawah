@@ -81,6 +81,10 @@ export function MobileEditorView() {
     ...funeralBeforeRelatives.map((s) => `static:${s.id}`),
     ...relatives.map((g) => `relative:${g.id}`),
     "add-relative",
+    // "العائلات" ثابتة مباشرة بعد "إضافة فئة قرابة" بطلب صريح — مُشتقّة تلقائياً من
+    // أسماء الأقارب أعلاه (راجع FamiliesField/defaultFamiliesLine)، فمكانها الطبيعي
+    // بعد فرقة الأقارب بأكملها لا قبلها.
+    ...staticFor("relatives").map((s) => `static:${s.id}`),
     ...funeralAfterRelatives.map((s) => `static:${s.id}`),
     ...staticFor("template").map((s) => `static:${s.id}`),
   ]
@@ -126,6 +130,8 @@ export function MobileEditorView() {
                   )
                 )}
                 {renderChip("add-relative", UserPlus, "إضافة فئة")}
+                {/* "العائلات" — قسم ثابت (لا فئة قرابة قابلة للحذف) يظهر دائماً هنا. */}
+                {staticFor("relatives").map((s) => renderChip(`static:${s.id}`, s.icon, s.title))}
               </div>
             </div>
           )

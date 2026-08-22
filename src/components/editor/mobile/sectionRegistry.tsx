@@ -7,7 +7,7 @@
 import type { ComponentType } from "react"
 import type { LucideProps } from "lucide-react"
 import {
-  BookOpen, Building2, Calendar, Cake, Hash, ImagePlus, LayoutTemplate, MapPin, MessageSquare,
+  BookOpen, Building2, Calendar, Cake, Hash, Heart, ImagePlus, LayoutTemplate, MapPin, MessageSquare,
   PenLine, Quote, Ruler, Settings, User, Users,
 } from "lucide-react"
 import {
@@ -16,6 +16,7 @@ import {
 import {
   CondolencesFields, CustomTextsFields, DateFormatFields, FillGapFields, InstitutionFields, PrayerBurialFields,
 } from "@/components/editor/steps/Step2Funeral"
+import { FamiliesField } from "@/components/editor/steps/Step3Relatives"
 import { Step4Template } from "@/components/editor/steps/Step4Template"
 import { PhotoUpload } from "@/components/editor/PhotoUpload"
 import { TextSettingsFields } from "@/components/editor/TextSettingsPanel"
@@ -48,6 +49,11 @@ export const STATIC_SECTIONS: StaticSectionDescriptor[] = [
   { id: "photo", title: "صورة الفقيد", icon: ImagePlus, group: "deceased", Content: PhotoUpload },
   { id: "spouse", title: "هوية الزوج", icon: Users, group: "deceased", Content: SpouseFields, requiresFemale: true },
   { id: "quran", title: "المخطوطة القرآنية", icon: BookOpen, group: "deceased", Content: QuranFields },
+
+  // "families" مصنَّفة "relatives" لكنها ليست فئة قرابة قابلة للحذف مثل البقية —
+  // تُعامَل خصيصاً في MobileEditorView.tsx (تظهر ثابتة بعد "إضافة فئة قرابة" دائماً،
+  // لا كفئة ديناميكية ضمن relatives[]). راجع تعليق orderedIds هناك.
+  { id: "families", title: "العائلات", icon: Heart, group: "relatives", Content: FamiliesField },
 
   { id: "institution", title: "الجهة الناعية", icon: Building2, group: "funeral", Content: InstitutionFields },
   { id: "prayer-burial", title: "الصلاة والدفن", icon: MapPin, group: "funeral", Content: PrayerBurialFields },

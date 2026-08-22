@@ -60,7 +60,6 @@ export interface DeceasedInfo {
   gender: Gender
   name: string
   honorific?: string
-  families: string
   /** إن كانت الفقيدة أنثى وزوجها متوفى: "حرم المرحوم …" */
   spouseName?: string
   spouseHonorific?: string
@@ -134,7 +133,7 @@ export interface FuneralInfo {
  * جنس الفقيد افتراضياً، ويمكن للمستخدم استبدالها بنص حرّ من "نصوص مخصّصة".
  * إضافة سطر قابل للتخصيص جديد = مفتاح واحد هنا + دالة تقرأه في render.ts.
  */
-export type CustomTextKey = "mourningSentence" | "maghfoorLine" | "closingDua" | "printFooterText"
+export type CustomTextKey = "mourningSentence" | "maghfoorLine" | "closingDua" | "printFooterText" | "familiesLine"
 
 export interface FormatPrefs {
   numerals: NumeralSystem

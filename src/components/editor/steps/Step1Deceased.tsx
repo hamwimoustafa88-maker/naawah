@@ -50,12 +50,9 @@ export function IdentityFields() {
           <Input value={deceased.name} onChange={(e) => update({ name: e.target.value })} placeholder="محمود محمد شهاب" />
         </FieldGroup>
       </div>
-
-      <div className="col-span-2">
-        <FieldGroup label="العائلات" hint="مثال: آل شهاب وحكيم ونعوس">
-          <Input value={deceased.families} onChange={(e) => update({ families: e.target.value })} />
-        </FieldGroup>
-      </div>
+      {/* حقل "العائلات" اليدوي انتقل من هنا — صار مُشتقّاً تلقائياً من أسماء
+          الأقارب المُدخَلين في (٣. الأقارب)، فظهر هناك (FamiliesField في
+          Step3Relatives.tsx) لا هنا. راجع defaultFamiliesLine في render.ts. */}
     </div>
   )
 }

@@ -10,10 +10,12 @@ import { CSS } from "@dnd-kit/utilities"
 import { GripVertical, Plus, Trash2 } from "lucide-react"
 import { CATEGORY_REQUIRES_DECEASED_GENDER, FIXED_GENDER_BY_CATEGORY, RELATIVE_CATEGORY_OPTIONS } from "@/lib/obituary/defaults"
 import { relativeCategoryLabel } from "@/lib/obituary/grammar"
+import { defaultFamiliesLine } from "@/lib/obituary/render"
 import { useEditorStore } from "@/store/editorStore"
 import type { Person, RelativeCategoryKey } from "@/lib/obituary/types"
+import { CustomTextOverride } from "@/components/editor/CustomTextOverride"
 import { Button } from "@/components/ui/Button"
-import { Card } from "@/components/ui/Card"
+import { Card, CardTitle } from "@/components/ui/Card"
 import { Checkbox, Input, Select } from "@/components/ui/Field"
 
 function PersonRow({ groupId, person, fixedGender }: { groupId: string; person: Person; fixedGender?: Person["gender"] }) {
@@ -96,6 +98,27 @@ export function AddRelativeCategoryField({ onAdded }: { onAdded?: (groupId: stri
         ))}
       </Select>
     </div>
+  )
+}
+
+/**
+ * سطر "العائلات" — انتقل إلى هنا من (١. بيانات الفقيد) بطلب صريح ليظهر مباشرة بعد
+ * (إضافة فئة قرابة)، وصار مُشتقّاً تلقائياً من أسماء عائلة كل الأقارب المُدخَلين
+ * أعلاه (آخر كلمة من كل اسم، بلا تكرار) بدل الإدخال اليدوي البحت — راجع
+ * defaultFamiliesLine في render.ts. يبقى قابلاً للتخصيص الحرّ عبر نفس آلية
+ * "نصوص مخصّصة" المستعملة لبقية الجمل المحسوبة (CustomTextOverride).
+ */
+export function FamiliesField() {
+  const data = useEditorStore((s) => s.data)
+  const updateCustomText = useEditorStore((s) => s.updateCustomText)
+
+  return (
+    <CustomTextOverride
+      label="العائلات"
+      computedDefault={defaultFamiliesLine(data) || "الراضون بقضاء الله وقدره: —"}
+      value={data.customTexts?.familiesLine}
+      onChange={(v) => updateCustomText("familiesLine", v)}
+    />
   )
 }
 
@@ -202,6 +225,12 @@ export function Step3Relatives() {
           إن لم يرغب المستخدم بما اختاره، يحذفه بسهولة عبر أيقونة السلة في بطاقة الفئة. */}
       <Card>
         <AddRelativeCategoryField />
+      </Card>
+
+      {/* "العائلات" — بعد إضافة فئة القرابة مباشرة بطلب صريح، مُشتقّة تلقائياً من الأقارب أعلاه. */}
+      <Card>
+        <CardTitle>العائلات</CardTitle>
+        <FamiliesField />
       </Card>
     </div>
   )

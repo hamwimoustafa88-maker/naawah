@@ -240,7 +240,6 @@ export const SAMPLE_OBITUARY_DATA: ObituaryData = {
     gender: "male",
     name: "محمود محمد شهاب",
     honorific: "الحاج",
-    families: "آل شهاب وحكيم ودعبول ونعوس وعيتاني ونجار وفاخوري وحمندي والزعبي وطبارة",
     deathDateISO: "2026-03-24",
     hijriOffsetDays: 0,
     country: "لبنان",
@@ -321,4 +320,10 @@ export const SAMPLE_OBITUARY_DATA: ObituaryData = {
     dateOrder: "hijri-first",
   },
   templateId: "royal-monogram",
+  // مثبَّت يدوياً (لا مُشتَقاً تلقائياً من الأقارب أعلاه) للحفاظ على مطابقة هذه
+  // البيانات التجريبية حرفياً للمرفق المرجعي الأصلي (بعض هذه العائلات — حكيم،
+  // طبارة — لا تقابل قريباً بعينه في القائمة أعلاه، بل معارف/أصهار غير مُفصَّلين).
+  customTexts: {
+    familiesLine: "الراضون بقضاء الله وقدره: آل شهاب وحكيم ودعبول ونعوس وعيتاني ونجار وفاخوري وحمندي والزعبي وطبارة",
+  },
 }

@@ -142,8 +142,42 @@ export function closingDua(data: ObituaryData): string {
   return data.customTexts?.closingDua ?? defaultClosingDua(data.deceased.gender)
 }
 
+/**
+ * آخر كلمة في اسم كامل — تُعامَل كاسم العائلة (اللقب العائلي). أسماء من كلمة واحدة
+ * (غالباً أبناء/إخوة يُذكرون بالاسم الأول فقط، يُفترض مشاركتهم لقب الفقيد نفسه)
+ * تُستبعد عمداً — لا يوجد فيها ما يُميَّز كلقب عائلة فعلي، فتحويلها إلى "عائلة"
+ * كان يُلوِّث القائمة بأسماء أولى ليست عائلات إطلاقاً.
+ */
+function lastNameOf(fullName: string): string {
+  const parts = fullName.trim().split(/\s+/).filter(Boolean)
+  return parts.length >= 2 ? parts[parts.length - 1] : ""
+}
+
+/**
+ * تُشتق تلقائياً من أسماء عائلة كل الأقارب المُدخَلين في (٣. الأقارب) — آخر كلمة من
+ * اسم كل قريب **وزوج/ة كل قريب أيضاً** (الأصهار جزء تقليدي أصيل من هذه العبارة —
+ * تحقّقتُ هذا من نص SAMPLE_OBITUARY_DATA المحفوظ يدوياً أصلاً، يتضمّن عائلات أزواج
+ * البنات صراحة)، بلا تكرار لنفس اسم العائلة، مسبوقة بـ"آل" مرة واحدة ومفصولة بفاصلة.
+ */
+export function defaultFamiliesLine(data: ObituaryData): string {
+  const surnames: string[] = []
+  const addSurname = (name: string | undefined) => {
+    const surname = name ? lastNameOf(name) : ""
+    if (surname && !surnames.includes(surname)) surnames.push(surname)
+  }
+  for (const group of data.relatives) {
+    for (const member of group.members) {
+      addSurname(member.name)
+      addSurname(member.spouseName)
+    }
+  }
+  if (surnames.length === 0) return ""
+  return `الراضون بقضاء الله وقدره: آل ${surnames.join("، ")}`
+}
+
+/** سطر العائلات — مُشتق تلقائياً من الأقارب افتراضياً، قابل للتخصيص الحرّ عبر customTexts.familiesLine. */
 export function familiesLine(data: ObituaryData): string {
-  return data.deceased.families ? `الراضون بقضاء الله وقدره: ${data.deceased.families}` : ""
+  return data.customTexts?.familiesLine ?? defaultFamiliesLine(data)
 }
 
 export function processionLine(data: ObituaryData): string | null {

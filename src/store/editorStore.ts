@@ -46,7 +46,6 @@ function createEmptyData(): ObituaryData {
     deceased: {
       gender: "male",
       name: "",
-      families: "",
       deathDateISO: "",
       hijriOffsetDays: 0,
       country: "لبنان",

@@ -3,7 +3,9 @@
 import { describe, expect, it } from "vitest"
 import { joinWithWaw, relativeCategoryLabel, renderPersonCore, renderRelativeList } from "./grammar"
 import { calculateAge, formatDualDate, formatWeekdayName, toNumerals } from "./hijri"
-import { closingDua, deceasedNameLine, familiesLine, funeralSentence, identityLine, maghfoorLine, relativesBlocks } from "./render"
+import {
+  closingDua, deceasedNameLine, defaultFamiliesLine, familiesLine, funeralSentence, identityLine, maghfoorLine, relativesBlocks,
+} from "./render"
 import { SAMPLE_OBITUARY_DATA } from "./defaults"
 import type { ObituaryData, Person } from "./types"
 
@@ -109,7 +111,7 @@ describe("relativeCategoryLabel — صيغة المفرد عند عضو واحد
 describe("identityLine — القاعدة: زوجة/أرملة تتغيّر حسب البيانات", () => {
   it("أنثى بزوج متوفٍّ، أسلوب 'زوجة' (المرفق ٢)", () => {
     const line = identityLine({
-      gender: "female", name: "سعاد محمد معروف المصري", families: "",
+      gender: "female", name: "سعاد محمد معروف المصري",
       deathDateISO: "2026-06-02", hijriOffsetDays: 0, country: "لبنان",
       hasBasmala: false, hasInnaLillah: false,
       spouseName: "يحيى زكريا عيتاني", spouseHonorific: "الحاج", spouseIsDeceased: true,
@@ -120,7 +122,7 @@ describe("identityLine — القاعدة: زوجة/أرملة تتغيّر حس
 
   it("لا يكرّر 'المرحوم' إن كتبه المستخدم مسبقاً داخل حقل لقب الزوج", () => {
     const line = identityLine({
-      gender: "female", name: "فلانة", families: "",
+      gender: "female", name: "فلانة",
       deathDateISO: "2026-06-02", hijriOffsetDays: 0, country: "لبنان",
       hasBasmala: false, hasInnaLillah: false,
       spouseName: "يحيى زكريا عيتاني", spouseHonorific: "المرحوم", spouseIsDeceased: true,
@@ -131,7 +133,7 @@ describe("identityLine — القاعدة: زوجة/أرملة تتغيّر حس
 
   it("أسلوب 'حرم المغفور له' لا يُضيف 'المرحوم' بعده — العبارة نفسها تحمل معنى الوفاة", () => {
     const line = identityLine({
-      gender: "female", name: "فلانة", families: "",
+      gender: "female", name: "فلانة",
       deathDateISO: "2026-06-02", hijriOffsetDays: 0, country: "لبنان",
       hasBasmala: false, hasInnaLillah: false,
       spouseName: "يحيى زكريا عيتاني", spouseHonorific: "الحاج", spouseIsDeceased: true,
@@ -142,7 +144,7 @@ describe("identityLine — القاعدة: زوجة/أرملة تتغيّر حس
 
   it("أنثى بزوج متوفٍّ، أسلوب 'أرملة' (المرفق ٣)", () => {
     const line = identityLine({
-      gender: "female", name: "وفاء عبد الرحمن عيتاني", families: "",
+      gender: "female", name: "وفاء عبد الرحمن عيتاني",
       deathDateISO: "2026-03-19", hijriOffsetDays: 0, country: "لبنان",
       hasBasmala: false, hasInnaLillah: false,
       spouseName: "عبد الكريم عيتاني", spouseIsDeceased: true, widowStyle: "أرملة",
@@ -153,7 +155,7 @@ describe("identityLine — القاعدة: زوجة/أرملة تتغيّر حس
 
   it("ذكر توفي في الخارج (المرفق ٥)", () => {
     const line = identityLine({
-      gender: "male", name: "عثمان عزالدين عيتاني", families: "",
+      gender: "male", name: "عثمان عزالدين عيتاني",
       deathDateISO: "2026-07-14", hijriOffsetDays: 0, country: "لبنان",
       hasBasmala: false, hasInnaLillah: false, deathPlaceNote: "كاليفورنيا",
     })
@@ -180,6 +182,79 @@ describe("maghfoorLine و deceasedNameLine و closingDua — تصريف حسب �
 describe("familiesLine", () => {
   it("يبدأ بصيغة الرضا الثابتة", () => {
     expect(familiesLine(SAMPLE_OBITUARY_DATA)).toMatch(/^الراضون بقضاء الله وقدره: /)
+  })
+})
+
+describe("defaultFamiliesLine — يُشتق تلقائياً من آخر كلمة في اسم كل قريب", () => {
+  const baseData: Omit<ObituaryData, "relatives"> = {
+    deceased: {
+      gender: "male", name: "فلان الفلاني", deathDateISO: "2026-01-01", hijriOffsetDays: 0,
+      country: "لبنان", hasBasmala: false, hasInnaLillah: false,
+    },
+    funeral: { prayerLocation: "" },
+    format: { numerals: "arabic-indic", months: "levantine", dateOrder: "hijri-first" },
+    templateId: "modern-minimal",
+  }
+
+  it("مثال المستخدم: والده أحمد الحموي ووالدته نازك قباني ← آل الحموي، قباني", () => {
+    const data: ObituaryData = {
+      ...baseData,
+      relatives: [
+        {
+          id: "g1", categoryKey: "parents",
+          members: [
+            { id: "f", name: "أحمد الحموي", isDeceased: true, gender: "male" },
+            { id: "m", name: "نازك قباني", isDeceased: true, gender: "female" },
+          ],
+        },
+      ],
+    }
+    expect(defaultFamiliesLine(data)).toBe("الراضون بقضاء الله وقدره: آل الحموي، قباني")
+  })
+
+  it("يستبعد اسم العائلة المكرَّر — لا تتكرر (الحموي) لو تعدّد الأقارب من نفس العائلة", () => {
+    const data: ObituaryData = {
+      ...baseData,
+      relatives: [
+        {
+          id: "g1", categoryKey: "parents",
+          members: [
+            { id: "f", name: "أحمد الحموي", isDeceased: true, gender: "male" },
+            { id: "m", name: "نازك قباني", isDeceased: true, gender: "female" },
+          ],
+        },
+        {
+          id: "g2", categoryKey: "brothers",
+          members: [{ id: "b1", name: "علي الحموي", isDeceased: false, gender: "male" }],
+        },
+      ],
+    }
+    expect(defaultFamiliesLine(data)).toBe("الراضون بقضاء الله وقدره: آل الحموي، قباني")
+  })
+
+  it("يتجاهل الأسماء من كلمة واحدة (لا لقب عائلة فعلي فيها)", () => {
+    const data: ObituaryData = {
+      ...baseData,
+      relatives: [{ id: "g1", categoryKey: "sons", members: [{ id: "s1", name: "كمال", isDeceased: false, gender: "male" }] }],
+    }
+    expect(defaultFamiliesLine(data)).toBe("")
+  })
+
+  it("يشمل اسم عائلة زوج/ة القريب أيضاً (الأصهار)", () => {
+    const data: ObituaryData = {
+      ...baseData,
+      relatives: [
+        {
+          id: "g1", categoryKey: "daughters",
+          members: [{ id: "d1", name: "هنا", isDeceased: false, gender: "female", spouseName: "توفيق شهاب" }],
+        },
+      ],
+    }
+    expect(defaultFamiliesLine(data)).toBe("الراضون بقضاء الله وقدره: آل شهاب")
+  })
+
+  it("بلا أي قريب مُدخَل ← نص فارغ", () => {
+    expect(defaultFamiliesLine({ ...baseData, relatives: [] })).toBe("")
   })
 })
 
