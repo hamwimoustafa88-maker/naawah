@@ -40,7 +40,7 @@ export function PhotoUpload() {
             <img
               src={photoDataUrl}
               alt="معاينة صورة الفقيد"
-              className="h-24 w-[4.5rem] rounded-md border border-black/15 object-contain bg-white"
+              className="h-24 w-18 rounded-md border border-black/15 object-contain bg-white"
             />
             <button
               type="button"
@@ -55,7 +55,7 @@ export function PhotoUpload() {
           <button
             type="button"
             onClick={() => inputRef.current?.click()}
-            className="flex h-24 w-[4.5rem] flex-col items-center justify-center gap-1 rounded-md border border-dashed border-black/25 text-black/40 hover:border-accent hover:text-accent"
+            className="flex h-24 w-18 flex-col items-center justify-center gap-1 rounded-md border border-dashed border-black/25 text-black/40 hover:border-accent hover:text-accent"
           >
             <ImagePlus size={18} />
             <span className="text-[10px]">إضافة</span>

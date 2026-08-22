@@ -1,11 +1,11 @@
 "use client"
 
-import { useState } from "react"
 import { ObituaryCanvas } from "@/components/canvas/ObituaryCanvas"
 import { ResponsiveCanvasFrame } from "@/components/canvas/ResponsiveCanvasFrame"
 import { useEditorStore } from "@/store/editorStore"
 import { cn } from "@/lib/utils/cn"
 import { ExportBar } from "@/components/editor/ExportBar"
+import { MobileEditorView } from "@/components/editor/mobile/MobileEditorView"
 import { Step1Deceased } from "@/components/editor/steps/Step1Deceased"
 import { Step2Funeral } from "@/components/editor/steps/Step2Funeral"
 import { Step3Relatives } from "@/components/editor/steps/Step3Relatives"
@@ -36,33 +36,21 @@ export function EditorShell() {
   const data = useEditorStore((s) => s.data)
   const step = useEditorStore((s) => s.step)
   const setStep = useEditorStore((s) => s.setStep)
-  const [mobileTab, setMobileTab] = useState<"edit" | "preview">("edit")
 
   const Active = STEPS.find((s) => s.id === step)?.Component ?? Step1Deceased
   const goPrev = () => setStep(step - 1)
   const goNext = () => setStep(step + 1)
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-6">
-      {/* تبويب الجوال */}
-      <div className="mb-4 flex gap-2 lg:hidden">
-        <button
-          onClick={() => setMobileTab("edit")}
-          className={cn("flex-1 rounded-lg py-2 text-sm font-medium", mobileTab === "edit" ? "bg-accent text-white" : "bg-black/5")}
-        >
-          تعديل البيانات
-        </button>
-        <button
-          onClick={() => setMobileTab("preview")}
-          className={cn("flex-1 rounded-lg py-2 text-sm font-medium", mobileTab === "preview" ? "bg-accent text-white" : "bg-black/5")}
-        >
-          المعاينة الحية
-        </button>
+    <>
+      {/* الجوال: معاينة حية دائمة الظهور + بوب-أب أقسام صغيرة سريعة (راجع mobile/MobileEditorView.tsx) */}
+      <div className="lg:hidden">
+        <MobileEditorView />
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(280px,480px)]">
-        {/* لوحة النموذج */}
-        <div className={cn("flex min-w-0 flex-col gap-4", mobileTab === "preview" && "hidden lg:flex")}>
+      {/* سطح المكتب: نموذج خطوات + معاينة جنباً إلى جنب — بلا أي تغيير عن السابق */}
+      <div className="mx-auto hidden max-w-7xl grid-cols-1 gap-6 px-4 py-6 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(280px,480px)]">
+        <div className="flex min-w-0 flex-col gap-4">
           <div className="flex gap-1 overflow-x-auto rounded-xl bg-black/5 p-1">
             {STEPS.map((s) => (
               <button
@@ -88,7 +76,7 @@ export function EditorShell() {
         </div>
 
         {/* لوحة المعاينة — تتقلّص لتملأ عرض حاويتها بالضبط، بلا أي scroll أفقي */}
-        <div className={cn("flex w-full min-w-0 flex-col gap-4 lg:sticky lg:top-6 lg:self-start", mobileTab === "edit" && "hidden lg:flex")}>
+        <div className="flex w-full min-w-0 flex-col gap-4 lg:sticky lg:top-6 lg:self-start">
           {/* overflow-x-hidden صريح إلزامي: تحديد overflow-y وحده يجعل المتصفح يحوّل
               overflow-x تلقائياً إلى auto (قاعدة CSS قياسية)، فيقصّ الكانفاس المصغَّر أفقياً. */}
           <div className="w-full overflow-x-hidden overflow-y-auto rounded-lg" style={{ maxHeight: "calc(100vh - 220px)" }}>
@@ -99,6 +87,6 @@ export function EditorShell() {
           <ExportBar />
         </div>
       </div>
-    </div>
+    </>
   )
 }

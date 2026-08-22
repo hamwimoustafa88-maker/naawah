@@ -56,7 +56,38 @@ function PersonRow({ groupId, person, fixedGender }: { groupId: string; person: 
   )
 }
 
-function GroupCard({ groupId }: { groupId: string }) {
+/** أزرار إضافة فئة قرابة — مُصدَّرة لإعادة استعمالها كقسم جوال مستقل صغير
+ * (mobile/sectionRegistry.tsx) بجانب استعمالها أسفل قائمة الفئات في سطح المكتب. */
+export function AddRelativeCategoryField() {
+  const relatives = useEditorStore((s) => s.data.relatives)
+  const addRelativeGroup = useEditorStore((s) => s.addRelativeGroup)
+  const deceasedGender = useEditorStore((s) => s.data.deceased.gender)
+
+  const usedKeys = new Set(relatives.map((g) => g.categoryKey))
+  const available = RELATIVE_CATEGORY_OPTIONS.filter((o) => o.key === "custom" || !usedKeys.has(o.key))
+
+  return (
+    <div className="flex items-center gap-3">
+      <Plus size={16} className="shrink-0 text-black/40" />
+      <Select
+        value=""
+        onChange={(e) => {
+          if (e.target.value) addRelativeGroup(e.target.value as RelativeCategoryKey)
+        }}
+        className="flex-1"
+      >
+        <option value="">إضافة فئة قرابة…</option>
+        {available.map((o) => (
+          <option key={o.key} value={o.key}>
+            {deceasedGender === "male" ? o.labelMale : o.labelFemale}
+          </option>
+        ))}
+      </Select>
+    </div>
+  )
+}
+
+export function GroupCard({ groupId }: { groupId: string }) {
   const group = useEditorStore((s) => s.data.relatives.find((g) => g.id === groupId))
   const deceasedGender = useEditorStore((s) => s.data.deceased.gender)
   const addPerson = useEditorStore((s) => s.addPerson)
@@ -131,14 +162,9 @@ function GroupCard({ groupId }: { groupId: string }) {
 
 export function Step3Relatives() {
   const relatives = useEditorStore((s) => s.data.relatives)
-  const addRelativeGroup = useEditorStore((s) => s.addRelativeGroup)
   const reorderRelativeGroups = useEditorStore((s) => s.reorderRelativeGroups)
-  const deceasedGender = useEditorStore((s) => s.data.deceased.gender)
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
-
-  const usedKeys = new Set(relatives.map((g) => g.categoryKey))
-  const available = RELATIVE_CATEGORY_OPTIONS.filter((o) => o.key === "custom" || !usedKeys.has(o.key))
 
   const onGroupsDragEnd = (e: DragEndEvent) => {
     const { active, over } = e
@@ -162,22 +188,8 @@ export function Step3Relatives() {
 
       {/* اختيار فئة من اللائحة يضيفها فوراً — بلا زر منفصل — تسريعاً للعملية.
           إن لم يرغب المستخدم بما اختاره، يحذفه بسهولة عبر أيقونة السلة في بطاقة الفئة. */}
-      <Card className="flex items-center gap-3">
-        <Plus size={16} className="shrink-0 text-black/40" />
-        <Select
-          value=""
-          onChange={(e) => {
-            if (e.target.value) addRelativeGroup(e.target.value as RelativeCategoryKey)
-          }}
-          className="flex-1"
-        >
-          <option value="">إضافة فئة قرابة…</option>
-          {available.map((o) => (
-            <option key={o.key} value={o.key}>
-              {deceasedGender === "male" ? o.labelMale : o.labelFemale}
-            </option>
-          ))}
-        </Select>
+      <Card>
+        <AddRelativeCategoryField />
       </Card>
     </div>
   )
