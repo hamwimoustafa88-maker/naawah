@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next"
 import Script from "next/script"
+import { GoogleAnalytics } from "@next/third-parties/google"
 import {
   Alexandria, Almarai, Amiri, Amiri_Quran, Aref_Ruqaa_Ink, Cairo, El_Messiri,
   IBM_Plex_Sans_Arabic, Lalezar, Markazi_Text, Noto_Naskh_Arabic, Reem_Kufi, Reem_Kufi_Ink,
@@ -81,6 +82,11 @@ export const metadata: Metadata = {
   // verification: { google: "xxxxxxxxxxxxxxxxxxxx" },
 }
 
+// معرّف قياس GA4 (يبدأ بـG-) — من env var لا مكتوباً حرفياً، حتى لا يُرسِل
+// التطوير المحلي بيانات لنفس الخاصية، ولتفادي تسجيله في الكود المصدري. يبقى
+// التتبّع مطفأً بأمان (بلا أي خطأ) ما لم يُضبَط NEXT_PUBLIC_GA_ID في الإنتاج.
+const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_ID
+
 export const viewport: Viewport = {
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#f7f5f0" },
@@ -115,6 +121,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         </Script>
         {children}
       </body>
+      {GA_MEASUREMENT_ID && <GoogleAnalytics gaId={GA_MEASUREMENT_ID} />}
     </html>
   )
 }

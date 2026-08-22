@@ -54,6 +54,7 @@ npm install
 ```bash
 DATABASE_URL="postgresql://..."   # رابط اتصال Postgres
 IP_SALT="سلسلة عشوائية طويلة"      # يُخلط مع IP الزائر قبل تجزئته لإحصاء مجهول الهوية
+NEXT_PUBLIC_GA_ID=""               # معرّف قياس Google Analytics 4 (G-XXXXXXXXXX) — اختياري
 ```
 
 > بلا `IP_SALT`، يتراجع الكود إلى قيمة افتراضية ثابتة في الكود — مقبول للتطوير المحلي فقط، غير مناسب للإنتاج.
@@ -121,13 +122,15 @@ prisma/                   نموذج البيانات والزرع
 - `src/app/manifest.ts` — Web App Manifest بأيقونات مربّعة مولَّدة من الشعار (`scripts/generate-manifest-icons.mjs`).
 - `src/app/opengraph-image.tsx` — صورة مشاركة اجتماعية مولَّدة بالكود، عمداً بلا نص عربي مُركَّب بها (محرك تشكيل Satori لا يدعم العربية بالكامل بعد) — العنوان والوصف يصلان عبر وسوم `og:title`/`og:description` النصية في `layout.tsx`.
 - بيانات JSON-LD (`WebApplication` + `Organization`) في الصفحة الرئيسية عبر `src/components/common/JsonLd.tsx`.
+- **Google Search Console**: الموقع مُتحقَّق ومُضاف فيه `sitemap.xml`. بعد أي نشر لصفحة جديدة، استعمل أداة "Inspect URL" ثم "Request Indexing" لتسريع الفهرسة بدل انتظار الزحف العشوائي.
+- **Google Analytics 4** (اختياري): فعّله بضبط `NEXT_PUBLIC_GA_ID` (معرّف يبدأ بـ`G-`) — عبر `@next/third-parties/google`، يبقى مُعطَّلاً بأمان بلا هذا المتغيّر.
 
 ## النشر على Vercel
 
 المشروع مُستضاف حالياً على [enaawah.scouthub.dev](https://enaawah.scouthub.dev). لنشر نسخة جديدة من مستودعك الخاص:
 
 1. استورد المستودع في [vercel.com/new](https://vercel.com/new).
-2. أضف متغيّري البيئة `DATABASE_URL` و`IP_SALT` في إعدادات المشروع.
+2. أضف متغيّري البيئة `DATABASE_URL` و`IP_SALT` في إعدادات المشروع (و`NEXT_PUBLIC_GA_ID` اختيارياً لتفعيل Google Analytics).
 3. شغّل `npx prisma db push --accept-data-loss` على قاعدة بيانات الإنتاج (وليس `prisma migrate deploy`)، ثم `npx tsx prisma/seed.ts` مرة واحدة.
 4. اضغط Deploy — كل دفعة `git push` لاحقة على الفرع الرئيسي تُنشَر تلقائياً.
 
