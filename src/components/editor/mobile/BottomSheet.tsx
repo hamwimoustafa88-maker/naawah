@@ -48,6 +48,17 @@ export function BottomSheet({
     return () => cancelAnimationFrame(raf)
   }, [open])
 
+  // شبكة أمان للإزالة من الـDOM بعد الإغلاق: onTransitionEnd أدناه هو المسار
+  // المعتاد، لكنه *لا* يُضمَن إطلاقه فعلياً على كل جهاز/متصفح (مثال حقيقي: إعداد
+  // "تقليل الحركة" على النظام قد يُلغي مدة الانتقال CSS بالكامل فيُسقِط الحدث نهائياً) —
+  // بلا هذه الشبكة، يبقى العنصر مُركَّباً للأبد. المهلة هنا أطول قليلاً من مدة
+  // الانتقال (٢٠٠مل ث) لتفادي التعارض مع onTransitionEnd في المسار الطبيعي.
+  useEffect(() => {
+    if (open) return
+    const timeout = setTimeout(() => setMounted(false), 300)
+    return () => clearTimeout(timeout)
+  }, [open])
+
   useEffect(() => {
     if (!open) return
     const onKeyDown = (e: KeyboardEvent) => {
@@ -66,7 +77,12 @@ export function BottomSheet({
   if (!mounted) return null
 
   return (
-    <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label={title}>
+    <div
+      className={cn("fixed inset-0 z-50 lg:hidden", entered ? "pointer-events-auto" : "pointer-events-none")}
+      role="dialog"
+      aria-modal="true"
+      aria-label={title}
+    >
       <div
         className={cn("absolute inset-0 bg-black/50 transition-opacity duration-200", entered ? "opacity-100" : "opacity-0")}
         onClick={onClose}

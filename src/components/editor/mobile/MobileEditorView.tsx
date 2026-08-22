@@ -23,7 +23,6 @@ import { ResponsiveCanvasFrame } from "@/components/canvas/ResponsiveCanvasFrame
 import { useEditorStore } from "@/store/editorStore"
 import { relativeCategoryLabel } from "@/lib/obituary/grammar"
 import { cn } from "@/lib/utils/cn"
-import { ExportBar } from "@/components/editor/ExportBar"
 import { AddRelativeCategoryField, GroupCard } from "@/components/editor/steps/Step3Relatives"
 import { BottomSheet } from "@/components/editor/mobile/BottomSheet"
 import { SECTION_GROUPS, STATIC_SECTIONS, type SectionGroupId } from "@/components/editor/mobile/sectionRegistry"
@@ -33,7 +32,7 @@ const CHIP_CLASS =
 
 /** أول قسم يُنصَح المستخدم بالبدء منه — يُميَّز بصرياً في شبكة القائمة (راجع طلب
  * "علامة على الزر الأول" صراحة). ليس له أي أثر وظيفي، مجرّد إرشاد بصري. */
-const FIRST_STEP_ID = "identity"
+const FIRST_STEP_NAV_ID = "static:identity"
 
 export function MobileEditorView() {
   const data = useEditorStore((s) => s.data)
@@ -44,6 +43,10 @@ export function MobileEditorView() {
   // أولاً) — طُلب صراحة أن تظهر "وكأنها مفتوحة" من البداية، لا مطفأة.
   const [sheetOpen, setSheetOpen] = useState(true)
   const [activeId, setActiveId] = useState<string | null>(null)
+  // آخر قسم فتحه المستخدم فعلياً — يبقى محفوظاً حتى بعد الرجوع للقائمة أو إغلاق
+  // اللائحة بالكامل وإعادة فتحها، ليُعرَض عليه "أنت هنا" بدل "ابدأ هنا" فور العودة
+  // (طُلب صراحة: يعرف المستخدم أين توقّف، لا يُعاد توجيهه لبداية القائمة في كل مرة).
+  const [lastVisitedId, setLastVisitedId] = useState<string | null>(null)
 
   const openMenu = () => {
     setActiveId(null)
@@ -51,6 +54,10 @@ export function MobileEditorView() {
   }
   const closeSheet = () => setSheetOpen(false)
   const backToMenu = () => setActiveId(null)
+  const goTo = (id: string) => {
+    setActiveId(id)
+    setLastVisitedId(id)
+  }
 
   const staticFor = (groupId: SectionGroupId) =>
     STATIC_SECTIONS.filter((s) => s.group === groupId && (!s.requiresFemale || deceasedGender === "female"))
@@ -70,17 +77,27 @@ export function MobileEditorView() {
   const prevId = activeIndex > 0 ? orderedIds[activeIndex - 1] : null
   const nextId = activeIndex >= 0 && activeIndex < orderedIds.length - 1 ? orderedIds[activeIndex + 1] : null
 
-  const renderChip = (id: string, Icon: ComponentType<LucideProps>, label: string, onClick: () => void, highlight = false) => (
-    <button key={id} type="button" className={cn(CHIP_CLASS, highlight && "border-2 border-accent bg-accent/10")} onClick={onClick}>
-      {highlight && (
-        <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-accent px-2 py-0.5 text-[9px] font-bold text-white">
-          ابدأ هنا
-        </span>
-      )}
-      <Icon size={18} className="text-accent" />
-      <span className="line-clamp-2">{label}</span>
-    </button>
-  )
+  // "ابدأ هنا" تظهر فقط قبل أول زيارة لأي قسم إطلاقاً؛ بعدها "أنت هنا" تحل محلها
+  // على القسم الذي توقّف عنده المستخدم فعلياً (وليس بالضرورة أول قسم في القائمة).
+  const badgeFor = (navId: string): "start" | "current" | undefined => {
+    if (lastVisitedId) return navId === lastVisitedId ? "current" : undefined
+    return navId === FIRST_STEP_NAV_ID ? "start" : undefined
+  }
+
+  const renderChip = (navId: string, Icon: ComponentType<LucideProps>, label: string) => {
+    const badge = badgeFor(navId)
+    return (
+      <button key={navId} type="button" className={cn(CHIP_CLASS, badge && "border-2 border-accent bg-accent/10")} onClick={() => goTo(navId)}>
+        {badge && (
+          <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-accent px-2 py-0.5 text-[9px] font-bold text-white">
+            {badge === "start" ? "ابدأ هنا" : "أنت هنا"}
+          </span>
+        )}
+        <Icon size={18} className="text-accent" />
+        <span className="line-clamp-2">{label}</span>
+      </button>
+    )
+  }
 
   const renderMenu = (): ReactNode => (
     <div className="flex flex-col gap-5">
@@ -92,16 +109,12 @@ export function MobileEditorView() {
               <div className="grid grid-cols-4 gap-2.5">
                 {relatives.map((g) =>
                   renderChip(
-                    g.id,
+                    `relative:${g.id}`,
                     UserPlus,
-                    relativeCategoryLabel(g.categoryKey, deceasedGender, g.members, g.customLabel),
-                    () => setActiveId(`relative:${g.id}`)
+                    relativeCategoryLabel(g.categoryKey, deceasedGender, g.members, g.customLabel)
                   )
                 )}
-                <button type="button" className={CHIP_CLASS} onClick={() => setActiveId("add-relative")}>
-                  <UserPlus size={18} className="text-black/40" />
-                  <span className="line-clamp-2">إضافة فئة</span>
-                </button>
+                {renderChip("add-relative", UserPlus, "إضافة فئة")}
               </div>
             </div>
           )
@@ -112,9 +125,7 @@ export function MobileEditorView() {
           <div key={group.id}>
             <p className="mb-2 text-xs font-bold text-black/50">{group.label}</p>
             <div className="grid grid-cols-4 gap-2.5">
-              {sections.map((s) =>
-                renderChip(s.id, s.icon, s.title, () => setActiveId(`static:${s.id}`), s.id === FIRST_STEP_ID)
-              )}
+              {sections.map((s) => renderChip(`static:${s.id}`, s.icon, s.title))}
             </div>
           </div>
         )
@@ -157,7 +168,7 @@ export function MobileEditorView() {
         <button
           type="button"
           disabled={!prevId}
-          onClick={() => prevId && setActiveId(prevId)}
+          onClick={() => prevId && goTo(prevId)}
           className="text-sm font-medium text-black/55 disabled:opacity-30"
         >
           ← السابق
@@ -165,7 +176,7 @@ export function MobileEditorView() {
         <button
           type="button"
           disabled={!nextId}
-          onClick={() => nextId && setActiveId(nextId)}
+          onClick={() => nextId && goTo(nextId)}
           className="text-sm font-medium text-accent disabled:opacity-30"
         >
           التالي →
@@ -181,7 +192,9 @@ export function MobileEditorView() {
         </ResponsiveCanvasFrame>
       </div>
 
-      <ExportBar />
+      {/* شريط التصدير (PNG/PDF/مشاركة/إعدادات) محذوف عمداً هنا على الجوال — كله
+          مكرَّر فعلياً كأيقونات في CreateHeader.tsx أعلى الصفحة (دائماً ظاهرة، بما
+          فيها الجوال). زر "تعديل البيانات" العائم هو الزر الوحيد المطلوب هنا. */}
 
       <button
         type="button"
