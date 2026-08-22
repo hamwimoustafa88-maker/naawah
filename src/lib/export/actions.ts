@@ -39,6 +39,18 @@ async function captureJpeg(templateId: string): Promise<string> {
   return toJpeg(node, { pixelRatio: 3, cacheBust: true, quality: 0.92, backgroundColor })
 }
 
+/**
+ * اسم ملف التصدير: "النعوة الإلكترونية - {اسم الفقيد}"، أو "النعوة الإلكترونية"
+ * وحدها إن لم يُدخَل اسم بعد. يُزيل الرموز غير الصالحة في أسماء الملفات عبر أنظمة
+ * التشغيل المختلفة (Windows تحديداً أكثرها تقييداً: \/:*?"<>|).
+ */
+function buildFileName(deceasedName: string, extension: string): string {
+  const trimmed = deceasedName.trim()
+  const base = trimmed ? `النعوة الإلكترونية - ${trimmed}` : "النعوة الإلكترونية"
+  const safe = base.replace(/[\\/:*?"<>|]/g, "").trim()
+  return `${safe}.${extension}`
+}
+
 function downloadBlob(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob)
   const a = document.createElement("a")
@@ -63,27 +75,28 @@ async function notifyStats(templateId: string) {
   }
 }
 
-export async function exportPng(templateId: string) {
+export async function exportPng(templateId: string, deceasedName: string) {
   const blob = await capturePngBlob()
-  downloadBlob(blob, "naawah.png")
+  downloadBlob(blob, buildFileName(deceasedName, "png"))
   void notifyStats(templateId)
 }
 
-export async function exportPdf(templateId: string) {
+export async function exportPdf(templateId: string, deceasedName: string) {
   const dataUrl = await captureJpeg(templateId)
   const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4", compress: true })
   pdf.addImage(dataUrl, "JPEG", 0, 0, 210, 297)
-  pdf.save("naawah.pdf")
+  pdf.save(buildFileName(deceasedName, "pdf"))
   void notifyStats(templateId)
 }
 
-export async function exportShare(templateId: string) {
+export async function exportShare(templateId: string, deceasedName: string) {
   const blob = await capturePngBlob()
-  const file = new File([blob], "naawah.png", { type: "image/png" })
+  const filename = buildFileName(deceasedName, "png")
+  const file = new File([blob], filename, { type: "image/png" })
   if (navigator.canShare?.({ files: [file] })) {
     await navigator.share({ files: [file], title: "نعوة" })
   } else {
-    downloadBlob(blob, "naawah.png")
+    downloadBlob(blob, filename)
   }
   void notifyStats(templateId)
 }

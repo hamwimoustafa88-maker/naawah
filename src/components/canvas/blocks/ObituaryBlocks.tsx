@@ -63,29 +63,29 @@ export function ObituaryContent({
       style={{ textAlign: "center", color: tokens.ink, minHeight: A4_HEIGHT_PX, fontFamily: bodyFontFamily }}
       className="flex flex-col gap-3 px-14 py-16"
     >
-      {/* ١. البسملة */}
+      {/* ١. البسملة — حجمها قابل للتحكم اليدوي من (بيانات الفقيد) عبر basmalaScale */}
       {deceased.hasBasmala && (
         <Calligraphy
           id="basmala"
           fontFamily={tokens.calligraphyFont}
-          widthPx={BASMALA_WIDTH_PX}
+          widthPx={BASMALA_WIDTH_PX * (deceased.basmalaScale ?? 1)}
           className="mx-auto"
           invert={template.calligraphyInvert}
         />
       )}
 
-      {/* ٢-٣. المخطوطة القرآنية + صدق الله العظيم */}
+      {/* ٢-٣. المخطوطة القرآنية + صدق الله العظيم — حجمها قابل للتحكم اليدوي عبر quranVerseScale */}
       {verse && (
         <div style={{ marginBlock: nameLayout === "calligraphy-dominant" ? "0.4em" : "0.2em" }}>
           <Calligraphy
             id={verse.id}
             handmadeFile={verse.handmadeFile}
             fontFamily={tokens.calligraphyFont}
-            widthPx={verse.targetWidthPx ?? CALLIGRAPHY_DEFAULT_WIDTH_PX}
+            widthPx={(verse.targetWidthPx ?? CALLIGRAPHY_DEFAULT_WIDTH_PX) * (deceased.quranVerseScale ?? 1)}
             className="mx-auto"
             style={{ color: tokens.ink }}
             invert={template.calligraphyInvert}
-            fontSizeEm={verse.liveTextFontSizeEm}
+            fontSizeEm={verse.liveTextFontSizeEm ? verse.liveTextFontSizeEm * (deceased.quranVerseScale ?? 1) : undefined}
           />
           {verse.isQuran && (
             <div style={{ fontSize: "0.7em", color: tokens.muted, marginTop: "0.2em" }}>(صدق الله العظيم)</div>
@@ -206,13 +206,14 @@ export function ObituaryContent({
           ١٢. إنّا لله وإنّا إليه راجعون — نفس ملف SVG اليدوي المستعمل أعلى الصفحة
           (handmadeFile="1")، لكن بعرض أصغر بكثير هنا (INNA_LILLAH_FOOTER_WIDTH_PX
           وليس targetWidthPx من QURAN_VERSES) — علامة ختامية صغيرة، لا مخطوطة رئيسية.
+          حجمها قابل للتحكم اليدوي أيضاً عبر innaLillahScale.
         */}
         {deceased.hasInnaLillah && (
           <Calligraphy
             id="inna-lillah"
             handmadeFile={innaLillahVerse?.handmadeFile}
             fontFamily={tokens.calligraphyFont}
-            widthPx={INNA_LILLAH_FOOTER_WIDTH_PX}
+            widthPx={INNA_LILLAH_FOOTER_WIDTH_PX * (deceased.innaLillahScale ?? 1)}
             className="mx-auto"
             invert={template.calligraphyInvert}
           />

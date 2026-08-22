@@ -53,6 +53,9 @@ function createEmptyData(): ObituaryData {
     },
     funeral: {
       prayerLocation: "",
+      // مفعّل افتراضياً بطلب صريح — بلا اعتماد على اقتراح القالب (template.showPrintFooter)
+      // كما كان سابقاً (راجع printFooterText في render.ts: printFooterEnabled ?? templateSuggestsFooter).
+      printFooterEnabled: true,
     },
     relatives: [],
     format: {

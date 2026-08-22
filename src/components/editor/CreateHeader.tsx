@@ -10,6 +10,14 @@
 // زر تبديل ظاهر في هذا الشريط (أُخفي بطلب صريح؛ لو أراد المستخدم تفعيله لاحقاً من
 // الصفحة الرئيسية فسيُطبَّق فوراً هنا أيضاً عبر نفس مفتاح localStorage المشترك).
 // **لا** تمتد هذه الترويسة لتلوين بقية عناصر /create (النماذج، الكانفاس) — نطاقها هذا الشريط فقط.
+//
+// relative z-[60] على الجذر إلزامي: بوتوم-شيت الجوال (mobile/BottomSheet.tsx) يُفتح
+// تلقائياً من البداية ويُغلَّف بـfixed inset-0 z-50 — عنصر ساكن (static) بلا موضع
+// صريح مثل هذه الترويسة يُرسَم دائماً *قبل* أي عنصر positioned بز-إندكس موجب مهما
+// كان ترتيبه في DOM (قاعدة CSS قياسية لترتيب الرسم داخل سياق التكديس)، فتُغطّى كل
+// أزرار الترويسة (PNG/PDF/مشاركة/إعدادات) بخلفية الشيت ويصبح النقر عليها يُغلق
+// الشيت بدل تنفيذ الزر — عطل حقيقي صادفناه (بلاغ: "زر إعدادات النصوص لا يعمل").
+// رفع الترويسة لموضع positioned بز-إندكس أعلى من الشيت (٦٠ > ٥٠) يبقيها فوقه دائماً.
 
 import { useState } from "react"
 import { Download, FileText, Loader2, Share2 } from "lucide-react"
@@ -20,6 +28,7 @@ import { BrandLogo } from "@/components/common/BrandLogo"
 
 export function CreateHeader() {
   const templateId = useEditorStore((s) => s.data.templateId)
+  const deceasedName = useEditorStore((s) => s.data.deceased.name)
   const [busy, setBusy] = useState<ExportKind | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -36,15 +45,15 @@ export function CreateHeader() {
     }
   }
 
-  const handlePng = () => runExport("png", "تعذّر التصدير", () => exportPng(templateId))
-  const handlePdf = () => runExport("pdf", "تعذّر التصدير", () => exportPdf(templateId))
-  const handleShare = () => runExport("share", "تعذّرت المشاركة", () => exportShare(templateId))
+  const handlePng = () => runExport("png", "تعذّر التصدير", () => exportPng(templateId, deceasedName))
+  const handlePdf = () => runExport("pdf", "تعذّر التصدير", () => exportPdf(templateId, deceasedName))
+  const handleShare = () => runExport("share", "تعذّرت المشاركة", () => exportShare(templateId, deceasedName))
 
   const iconButtonClass =
     "inline-flex h-9 w-9 items-center justify-center rounded-full border border-(--home-border) text-(--home-fg) transition-colors hover:bg-(--home-bg) disabled:opacity-40 disabled:pointer-events-none"
 
   return (
-    <div className="home-scope border-b border-(--home-border) bg-(--home-surface)">
+    <div className="home-scope relative z-60 border-b border-(--home-border) bg-(--home-surface)">
       <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-3 px-4 py-3">
         <BrandLogo />
 
@@ -61,7 +70,13 @@ export function CreateHeader() {
             {busy === "share" ? <Loader2 size={16} className="animate-spin" /> : <Share2 size={16} />}
           </button>
 
-          <TextSettingsPanel placement="down" triggerClassName={iconButtonClass} />
+          {/* مخفي على الجوال: نفس الحقول متاحة كقسم "إعدادات النصوص" داخل بوتوم-شيت
+              /mobile/MobileEditorView.tsx (ضمن مجموعة "القالب") — بوب-أوفر صغير
+              مموضع بالإحداثيات المطلقة هش أصلاً على شاشة ضيقة، والبوتوم-شيت المتّسق
+              مع بقية أقسام التعديل هو المسار الوحيد على الجوال الآن. */}
+          <div className="hidden lg:block">
+            <TextSettingsPanel placement="down" triggerClassName={iconButtonClass} />
+          </div>
         </div>
       </div>
     </div>

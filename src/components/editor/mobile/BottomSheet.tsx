@@ -15,6 +15,7 @@ export function BottomSheet({
   title,
   onBack,
   children,
+  footer,
 }: {
   open: boolean
   onClose: () => void
@@ -22,6 +23,9 @@ export function BottomSheet({
   /** إن مُرِّرت، يظهر سهم رجوع بدل ترك اللوحة على القائمة الرئيسية فقط. */
   onBack?: () => void
   children: ReactNode
+  /** شريط سفلي ثابت (لا يتمرّر مع المحتوى) — يُستعمل لأزرار "السابق/التالي"
+   * للتنقّل المباشر بين الأقسام بلا رجوع للقائمة الرئيسية في كل مرة. */
+  footer?: ReactNode
 }) {
   // mounted: العنصر موجود في الـDOM (لإتاحة حركة الخروج قبل الإزالة الفعلية).
   // entered: الحالة البصرية "مفتوح تماماً" (translate-y-0) — تُفعَّل بعد إطار واحد من التركيب.
@@ -96,6 +100,7 @@ export function BottomSheet({
           </button>
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-4 py-4">{children}</div>
+        {footer && <div className="shrink-0 border-t border-black/10 px-4 py-3">{footer}</div>}
       </div>
     </div>
   )

@@ -15,27 +15,34 @@
 // يُفكِّك (unmount) الشجرة الفرعية ويعيد تركيبها من الصفر في كل ضغطة مفتاح، فيفقد
 // حقل الإدخال تركيزه (focus) فوراً بعد أول حرف — عطل تجربة مستخدم خطير وصامت.
 
-import { useState, type ReactNode } from "react"
-import { LayoutTemplate, Pencil, UserPlus } from "lucide-react"
+import { useState, type ComponentType, type ReactNode } from "react"
+import { Pencil, UserPlus } from "lucide-react"
+import type { LucideProps } from "lucide-react"
 import { ObituaryCanvas } from "@/components/canvas/ObituaryCanvas"
 import { ResponsiveCanvasFrame } from "@/components/canvas/ResponsiveCanvasFrame"
 import { useEditorStore } from "@/store/editorStore"
 import { relativeCategoryLabel } from "@/lib/obituary/grammar"
+import { cn } from "@/lib/utils/cn"
 import { ExportBar } from "@/components/editor/ExportBar"
 import { AddRelativeCategoryField, GroupCard } from "@/components/editor/steps/Step3Relatives"
-import { Step4Template } from "@/components/editor/steps/Step4Template"
 import { BottomSheet } from "@/components/editor/mobile/BottomSheet"
 import { SECTION_GROUPS, STATIC_SECTIONS, type SectionGroupId } from "@/components/editor/mobile/sectionRegistry"
 
 const CHIP_CLASS =
-  "flex flex-col items-center gap-1.5 rounded-xl bg-black/5 p-3 text-center text-[11px] font-medium leading-tight text-foreground transition-colors hover:bg-accent/10 active:bg-accent/15"
+  "relative flex flex-col items-center gap-1.5 rounded-xl bg-black/5 p-3 text-center text-[11px] font-medium leading-tight text-foreground transition-colors hover:bg-accent/10 active:bg-accent/15"
+
+/** أول قسم يُنصَح المستخدم بالبدء منه — يُميَّز بصرياً في شبكة القائمة (راجع طلب
+ * "علامة على الزر الأول" صراحة). ليس له أي أثر وظيفي، مجرّد إرشاد بصري. */
+const FIRST_STEP_ID = "identity"
 
 export function MobileEditorView() {
   const data = useEditorStore((s) => s.data)
   const relatives = data.relatives
   const deceasedGender = data.deceased.gender
 
-  const [sheetOpen, setSheetOpen] = useState(false)
+  // اللائحة تُفتح تلقائياً فور دخول الصفحة على الجوال (بلا حاجة لضغط الزر العائم
+  // أولاً) — طُلب صراحة أن تظهر "وكأنها مفتوحة" من البداية، لا مطفأة.
+  const [sheetOpen, setSheetOpen] = useState(true)
   const [activeId, setActiveId] = useState<string | null>(null)
 
   const openMenu = () => {
@@ -48,6 +55,33 @@ export function MobileEditorView() {
   const staticFor = (groupId: SectionGroupId) =>
     STATIC_SECTIONS.filter((s) => s.group === groupId && (!s.requiresFemale || deceasedGender === "female"))
 
+  // قائمة مُسطَّحة بترتيب كل الأقسام القابلة للتنقّل — تُبنى فرقة بفرقة بنفس ترتيب
+  // SECTION_GROUPS (بيانات الفقيد ثم الجنازة والتعزية، فالأقارب، فالقالب) لضمان
+  // تطابقها تماماً مع الترتيب المعروض فعلياً في شبكة القائمة — لا تُبنَ من مصفوفة
+  // STATIC_SECTIONS الخام مباشرة (ترتيبها الداخلي لا يعكس التجميع البصري بالضرورة).
+  const orderedIds: string[] = [
+    ...staticFor("deceased").map((s) => `static:${s.id}`),
+    ...staticFor("funeral").map((s) => `static:${s.id}`),
+    ...relatives.map((g) => `relative:${g.id}`),
+    "add-relative",
+    ...staticFor("template").map((s) => `static:${s.id}`),
+  ]
+  const activeIndex = activeId ? orderedIds.indexOf(activeId) : -1
+  const prevId = activeIndex > 0 ? orderedIds[activeIndex - 1] : null
+  const nextId = activeIndex >= 0 && activeIndex < orderedIds.length - 1 ? orderedIds[activeIndex + 1] : null
+
+  const renderChip = (id: string, Icon: ComponentType<LucideProps>, label: string, onClick: () => void, highlight = false) => (
+    <button key={id} type="button" className={cn(CHIP_CLASS, highlight && "border-2 border-accent bg-accent/10")} onClick={onClick}>
+      {highlight && (
+        <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-accent px-2 py-0.5 text-[9px] font-bold text-white">
+          ابدأ هنا
+        </span>
+      )}
+      <Icon size={18} className="text-accent" />
+      <span className="line-clamp-2">{label}</span>
+    </button>
+  )
+
   const renderMenu = (): ReactNode => (
     <div className="flex flex-col gap-5">
       {SECTION_GROUPS.map((group) => {
@@ -56,28 +90,17 @@ export function MobileEditorView() {
             <div key={group.id}>
               <p className="mb-2 text-xs font-bold text-black/50">{group.label}</p>
               <div className="grid grid-cols-4 gap-2.5">
-                {relatives.map((g) => (
-                  <button key={g.id} type="button" className={CHIP_CLASS} onClick={() => setActiveId(`relative:${g.id}`)}>
-                    <UserPlus size={18} className="text-accent" />
-                    <span className="line-clamp-2">{relativeCategoryLabel(g.categoryKey, deceasedGender, g.members, g.customLabel)}</span>
-                  </button>
-                ))}
+                {relatives.map((g) =>
+                  renderChip(
+                    g.id,
+                    UserPlus,
+                    relativeCategoryLabel(g.categoryKey, deceasedGender, g.members, g.customLabel),
+                    () => setActiveId(`relative:${g.id}`)
+                  )
+                )}
                 <button type="button" className={CHIP_CLASS} onClick={() => setActiveId("add-relative")}>
                   <UserPlus size={18} className="text-black/40" />
                   <span className="line-clamp-2">إضافة فئة</span>
-                </button>
-              </div>
-            </div>
-          )
-        }
-        if (group.id === "template") {
-          return (
-            <div key={group.id}>
-              <p className="mb-2 text-xs font-bold text-black/50">{group.label}</p>
-              <div className="grid grid-cols-4 gap-2.5">
-                <button type="button" className={CHIP_CLASS} onClick={() => setActiveId("template")}>
-                  <LayoutTemplate size={18} className="text-accent" />
-                  <span className="line-clamp-2">اختيار القالب</span>
                 </button>
               </div>
             </div>
@@ -89,15 +112,9 @@ export function MobileEditorView() {
           <div key={group.id}>
             <p className="mb-2 text-xs font-bold text-black/50">{group.label}</p>
             <div className="grid grid-cols-4 gap-2.5">
-              {sections.map((s) => {
-                const Icon = s.icon
-                return (
-                  <button key={s.id} type="button" className={CHIP_CLASS} onClick={() => setActiveId(`static:${s.id}`)}>
-                    <Icon size={18} className="text-accent" />
-                    <span className="line-clamp-2">{s.title}</span>
-                  </button>
-                )
-              })}
+              {sections.map((s) =>
+                renderChip(s.id, s.icon, s.title, () => setActiveId(`static:${s.id}`), s.id === FIRST_STEP_ID)
+              )}
             </div>
           </div>
         )
@@ -109,11 +126,7 @@ export function MobileEditorView() {
   let sheetBody: ReactNode = renderMenu()
   let onBack: (() => void) | undefined
 
-  if (activeId === "template") {
-    sheetTitle = "القالب"
-    sheetBody = <Step4Template />
-    onBack = backToMenu
-  } else if (activeId === "add-relative") {
+  if (activeId === "add-relative") {
     sheetTitle = "إضافة فئة قرابة"
     sheetBody = <AddRelativeCategoryField />
     onBack = backToMenu
@@ -136,6 +149,30 @@ export function MobileEditorView() {
     }
   }
 
+  // زرا السابق/التالي يظهران فقط داخل قسم مفتوح فعلياً (لا في شاشة القائمة نفسها)
+  // — يسمحان بالتنقّل المباشر بين الأقسام المتتالية بلا رجوع للقائمة في كل مرة.
+  const sheetFooter =
+    activeId !== null ? (
+      <div className="flex items-center justify-between">
+        <button
+          type="button"
+          disabled={!prevId}
+          onClick={() => prevId && setActiveId(prevId)}
+          className="text-sm font-medium text-black/55 disabled:opacity-30"
+        >
+          ← السابق
+        </button>
+        <button
+          type="button"
+          disabled={!nextId}
+          onClick={() => nextId && setActiveId(nextId)}
+          className="text-sm font-medium text-accent disabled:opacity-30"
+        >
+          التالي →
+        </button>
+      </div>
+    ) : undefined
+
   return (
     <div className="flex flex-col gap-4 px-4 py-6 pb-28">
       <div className="w-full overflow-x-hidden overflow-y-auto rounded-lg">
@@ -156,7 +193,7 @@ export function MobileEditorView() {
         تعديل البيانات
       </button>
 
-      <BottomSheet open={sheetOpen} onClose={closeSheet} title={sheetTitle} onBack={onBack}>
+      <BottomSheet open={sheetOpen} onClose={closeSheet} title={sheetTitle} onBack={onBack} footer={sheetFooter}>
         {sheetBody}
       </BottomSheet>
     </div>

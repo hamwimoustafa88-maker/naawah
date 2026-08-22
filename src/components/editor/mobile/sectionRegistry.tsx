@@ -7,8 +7,8 @@
 import type { ComponentType } from "react"
 import type { LucideProps } from "lucide-react"
 import {
-  BookOpen, Building2, Calendar, Cake, Hash, ImagePlus, MapPin, MessageSquare,
-  PenLine, Quote, Ruler, User, Users,
+  BookOpen, Building2, Calendar, Cake, Hash, ImagePlus, LayoutTemplate, MapPin, MessageSquare,
+  PenLine, Quote, Ruler, Settings, User, Users,
 } from "lucide-react"
 import {
   BirthInfoFields, DeathDateFields, IdentityFields, MarhoomFields, QuranFields, SpouseFields,
@@ -16,7 +16,9 @@ import {
 import {
   CondolencesFields, CustomTextsFields, DateFormatFields, FillGapFields, InstitutionFields, PrayerBurialFields,
 } from "@/components/editor/steps/Step2Funeral"
+import { Step4Template } from "@/components/editor/steps/Step4Template"
 import { PhotoUpload } from "@/components/editor/PhotoUpload"
+import { TextSettingsFields } from "@/components/editor/TextSettingsPanel"
 
 export type SectionGroupId = "deceased" | "funeral" | "relatives" | "template"
 
@@ -53,4 +55,7 @@ export const STATIC_SECTIONS: StaticSectionDescriptor[] = [
   { id: "fill-gap", title: "ملء الفراغ", icon: Ruler, group: "funeral", Content: FillGapFields },
   { id: "custom-texts", title: "نصوص مخصّصة", icon: PenLine, group: "funeral", Content: CustomTextsFields },
   { id: "date-format", title: "تنسيق التاريخ", icon: Hash, group: "funeral", Content: DateFormatFields },
+
+  { id: "template-picker", title: "اختيار القالب", icon: LayoutTemplate, group: "template", Content: Step4Template },
+  { id: "text-settings", title: "إعدادات النصوص", icon: Settings, group: "template", Content: TextSettingsFields },
 ]

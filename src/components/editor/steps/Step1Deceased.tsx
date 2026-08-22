@@ -228,6 +228,39 @@ export function SpouseFields() {
   )
 }
 
+/** أقصى/أدنى تكبير للمخطوطات القرآنية: درجتان (٪١٠ لكل درجة) في أي من الاتجاهين. */
+const CALLIGRAPHY_SCALE_MIN = 0.8
+const CALLIGRAPHY_SCALE_MAX = 1.2
+const CALLIGRAPHY_SCALE_STEP = 0.1
+
+/** زرا تكبير/تصغير صغيران لمخطوطة قرآنية واحدة — يظهران فقط أثناء عرضها فعلياً. */
+function CalligraphyScaleStepper({ value, onChange, label }: { value: number; onChange: (v: number) => void; label: string }) {
+  const clamp = (v: number) => Math.min(CALLIGRAPHY_SCALE_MAX, Math.max(CALLIGRAPHY_SCALE_MIN, +v.toFixed(2)))
+  return (
+    <div className="flex items-center gap-1" aria-label={label}>
+      <button
+        type="button"
+        onClick={() => onChange(clamp(value - CALLIGRAPHY_SCALE_STEP))}
+        disabled={value <= CALLIGRAPHY_SCALE_MIN}
+        aria-label={`تصغير ${label}`}
+        className="h-7 w-7 shrink-0 rounded-md border border-black/15 text-sm hover:bg-black/5 disabled:opacity-30"
+      >
+        −
+      </button>
+      <span className="w-11 shrink-0 text-center text-xs tabular-nums text-black/60">{Math.round(value * 100)}%</span>
+      <button
+        type="button"
+        onClick={() => onChange(clamp(value + CALLIGRAPHY_SCALE_STEP))}
+        disabled={value >= CALLIGRAPHY_SCALE_MAX}
+        aria-label={`تكبير ${label}`}
+        className="h-7 w-7 shrink-0 rounded-md border border-black/15 text-sm hover:bg-black/5 disabled:opacity-30"
+      >
+        +
+      </button>
+    </div>
+  )
+}
+
 export function QuranFields() {
   const deceased = useEditorStore((s) => s.data.deceased)
   const update = useEditorStore((s) => s.updateDeceased)
@@ -235,16 +268,47 @@ export function QuranFields() {
   return (
     <div className="flex flex-col gap-3">
       <FieldGroup label="الآية / العبارة أعلى النعوة">
-        <Select value={deceased.quranVerseId ?? ""} onChange={(e) => update({ quranVerseId: e.target.value || undefined })}>
-          <option value="">بلا</option>
-          {QURAN_VERSES.map((v) => (
-            <option key={v.id} value={v.id}>{v.label}</option>
-          ))}
-        </Select>
+        <div className="flex items-center gap-2">
+          <Select
+            className="flex-1"
+            value={deceased.quranVerseId ?? ""}
+            onChange={(e) => update({ quranVerseId: e.target.value || undefined })}
+          >
+            <option value="">بلا</option>
+            {QURAN_VERSES.map((v) => (
+              <option key={v.id} value={v.id}>{v.label}</option>
+            ))}
+          </Select>
+          {deceased.quranVerseId && (
+            <CalligraphyScaleStepper
+              label="المخطوطة"
+              value={deceased.quranVerseScale ?? 1}
+              onChange={(v) => update({ quranVerseScale: v })}
+            />
+          )}
+        </div>
       </FieldGroup>
-      <div className="flex gap-5">
-        <Checkbox label="إظهار البسملة" checked={deceased.hasBasmala} onChange={(e) => update({ hasBasmala: e.target.checked })} />
-        <Checkbox label="إظهار «إنّا لله وإنّا إليه راجعون»" checked={deceased.hasInnaLillah} onChange={(e) => update({ hasInnaLillah: e.target.checked })} />
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+        <div className="flex items-center gap-2">
+          <Checkbox label="إظهار البسملة" checked={deceased.hasBasmala} onChange={(e) => update({ hasBasmala: e.target.checked })} />
+          {deceased.hasBasmala && (
+            <CalligraphyScaleStepper label="البسملة" value={deceased.basmalaScale ?? 1} onChange={(v) => update({ basmalaScale: v })} />
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <Checkbox
+            label="إظهار «إنّا لله وإنّا إليه راجعون»"
+            checked={deceased.hasInnaLillah}
+            onChange={(e) => update({ hasInnaLillah: e.target.checked })}
+          />
+          {deceased.hasInnaLillah && (
+            <CalligraphyScaleStepper
+              label="إنّا لله وإنّا إليه راجعون"
+              value={deceased.innaLillahScale ?? 1}
+              onChange={(v) => update({ innaLillahScale: v })}
+            />
+          )}
+        </div>
       </div>
     </div>
   )

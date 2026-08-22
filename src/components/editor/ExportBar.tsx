@@ -9,6 +9,7 @@ import { TextSettingsPanel } from "@/components/editor/TextSettingsPanel"
 
 export function ExportBar() {
   const templateId = useEditorStore((s) => s.data.templateId)
+  const deceasedName = useEditorStore((s) => s.data.deceased.name)
   const [busy, setBusy] = useState<ExportKind | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -26,9 +27,9 @@ export function ExportBar() {
     }
   }
 
-  const handlePng = () => runExport("png", "تعذّر تصدير الصورة. حاول مجدداً.", () => exportPng(templateId))
-  const handlePdf = () => runExport("pdf", "تعذّر تصدير PDF. حاول مجدداً.", () => exportPdf(templateId))
-  const handleShare = () => runExport("share", "تعذّرت المشاركة. حاول مجدداً.", () => exportShare(templateId))
+  const handlePng = () => runExport("png", "تعذّر تصدير الصورة. حاول مجدداً.", () => exportPng(templateId, deceasedName))
+  const handlePdf = () => runExport("pdf", "تعذّر تصدير PDF. حاول مجدداً.", () => exportPdf(templateId, deceasedName))
+  const handleShare = () => runExport("share", "تعذّرت المشاركة. حاول مجدداً.", () => exportShare(templateId, deceasedName))
 
   return (
     <div className="flex flex-col gap-3 border-t border-black/10 pt-4">

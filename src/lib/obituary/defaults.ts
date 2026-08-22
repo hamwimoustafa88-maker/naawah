@@ -182,7 +182,7 @@ export const MOURNING_OPENINGS = [
 ]
 
 export const DEFAULT_PRINT_FOOTER_TEXT =
-  "مطبعة  (إسم المطبعة) — البسطة التحتا، تجاه الباشورة — هاتف ٠١/****** (ليلاً ونهاراً للجميع)"
+  "النعوة الإلكترونية — مشروع خيري مجاني لجميع المسلمين — enaawah.scouthub.dev"
 
 export const ARAB_COUNTRIES = [
   "لبنان", "سوريا", "الأردن", "فلسطين", "مصر", "العراق",

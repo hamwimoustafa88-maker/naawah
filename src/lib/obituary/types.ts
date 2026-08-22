@@ -83,8 +83,14 @@ export interface DeceasedInfo {
   birthCountry?: string
   country: string
   quranVerseId?: string
+  /** مضاعف حجم المخطوطة القرآنية الرئيسية — تكبير/تصغير يدوي بخطوات ١٠٪، ٠.٨-١.٢ (افتراضياً ١). */
+  quranVerseScale?: number
   hasBasmala: boolean
+  /** مضاعف حجم البسملة (٠.٨-١.٢، افتراضياً ١) — نفس نمط quranVerseScale. */
+  basmalaScale?: number
   hasInnaLillah: boolean
+  /** مضاعف حجم علامة "إنّا لله وإنّا إليه راجعون" الختامية (٠.٨-١.٢، افتراضياً ١). */
+  innaLillahScale?: number
   /**
    * عبارة الترحّم الظاهرة مباشرة فوق اسم الفقيد — "المرحوم/ة" (افتراضي) أو
    * "الشهيد/ة" أو نص حر (`marhoomCustomText`) عند "custom". راجع marhoomWord في render.ts.
