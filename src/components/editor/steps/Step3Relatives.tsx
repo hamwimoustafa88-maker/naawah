@@ -8,7 +8,7 @@ import {
 } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
 import { GripVertical, Plus, Trash2 } from "lucide-react"
-import { FIXED_GENDER_BY_CATEGORY, RELATIVE_CATEGORY_OPTIONS } from "@/lib/obituary/defaults"
+import { CATEGORY_REQUIRES_DECEASED_GENDER, FIXED_GENDER_BY_CATEGORY, RELATIVE_CATEGORY_OPTIONS } from "@/lib/obituary/defaults"
 import { relativeCategoryLabel } from "@/lib/obituary/grammar"
 import { useEditorStore } from "@/store/editorStore"
 import type { Person, RelativeCategoryKey } from "@/lib/obituary/types"
@@ -56,15 +56,25 @@ function PersonRow({ groupId, person, fixedGender }: { groupId: string; person: 
   )
 }
 
-/** أزرار إضافة فئة قرابة — مُصدَّرة لإعادة استعمالها كقسم جوال مستقل صغير
- * (mobile/sectionRegistry.tsx) بجانب استعمالها أسفل قائمة الفئات في سطح المكتب. */
-export function AddRelativeCategoryField() {
+/**
+ * أزرار إضافة فئة قرابة — مُصدَّرة لإعادة استعمالها كقسم جوال مستقل صغير
+ * (mobile/sectionRegistry.tsx) بجانب استعمالها أسفل قائمة الفئات في سطح المكتب.
+ * `onAdded` اختياري: يُستدعى بـ id الفئة الجديدة فور إضافتها — تستهلكه واجهة
+ * الجوال (MobileEditorView.tsx) للتنقّل مباشرة إلى شاشة الفئة الجديدة بدل البقاء
+ * على شاشة "إضافة فئة قرابة" فارغة (عطل حقيقي: لم يكن يظهر أي أثر للإضافة إلا
+ * بالنقر يدوياً على "السابق"). سطح المكتب لا يمرّر هذا الـprop، فيبقى سلوكه كما هو.
+ */
+export function AddRelativeCategoryField({ onAdded }: { onAdded?: (groupId: string) => void } = {}) {
   const relatives = useEditorStore((s) => s.data.relatives)
   const addRelativeGroup = useEditorStore((s) => s.addRelativeGroup)
   const deceasedGender = useEditorStore((s) => s.data.deceased.gender)
 
   const usedKeys = new Set(relatives.map((g) => g.categoryKey))
-  const available = RELATIVE_CATEGORY_OPTIONS.filter((o) => o.key === "custom" || !usedKeys.has(o.key))
+  const available = RELATIVE_CATEGORY_OPTIONS.filter((o) => {
+    if (o.key !== "custom" && usedKeys.has(o.key)) return false
+    const requiredGender = CATEGORY_REQUIRES_DECEASED_GENDER[o.key]
+    return !requiredGender || requiredGender === deceasedGender
+  })
 
   return (
     <div className="flex items-center gap-3">
@@ -72,7 +82,9 @@ export function AddRelativeCategoryField() {
       <Select
         value=""
         onChange={(e) => {
-          if (e.target.value) addRelativeGroup(e.target.value as RelativeCategoryKey)
+          if (!e.target.value) return
+          const groupId = addRelativeGroup(e.target.value as RelativeCategoryKey)
+          onAdded?.(groupId)
         }}
         className="flex-1"
       >

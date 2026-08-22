@@ -66,11 +66,22 @@ export function MobileEditorView() {
   // SECTION_GROUPS (بيانات الفقيد ثم الجنازة والتعزية، فالأقارب، فالقالب) لضمان
   // تطابقها تماماً مع الترتيب المعروض فعلياً في شبكة القائمة — لا تُبنَ من مصفوفة
   // STATIC_SECTIONS الخام مباشرة (ترتيبها الداخلي لا يعكس التجميع البصري بالضرورة).
+  //
+  // استثناء متعمَّد: "ملء الفراغ"/"نصوص مخصّصة"/"تنسيق التاريخ" (آخر ثلاثة أقسام في
+  // فرقة "funeral") تُنقَل هنا إلى ما *بعد* فرقة الأقارب (بطلب صريح) رغم بقائها
+  // مُصنَّفة بصرياً تحت "الجنازة والتعزية" في شبكة القائمة نفسها (renderMenu أدناه) —
+  // الفصل هنا بين *ترتيب التنقّل التالي/السابق* و*التجميع البصري في القائمة* مقصود.
+  const AFTER_RELATIVES_FUNERAL_IDS = new Set(["fill-gap", "custom-texts", "date-format"])
+  const funeralSections = staticFor("funeral")
+  const funeralBeforeRelatives = funeralSections.filter((s) => !AFTER_RELATIVES_FUNERAL_IDS.has(s.id))
+  const funeralAfterRelatives = funeralSections.filter((s) => AFTER_RELATIVES_FUNERAL_IDS.has(s.id))
+
   const orderedIds: string[] = [
     ...staticFor("deceased").map((s) => `static:${s.id}`),
-    ...staticFor("funeral").map((s) => `static:${s.id}`),
+    ...funeralBeforeRelatives.map((s) => `static:${s.id}`),
     ...relatives.map((g) => `relative:${g.id}`),
     "add-relative",
+    ...funeralAfterRelatives.map((s) => `static:${s.id}`),
     ...staticFor("template").map((s) => `static:${s.id}`),
   ]
   const activeIndex = activeId ? orderedIds.indexOf(activeId) : -1
@@ -139,7 +150,10 @@ export function MobileEditorView() {
 
   if (activeId === "add-relative") {
     sheetTitle = "إضافة فئة قرابة"
-    sheetBody = <AddRelativeCategoryField />
+    // onAdded ينقل مباشرة لشاشة الفئة الجديدة فور اختيارها — بدل البقاء على شاشة
+    // "إضافة فئة قرابة" فارغة (عطل حقيقي: لم يكن يظهر أي أثر إلا بالنقر يدوياً على
+    // "السابق"، لأن الفئة الجديدة تُدرَج في orderedIds قبل "add-relative" مباشرة).
+    sheetBody = <AddRelativeCategoryField onAdded={(groupId) => goTo(`relative:${groupId}`)} />
     onBack = backToMenu
   } else if (activeId?.startsWith("static:")) {
     const id = activeId.slice("static:".length)

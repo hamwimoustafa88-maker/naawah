@@ -79,6 +79,18 @@ export const FIXED_GENDER_BY_CATEGORY: Partial<Record<RelativeCategoryKey, Gende
   inlaws_sisters: "male",
 }
 
+/**
+ * بعض فئات القرابة صالحة لجنس فقيد واحد فقط — "زوجاته" لا معنى لها إلا لفقيد ذكر
+ * (تعدّد الزوجات)، و"زوجها" لا معنى له إلا لفقيدة أنثى. تُستبعد من قائمة "إضافة
+ * فئة قرابة" حين لا تنطبق على جنس الفقيد الحالي (كان عطلاً حقيقياً: "زوجها" تظهر
+ * كخيار متاح حتى لفقيد ذكر). لا علاقة لهذا بـ FIXED_GENDER_BY_CATEGORY أعلاه —
+ * ذاك يخصّ جنس *أعضاء* الفئة، وهذا يخصّ جنس *الفقيد* نفسه.
+ */
+export const CATEGORY_REQUIRES_DECEASED_GENDER: Partial<Record<RelativeCategoryKey, Gender>> = {
+  wives: "male",
+  husband: "female",
+}
+
 export interface QuranVerse {
   id: string
   label: string

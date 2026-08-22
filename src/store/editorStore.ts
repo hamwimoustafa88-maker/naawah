@@ -17,7 +17,9 @@ interface EditorState {
   setBodyFontFamily: (fontFamily: string | undefined) => void
   setTemplate: (templateId: string) => void
 
-  addRelativeGroup: (categoryKey: RelativeCategoryKey) => void
+  /** يُعيد id الفئة المُنشأة — يُستهلَك في mobile/MobileEditorView.tsx للتنقّل
+   * التلقائي إلى شاشة الفئة الجديدة فور إضافتها (راجع AddRelativeCategoryField). */
+  addRelativeGroup: (categoryKey: RelativeCategoryKey) => string
   removeRelativeGroup: (groupId: string) => void
   updateRelativeGroup: (groupId: string, patch: Partial<RelativeGroup>) => void
   reorderRelativeGroups: (groups: RelativeGroup[]) => void
@@ -97,16 +99,16 @@ export const useEditorStore = create<EditorState>((set) => ({
 
   setTemplate: (templateId) => set((s) => ({ data: { ...s.data, templateId } })),
 
-  addRelativeGroup: (categoryKey) =>
-    set((s) => {
-      const group = createEmptyRelativeGroup(categoryKey)
-      // كل فئة تُضاف تبدأ باسم واحد جاهز للتعديل مباشرة، لا بزر "إضافة اسم" فارغ.
-      // "الوالدين" حالة خاصة تصل بعضوين جاهزين سلفاً من createEmptyRelativeGroup.
-      if (group.members.length === 0) {
-        group.members.push(createEmptyPerson(FIXED_GENDER_BY_CATEGORY[categoryKey] ?? "male"))
-      }
-      return { data: { ...s.data, relatives: [...s.data.relatives, group] } }
-    }),
+  addRelativeGroup: (categoryKey) => {
+    const group = createEmptyRelativeGroup(categoryKey)
+    // كل فئة تُضاف تبدأ باسم واحد جاهز للتعديل مباشرة، لا بزر "إضافة اسم" فارغ.
+    // "الوالدين" حالة خاصة تصل بعضوين جاهزين سلفاً من createEmptyRelativeGroup.
+    if (group.members.length === 0) {
+      group.members.push(createEmptyPerson(FIXED_GENDER_BY_CATEGORY[categoryKey] ?? "male"))
+    }
+    set((s) => ({ data: { ...s.data, relatives: [...s.data.relatives, group] } }))
+    return group.id
+  },
 
   removeRelativeGroup: (groupId) =>
     set((s) => ({ data: { ...s.data, relatives: s.data.relatives.filter((g) => g.id !== groupId) } })),
