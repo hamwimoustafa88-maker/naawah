@@ -20,18 +20,54 @@
 // رفع الترويسة لموضع positioned بز-إندكس أعلى من الشيت (٦٠ > ٥٠) يبقيها فوقه دائماً.
 
 import { useState } from "react"
-import { Download, FileText, Loader2, Share2 } from "lucide-react"
+import { Download, FileJson, FileText, Loader2, Share2, Upload } from "lucide-react"
 import { useEditorStore } from "@/store/editorStore"
 import { exportPdf, exportPng, exportShare, type ExportKind } from "@/lib/export/actions"
+import { exportObituaryJson, importObituaryJson } from "@/lib/export/tempDataIO"
 import { TextSettingsPanel } from "@/components/editor/TextSettingsPanel"
 import { BrandLogo } from "@/components/common/BrandLogo"
 
+/** ⚠️ مؤقت للاختبار — راجع lib/export/tempDataIO.ts. زرا استيراد/تصدير JSON
+ * مُخفيّان من الترويسة بطلب صريح (لا محذوفان — لا يزالان مفيدَين للاختبار الداخلي؛
+ * بدّل هذا إلى true لإعادة إظهارهما، أو احذف البلوك بالكامل أدناه عند الانتهاء تماماً). */
+const SHOW_JSON_IO_TOOLS = false
+
 export function CreateHeader() {
   const data = useEditorStore((s) => s.data)
+  const loadData = useEditorStore((s) => s.loadData)
   const templateId = data.templateId
   const deceasedName = data.deceased.name
   const [busy, setBusy] = useState<ExportKind | null>(null)
   const [error, setError] = useState<string | null>(null)
+
+  // ⚠️ مؤقت للاختبار — راجع lib/export/tempDataIO.ts. احذف هذا البلوك بالكامل
+  // (وزرّيه أدناه) عند الانتهاء من تجربة الشكل النهائي.
+  const [dataBusy, setDataBusy] = useState<"export" | "import" | null>(null)
+  const [dataError, setDataError] = useState<string | null>(null)
+
+  const handleExportData = () => {
+    setDataError(null)
+    try {
+      exportObituaryJson(data)
+    } catch (err) {
+      setDataError("تعذّر تصدير البيانات")
+      console.error(err)
+    }
+  }
+
+  const handleImportData = async () => {
+    setDataBusy("import")
+    setDataError(null)
+    try {
+      const imported = await importObituaryJson()
+      loadData(imported)
+    } catch (err) {
+      setDataError(err instanceof Error ? err.message : "تعذّر استيراد البيانات")
+      console.error(err)
+    } finally {
+      setDataBusy(null)
+    }
+  }
 
   const runExport = async (kind: ExportKind, errorMessage: string, action: () => Promise<void>) => {
     setBusy(kind)
@@ -60,6 +96,33 @@ export function CreateHeader() {
 
         <div className="flex items-center gap-2">
           {error && <span className="text-xs font-medium text-red-600">{error}</span>}
+          {SHOW_JSON_IO_TOOLS && dataError && <span className="text-xs font-medium text-red-600">{dataError}</span>}
+
+          {/* ⚠️ مؤقت للاختبار فقط — تصدير/استيراد بيانات النعوة كـJSON (راجع
+              lib/export/tempDataIO.ts). مُخفيّ حالياً (SHOW_JSON_IO_TOOLS أعلاه)
+              بطلب صريح. حدّ أصفر مميّز عمداً ليسهل تمييزه وحذفه لاحقاً عند إعادة إظهاره. */}
+          {SHOW_JSON_IO_TOOLS && (
+            <div className="flex items-center gap-2 rounded-full border border-dashed border-amber-500/60 px-1.5 py-0.5" title="مؤقت للاختبار: تصدير/استيراد بيانات النعوة">
+              <button
+                type="button"
+                onClick={handleExportData}
+                disabled={busy !== null || dataBusy !== null}
+                aria-label="تصدير بيانات النعوة (JSON) — مؤقت"
+                className={iconButtonClass}
+              >
+                <FileJson size={16} />
+              </button>
+              <button
+                type="button"
+                onClick={handleImportData}
+                disabled={busy !== null || dataBusy !== null}
+                aria-label="استيراد بيانات النعوة (JSON) — مؤقت"
+                className={iconButtonClass}
+              >
+                {dataBusy === "import" ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+              </button>
+            </div>
+          )}
 
           <button type="button" onClick={handlePng} disabled={busy !== null} aria-label="تحميل صورة PNG" className={iconButtonClass}>
             {busy === "png" ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}

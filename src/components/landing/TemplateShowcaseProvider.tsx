@@ -7,7 +7,7 @@
 // تمرير props عبر شجرة الصفحة.
 
 import { createContext, useContext, useState, type ReactNode } from "react"
-import { TEMPLATES } from "@/lib/templates/registry"
+import { VISIBLE_TEMPLATES as TEMPLATES } from "@/lib/templates/registry"
 
 interface TemplateShowcaseContextValue {
   templateId: string

@@ -16,7 +16,7 @@ import { Card, CardTitle } from "@/components/ui/Card"
 
 /** نص افتراضي جاهز للتعديل — يُملأ فعلياً (لا مجرد placeholder رمادي) عند أول
  * تركيز على حقل "التعزية العامة" إن كان فارغاً، فيتمكّن المستخدم من تعديله مباشرة. */
-const DEFAULT_CONDOLENCES_GENERAL = "تُقبل التعازي في (إسم المكان) قبل الدفن وبعده في منزل الفقيد"
+const DEFAULT_CONDOLENCES_GENERAL = "تُقبل التعازي قبل الدفن وبعده في منزل الفقيد"
 
 export function InstitutionFields() {
   const funeral = useEditorStore((s) => s.data.funeral)
@@ -55,7 +55,7 @@ export function PrayerBurialFields() {
         <FieldGroup label="مكان صلاة الجنازة">
           <Input value={funeral.prayerLocation} onChange={(e) => updateFuneral({ prayerLocation: e.target.value })} placeholder="مسجد الشهداء" />
         </FieldGroup>
-        <FieldGroup label="ملاحظة الوقت" hint="مثال: عصر، أو بعد صلاة الظهر/العصر">
+        <FieldGroup label="ملاحظة الوقت" hint="مثال: بعد صلاة الظهر/العصر">
           <Input
             value={funeral.prayerTimeNote ?? ""}
             onChange={(e) => updateFuneral({ prayerTimeNote: e.target.value })}
@@ -234,8 +234,8 @@ export function DateFormatFields() {
       </FieldGroup>
       <FieldGroup label="أسماء الأشهر">
         <Select value={format.months} onChange={(e) => updateFormat({ months: e.target.value as typeof format.months })}>
-          <option value="levantine">شامية (آذار)</option>
-          <option value="egyptian">مصرية (مارس)</option>
+          <option value="levantine">بلاد الشام (آذار)</option>
+          <option value="egyptian">اللاتينية (مارس)</option>
         </Select>
       </FieldGroup>
     </div>

@@ -12,28 +12,25 @@
 
 import { useEffect, useRef, useState } from "react"
 import { Settings, X } from "lucide-react"
-import { TEXT_FONT_OPTIONS } from "@/lib/textFonts"
 import { useEditorStore } from "@/store/editorStore"
 import { cn } from "@/lib/utils/cn"
-import { Checkbox, Label, Select } from "@/components/ui/Field"
+import { Checkbox, Label } from "@/components/ui/Field"
 import { Button } from "@/components/ui/Button"
+import { FontPicker } from "@/components/editor/FontPicker"
 
 export function TextSettingsFields() {
   const bodyFontFamily = useEditorStore((s) => s.data.bodyFontFamily)
   const setBodyFontFamily = useEditorStore((s) => s.setBodyFontFamily)
+  const setPreviewBodyFontFamily = useEditorStore((s) => s.setPreviewBodyFontFamily)
   const nameStyle = useEditorStore((s) => s.data.nameStyle)
   const updateNameStyle = useEditorStore((s) => s.updateNameStyle)
+  const setPreviewNameFontFamily = useEditorStore((s) => s.setPreviewNameFontFamily)
 
   return (
     <div className="flex flex-col gap-3">
       <div>
         <Label>خط جميع النصوص</Label>
-        <Select value={bodyFontFamily ?? ""} onChange={(e) => setBodyFontFamily(e.target.value || undefined)}>
-          <option value="">افتراضي القالب</option>
-          {TEXT_FONT_OPTIONS.map((f) => (
-            <option key={f.id} value={f.cssVar}>{f.label}</option>
-          ))}
-        </Select>
+        <FontPicker value={bodyFontFamily ?? ""} onChange={setBodyFontFamily} onPreview={setPreviewBodyFontFamily} />
       </div>
 
       <div className="mt-1 flex flex-col gap-3 border-t border-black/10 pt-4">
@@ -41,15 +38,11 @@ export function TextSettingsFields() {
 
         <div>
           <Label>خط الاسم</Label>
-          <Select
+          <FontPicker
             value={nameStyle?.fontFamily ?? ""}
-            onChange={(e) => updateNameStyle({ fontFamily: e.target.value || undefined })}
-          >
-            <option value="">افتراضي القالب</option>
-            {TEXT_FONT_OPTIONS.map((f) => (
-              <option key={f.id} value={f.cssVar}>{f.label}</option>
-            ))}
-          </Select>
+            onChange={(v) => updateNameStyle({ fontFamily: v })}
+            onPreview={setPreviewNameFontFamily}
+          />
         </div>
 
         <div>

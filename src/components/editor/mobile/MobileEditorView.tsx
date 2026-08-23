@@ -208,7 +208,14 @@ export function MobileEditorView() {
     <div className="flex flex-col gap-4 px-4 py-6 pb-28">
       <div className="w-full overflow-x-hidden overflow-y-auto rounded-lg">
         <ResponsiveCanvasFrame>
-          <ObituaryCanvas data={data} />
+          {/* id مستقل عن نسخة سطح المكتب (EditorShell.tsx) عمداً — كلا الفرعين
+              مُركَّبان معاً دائماً في DOM (التبديل بينهما بـCSS فقط: lg:hidden/hidden
+              lg:grid)، فمعرّف id="obituary-canvas" مكرر كان يجعل
+              document.getElementById في lib/export/actions.ts يُصادف دائماً نسخة
+              الجوال المخفية (٠×٠px) أولاً على شاشات سطح المكتب — عطل حقيقي صادفناه:
+              تصدير PNG يفشل بـ"فشل تحويل الكانفاس إلى صورة" وتصدير PDF ينتج صفحة
+              فارغة فعلياً (صورة JPEG مُضمَّنة بأبعاد 0×0). راجع getCanvasNode(). */}
+          <ObituaryCanvas data={data} id="obituary-canvas-mobile" />
         </ResponsiveCanvasFrame>
       </div>
 

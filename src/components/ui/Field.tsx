@@ -4,7 +4,9 @@ import { cn } from "@/lib/utils/cn"
 import { ChevronDown } from "lucide-react"
 import type { InputHTMLAttributes, LabelHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from "react"
 
-const FIELD_BASE =
+// مُصدَّرة عمداً: FontPicker.tsx (قائمة خطوط مخصّصة بمعاينة hover، بديلة عن <select>
+// الأصلي في هذه الحالة تحديداً) تحتاج نفس شكل الحقل القياسي دون تكرار السلسلة.
+export const FIELD_BASE =
   "w-full rounded-lg border border-black/15 bg-white px-3 py-2 text-sm text-foreground placeholder:text-black/35 focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent"
 
 export function Label({ className, ...props }: LabelHTMLAttributes<HTMLLabelElement>) {

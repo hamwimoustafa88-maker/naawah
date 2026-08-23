@@ -16,6 +16,7 @@ const SEED_TEMPLATES = [
   { slug: 'royal-monogram', name: 'البروتوكولي الملكي', category: 'ملكي', isDefault: false },
   { slug: 'traditional-press', name: 'الصحيفة التقليدية', category: 'تقليدي', isDefault: false },
   { slug: 'midnight-elegant', name: 'الليلي الفخم', category: 'ملكي', isDefault: false },
+  { slug: 'tripoli-north', name: 'طرابلس وشمال لبنان', category: 'تقليدي', isDefault: false },
 ]
 
 async function main() {

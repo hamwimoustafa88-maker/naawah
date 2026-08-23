@@ -133,6 +133,45 @@ export function funeralSentence(data: ObituaryData): string {
     : sentence
 }
 
+/**
+ * جملة الصلاة بلا اسم المسجد ("في {مكان}") ولا "ويوارى الثرى..." — مطابقة لـ
+ * funeralSentence حرفياً باستثناء هذين الجزأين. مُستعملة فقط حين يفصلهما القالب
+ * لسطرين مستقلّين (طرابلس وشمال لبنان، template.emphasizePrayerLocation) عبر
+ * prayerLocationLine/burialLine أدناه. funeralSentence نفسها تبقى بلا تغيير —
+ * تستهلكها اختبارات نصية حرفية (grammar.test.ts).
+ */
+export function funeralSentenceCore(data: ObituaryData): string {
+  const words = DECEASED_WORDS[data.deceased.gender]
+  const burialDate = data.funeral.burialDateISO || data.deceased.deathDateISO
+  const dateStr = formatDualDate(burialDate, {
+    hijriOffsetDays: data.deceased.hijriOffsetDays,
+    order: data.format.dateOrder,
+    numerals: data.format.numerals,
+    months: data.format.months,
+  })
+  const weekday = formatWeekdayName(burialDate)
+  const parts = [
+    words.sayusalla,
+    "على",
+    words.jasad,
+    words.tahir,
+    data.funeral.prayerTimeNote,
+    weekday ? `يوم ${weekday}` : "",
+    dateStr ? `الواقع في ${dateStr}` : "",
+  ]
+  return parts.filter(Boolean).join(" ").replace(/\s+/g, " ").trim()
+}
+
+/** سطر اسم المسجد وحده — "في {مكان الصلاة}" */
+export function prayerLocationLine(data: ObituaryData): string | null {
+  return data.funeral.prayerLocation ? `في ${data.funeral.prayerLocation}` : null
+}
+
+/** سطر مكان الدفن وحده — "ويوارى الثرى في {مكان الدفن}" */
+export function burialLine(data: ObituaryData): string | null {
+  return data.funeral.burialLocation ? `ويوارى الثرى في ${data.funeral.burialLocation}` : null
+}
+
 export function defaultClosingDua(gender: DeceasedInfo["gender"]): string {
   const words = DECEASED_WORDS[gender]
   return `${attachLam(words.faqeed)} ${words.rahmah} ولكم ${words.ajruh} والثواب`
@@ -147,9 +186,16 @@ export function closingDua(data: ObituaryData): string {
  * (غالباً أبناء/إخوة يُذكرون بالاسم الأول فقط، يُفترض مشاركتهم لقب الفقيد نفسه)
  * تُستبعد عمداً — لا يوجد فيها ما يُميَّز كلقب عائلة فعلي، فتحويلها إلى "عائلة"
  * كان يُلوِّث القائمة بأسماء أولى ليست عائلات إطلاقاً.
+ *
+ * أي محتوى بين قوسين (كنية توضيحية مثل "نازك محي الدين قباني (أبو نادر)") يُستبعد
+ * أولاً قبل استخراج آخر كلمة — بطلب صريح: الكنية داخل القوسين ليست اسم عائلة أبداً
+ * ولا يجوز احتسابها كذلك، حتى لو كانت آخر ما في النص فعلياً. هذا لا يمسّ الاسم
+ * المطبوع فعلياً في قائمة الأقارب (renderPersonCore في grammar.ts) — الكنية تبقى
+ * ظاهرة هناك كما كتبها المستخدم، الاستبعاد هنا فقط.
  */
 function lastNameOf(fullName: string): string {
-  const parts = fullName.trim().split(/\s+/).filter(Boolean)
+  const withoutParens = fullName.replace(/\([^)]*\)/g, " ")
+  const parts = withoutParens.trim().split(/\s+/).filter(Boolean)
   return parts.length >= 2 ? parts[parts.length - 1] : ""
 }
 
@@ -175,9 +221,28 @@ export function defaultFamiliesLine(data: ObituaryData): string {
   return `الراضون بقضاء الله وقدره: آل ${surnames.join("، ")}`
 }
 
-/** سطر العائلات — مُشتق تلقائياً من الأقارب افتراضياً، قابل للتخصيص الحرّ عبر customTexts.familiesLine. */
-export function familiesLine(data: ObituaryData): string {
-  return data.customTexts?.familiesLine ?? defaultFamiliesLine(data)
+/**
+ * سطر العائلات المختصر: عائلة الأب وعائلة الأم فقط، لا كل عائلات الأقارب والأصهار
+ * — طرابلس وشمال لبنان حصراً (template.familiesLineScope === "parents-only").
+ * عائلة الأب = لقب الفقيد نفسه (نسب أبوي)؛ عائلة الأم = لقب عضو "الوالدين" الأنثى
+ * إن وُجدت فئة الوالدين أصلاً. تكرار نفس اللقب (شائع حين لم يُدخَل اسم الأم بلقب
+ * مختلف) يُوحَّد لمرة واحدة.
+ */
+export function parentFamiliesLine(data: ObituaryData): string {
+  const fatherSurname = lastNameOf(data.deceased.name)
+  const parentsGroup = data.relatives.find((g) => g.categoryKey === "parents")
+  const mother = parentsGroup?.members.find((m) => m.gender === "female")
+  const motherSurname = mother ? lastNameOf(mother.name) : ""
+  const surnames = [...new Set([fatherSurname, motherSurname].filter(Boolean))]
+  if (surnames.length === 0) return ""
+  return `الراضون بقضاء الله وقدره: آل ${surnames.join("، ")}`
+}
+
+/** سطر العائلات — مُشتق تلقائياً من الأقارب افتراضياً، قابل للتخصيص الحرّ عبر
+ * customTexts.familiesLine. scope="parents-only" يستعمل parentFamiliesLine بدل
+ * defaultFamiliesLine (طرابلس وشمال لبنان حصراً، عبر template.familiesLineScope). */
+export function familiesLine(data: ObituaryData, scope: "all" | "parents-only" = "all"): string {
+  return data.customTexts?.familiesLine ?? (scope === "parents-only" ? parentFamiliesLine(data) : defaultFamiliesLine(data))
 }
 
 export function processionLine(data: ObituaryData): string | null {

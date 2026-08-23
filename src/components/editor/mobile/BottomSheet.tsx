@@ -65,11 +65,26 @@ export function BottomSheet({
       if (e.key === "Escape") onClose()
     }
     document.addEventListener("keydown", onKeyDown)
-    // يمنع تمرير الصفحة خلف اللوحة أثناء فتحها
+
+    // قفل تمرير الصفحة خلف اللوحة — لكن فقط طالما اللوحة ظاهرة فعلياً (الجذر
+    // أدناه lg:hidden). MobileEditorView يبقى مُركَّباً دائماً حتى على سطح
+    // المكتب (تخفيه lg:hidden عبر CSS فقط، لا يُلغي تركيبه)، وsheetOpen يبدأ
+    // true دائماً — فبلا هذا الشرط كان تمرير صفحة /create كاملة على سطح
+    // المكتب يُقفَل بصمت من أول تحميل (عطل حقيقي صادفناه: "يختفي scroll أحياناً"،
+    // يظهر فقط حين يطول محتوى النموذج عن ارتفاع الشاشة فيحاول المستخدم التمرير).
+    // مستمع resize (لا فحص مرة واحدة فقط) لتغطية عبور حافة ١٠٢٤px حيّاً واللوحة
+    // ما زالت مفتوحة (تكبير/تصغير نافذة المتصفح بلا إعادة تحميل).
+    const desktopQuery = window.matchMedia("(min-width: 1024px)")
     const prevOverflow = document.body.style.overflow
-    document.body.style.overflow = "hidden"
+    const syncOverflow = () => {
+      document.body.style.overflow = desktopQuery.matches ? prevOverflow : "hidden"
+    }
+    syncOverflow()
+    desktopQuery.addEventListener("change", syncOverflow)
+
     return () => {
       document.removeEventListener("keydown", onKeyDown)
+      desktopQuery.removeEventListener("change", syncOverflow)
       document.body.style.overflow = prevOverflow
     }
   }, [open, onClose])

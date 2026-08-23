@@ -10,8 +10,20 @@ import type { ObituaryData } from "@/lib/obituary/types"
 
 export type ExportKind = "png" | "pdf" | "share"
 
+/**
+ * نسخة سطح المكتب (EditorShell.tsx) ونسخة الجوال (MobileEditorView.tsx) من
+ * ObituaryCanvas مُركَّبتان معاً دائماً في DOM — التبديل بينهما بصرياً بـCSS فقط
+ * (lg:hidden / hidden lg:grid) حسب عرض الشاشة، لا بعدم تركيب أحدهما. لذا نبحث
+ * عن أول عنصر مُطابق *ظاهر فعلياً* (أبعاد غير صفرية)، لا أول id مطابق مطلقاً —
+ * وإلا قد نلتقط النسخة المخفية (٠×٠px) فيفشل toBlob()/toJpeg() بصمت أو ينتج
+ * صورة فارغة (عطل حقيقي صادفناه: PNG "فشل تحويل الكانفاس إلى صورة"، PDF بصفحة فارغة).
+ */
+const CANVAS_IDS = ["obituary-canvas", "obituary-canvas-mobile"]
+
 async function getCanvasNode(): Promise<HTMLElement> {
-  const node = document.getElementById("obituary-canvas")
+  const node = CANVAS_IDS
+    .map((id) => document.getElementById(id))
+    .find((el): el is HTMLElement => !!el && el.offsetWidth > 0 && el.offsetHeight > 0)
   if (!node) throw new Error("لم يُعثر على الكانفاس")
   if (typeof document.fonts?.ready?.then === "function") {
     await document.fonts.ready

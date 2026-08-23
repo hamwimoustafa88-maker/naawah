@@ -125,6 +125,12 @@ const FAJR_WIDTH_PX = Math.round(18 * CM_TO_PX)
  * QURAN_VERSES — تغيير ذاك كان سيُصغّر نفس الآية أيضاً حين تُختار كمخطوطة رئيسية.
  */
 export const INNA_LILLAH_FOOTER_WIDTH_PX = Math.round(4.5 * CM_TO_PX)
+/**
+ * المخطوطة القرآنية حين تُعرض مصغّرة في زاوية الصفحة العلوية بدل وسط الصفحة —
+ * طرابلس وشمال لبنان حصراً (template.quranPlacement === "corner"): ~٤سم، بجانب
+ * الجهة الناعية بدل أعلاها.
+ */
+export const QURAN_CORNER_WIDTH_PX = Math.round(4 * CM_TO_PX)
 
 /** كل نص هنا موثوق حرفياً — يُعرض حيّاً بخط عربي حقيقي، لا يُولَّد بمسارات أو صور. */
 export const QURAN_VERSES: QuranVerse[] = [
@@ -256,7 +262,7 @@ export const SAMPLE_OBITUARY_DATA: ObituaryData = {
     // صادفناه في بيانات هذه العيّنة تحديداً (تاريخها يصادف يوم ثلاثاء أيضاً).
     prayerTimeNote: "عصر",
     burialLocation: "جبانة الثرى",
-    condolencesGeneral: "تُقبل التعازي في (إسم المكان) قبل الدفن وبعده في منزل الفقيد",
+    condolencesGeneral: "تُقبل التعازي قبل الدفن وبعده في منزل الفقيد",
     condolencesMen: "في مسجد الحمراء، قاعة المرحوم الحاج عبد اللطيف عيتاني، بين صلاتي العصر والمغرب",
     condolencesWomen: "في مسجد الحمراء، قاعة المرحوم الحاج عبد اللطيف عيتاني، بين صلاتي العصر والمغرب",
   },

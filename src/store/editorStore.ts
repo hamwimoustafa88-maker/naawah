@@ -8,6 +8,19 @@ interface EditorState {
   data: ObituaryData
   step: number
 
+  /**
+   * معاينة خط عابرة (hover) — منفصلة عمداً عن data.bodyFontFamily/nameStyle.fontFamily
+   * الفعليَّين: تُطبَّق فوراً على الكانفاس بأولوية أعلى منهما (راجع ObituaryBlocks.tsx)
+   * أثناء تمرير المؤشر فوق اسم خط في FontPicker.tsx فقط، بلا أي تعديل على البيانات
+   * الفعلية. تُمسَح (undefined) عند مغادرة المؤشر أو عند اختيار خط فعلياً بالنقر —
+   * "لا يعني شيئاً" ما لم يُنقَر عليه صراحةً، كما طُلب حرفياً. ليست جزءاً من
+   * ObituaryData عمداً — لا تُصدَّر ولا تُستورَد ولا تُحفَظ، مجرّد حالة واجهة عابرة.
+   */
+  previewBodyFontFamily?: string
+  previewNameFontFamily?: string
+  setPreviewBodyFontFamily: (fontFamily: string | undefined) => void
+  setPreviewNameFontFamily: (fontFamily: string | undefined) => void
+
   setStep: (step: number) => void
   updateDeceased: (patch: Partial<DeceasedInfo>) => void
   updateFuneral: (patch: Partial<FuneralInfo>) => void
@@ -31,6 +44,9 @@ interface EditorState {
 
   loadSample: () => void
   reset: () => void
+  /** يستبدل بيانات النعوة بالكامل — مؤقت، يخدم استيراد JSON للاختبار عبر
+   * lib/export/tempDataIO.ts وCreateHeader.tsx. احذفه معها لاحقاً. */
+  loadData: (data: ObituaryData) => void
 }
 
 /**
@@ -71,6 +87,11 @@ function createEmptyData(): ObituaryData {
 export const useEditorStore = create<EditorState>((set) => ({
   data: createEmptyData(),
   step: 1,
+
+  previewBodyFontFamily: undefined,
+  previewNameFontFamily: undefined,
+  setPreviewBodyFontFamily: (fontFamily) => set({ previewBodyFontFamily: fontFamily }),
+  setPreviewNameFontFamily: (fontFamily) => set({ previewNameFontFamily: fontFamily }),
 
   setStep: (step) => set({ step }),
 
@@ -160,4 +181,5 @@ export const useEditorStore = create<EditorState>((set) => ({
 
   loadSample: () => set({ data: SAMPLE_OBITUARY_DATA }),
   reset: () => set({ data: createEmptyData(), step: 1 }),
+  loadData: (data) => set({ data }),
 }))

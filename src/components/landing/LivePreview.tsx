@@ -11,7 +11,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react"
 import { ObituaryCanvas } from "@/components/canvas/ObituaryCanvas"
 import { ResponsiveCanvasFrame } from "@/components/canvas/ResponsiveCanvasFrame"
 import { SAMPLE_OBITUARY_DATA } from "@/lib/obituary/defaults"
-import { TEMPLATES } from "@/lib/templates/registry"
+import { VISIBLE_TEMPLATES as TEMPLATES } from "@/lib/templates/registry"
 import { cn } from "@/lib/utils/cn"
 import { useTemplateShowcase } from "@/components/landing/TemplateShowcaseProvider"
 

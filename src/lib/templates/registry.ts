@@ -143,7 +143,48 @@ export const TEMPLATES: TemplateDefinition[] = [
     // خلفية سوداء — مخطوطات SVG اليدوية مرسومة بحبر أسود/داكن، تختفي بلا هذا الفلتر.
     calligraphyInvert: true,
   },
+  {
+    id: "tripoli-north",
+    name: "طرابلس وشمال لبنان",
+    category: "تقليدي",
+    description: "الرزنامة الصحفية المعتمدة في طرابلس والشمال — حبر أسود خالص على أبيض ناصع بخط نسخ تقليدي، بلا إطار.",
+    tokens: {
+      bg: "#ffffff",
+      ink: "#0a0a0a",
+      accent: "#0a0a0a",
+      muted: "#4b4b4b",
+      nameFont: "var(--font-noto-naskh)",
+      bodyFont: "var(--font-noto-naskh)",
+      calligraphyFont: "var(--font-amiri-quran)",
+    },
+    // نسخة عن MinimalFrame (بلا إطار إطلاقاً) — النعوة الصحفية المعتمدة في طرابلس
+    // مسطّحة بلا حدود صفحة، فالتمايز البصري كلّه عبر الخط الأسود الخالص والنسخ التقليدي.
+    Frame: MinimalFrame,
+    divider: "",
+    showPrintFooter: false,
+    nameLayout: "plain",
+    // كتلة الأقارب على طراز الصحف الطرابلسية الورقية — سطر مستقل بعرض الصفحة لكل
+    // فئة، بلا توسيط، وبتسمية مطوَّلة بحرف التطويل قبل النقطتين.
+    relativesLayout: "justified-lines",
+    // الاسم أكبر عنصر في الصفحة بوضوح — أكبر من الافتراضي (٢.٥) بكثير.
+    nameSizeEm: 4,
+    // المخطوطة القرآنية مصغّرة في الزاوية العلوية بجانب الجهة الناعية، لا وسط الصفحة.
+    quranPlacement: "corner",
+    // سطر العائلات: عائلة الأب وعائلة الأم فقط، لا كل عائلات الأقارب والأصهار.
+    familiesLineScope: "parents-only",
+    // اسم المسجد سطر عريض مستقل بعد جملة الصلاة، لا مدموجاً داخلها.
+    emphasizePrayerLocation: true,
+    // مخفيّ مؤقّتاً بطلب صريح — التعريف يبقى كاملاً (getTemplate يجده عبر TEMPLATES
+    // غير المُصفّاة)، فقط غائب عن واجهات الاختيار عبر VISIBLE_TEMPLATES أدناه.
+    // لإعادة إظهاره: احذف هذا السطر.
+    hidden: true,
+  },
 ]
+
+/** القوالب الظاهرة فعلياً في واجهات الاختيار (محرر /create + معرض الصفحة الرئيسية)
+ * — تستبعد أي قالب `hidden: true`. استعمل TEMPLATES نفسها (غير المُصفّاة) فقط عند
+ * الحاجة لحلّ معرّف قالب محدَّد (getTemplate) لا لعرض قائمة اختيار. */
+export const VISIBLE_TEMPLATES = TEMPLATES.filter((t) => !t.hidden)
 
 export function getTemplate(id: string): TemplateDefinition {
   return TEMPLATES.find((t) => t.id === id) ?? TEMPLATES[0]

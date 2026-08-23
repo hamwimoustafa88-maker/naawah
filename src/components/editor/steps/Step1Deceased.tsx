@@ -4,8 +4,10 @@
 // أسفل الملف (Step1Deceased لسطح المكتب) — نفس الحقول تُعاد استعمالها حرفياً في
 // أقسام الجوال الصغيرة (mobile/sectionRegistry.tsx) بلا أي تكرار للمنطق أو الحقول.
 
+import { useState } from "react"
 import { ARAB_COUNTRIES, honorificsFor, QURAN_VERSES, todayISO } from "@/lib/obituary/defaults"
 import { formatDualDate } from "@/lib/obituary/hijri"
+import { detectWriterPlaceAr } from "@/lib/location/detectPlace"
 import { useEditorStore } from "@/store/editorStore"
 import { Checkbox, FieldGroup, Input, Select } from "@/components/ui/Field"
 import { Card, CardTitle } from "@/components/ui/Card"
@@ -93,6 +95,11 @@ export function DeathDateFields() {
   const format = useEditorStore((s) => s.data.format)
   const update = useEditorStore((s) => s.updateDeceased)
 
+  // كشف مكان الكاتب (لا الفقيد) عبر IP — مرة واحدة فقط لكل تركيب لهذا المكوّن،
+  // حتى لا يُعاد الاستعلام في كل تركيز لاحق على الحقل بلا فائدة (خاصة بعد فشل
+  // أول محاولة). راجع lib/location/detectPlace.ts لتفاصيل الخصوصية والدقّة.
+  const [placeDetectState, setPlaceDetectState] = useState<"idle" | "detecting" | "done">("idle")
+
   const hijriDisplay = deceased.deathDateISO
     ? formatDualDate(deceased.deathDateISO, {
       hijriOffsetDays: deceased.hijriOffsetDays,
@@ -144,8 +151,27 @@ export function DeathDateFields() {
           تبقى محفوظة في البيانات لأغراض الإحصاءات المجهولة فقط، بلا واجهة تعديل. */}
 
       <div className="col-span-2">
-        <FieldGroup label="مكان وفاة (اختياري)" hint="مثال: كاليفورنيا ← يظهر «المتوفي/المتوفاة في كاليفورنيا»">
-          <Input value={deceased.deathPlaceNote ?? ""} onChange={(e) => update({ deathPlaceNote: e.target.value })} />
+        <FieldGroup
+          label="مكان وفاة (اختياري)"
+          hint={
+            placeDetectState === "detecting"
+              ? "جارٍ اكتشاف موقعك تلقائياً…"
+              : "فارغ افتراضياً — انقر على الحقل ليُقتَرح مكانك الحالي تلقائياً (قابل للتعديل الكامل). مثال: كاليفورنيا ← يظهر «المتوفي/المتوفاة في كاليفورنيا»"
+          }
+        >
+          <Input
+            value={deceased.deathPlaceNote ?? ""}
+            onFocus={async () => {
+              // نحاول مرة واحدة فقط لكل تركيب — لا نُعيد المحاولة عند كل تركيز
+              // لاحق (خصوصاً بعد فشل أول محاولة: بلا اتصال، أو تعذّر ترجمة الاسم للعربية).
+              if (deceased.deathPlaceNote || placeDetectState !== "idle") return
+              setPlaceDetectState("detecting")
+              const place = await detectWriterPlaceAr()
+              setPlaceDetectState("done")
+              if (place) update({ deathPlaceNote: place })
+            }}
+            onChange={(e) => update({ deathPlaceNote: e.target.value })}
+          />
         </FieldGroup>
       </div>
     </div>

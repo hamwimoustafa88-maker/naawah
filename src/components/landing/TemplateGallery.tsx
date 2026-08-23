@@ -9,7 +9,7 @@
 
 import { useEffect } from "react"
 import { X } from "lucide-react"
-import { TEMPLATES } from "@/lib/templates/registry"
+import { VISIBLE_TEMPLATES as TEMPLATES } from "@/lib/templates/registry"
 import { cn } from "@/lib/utils/cn"
 import { useTemplateShowcase } from "@/components/landing/TemplateShowcaseProvider"
 
@@ -64,7 +64,7 @@ export function TemplateGallery() {
             <h2 id="gallery-title" className="text-lg font-bold">
               معرض القوالب
             </h2>
-            <p className="text-xs text-(--home-muted)">٧ تصاميم إسلامية وقورة — اختر ما يليق بمقام الفقيد</p>
+            <p className="text-xs text-(--home-muted)">{TEMPLATES.length} تصاميم إسلامية وقورة — اختر ما يليق بمقام الفقيد</p>
           </div>
           <button
             type="button"

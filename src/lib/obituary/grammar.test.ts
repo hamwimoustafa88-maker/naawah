@@ -232,6 +232,22 @@ describe("defaultFamiliesLine — يُشتق تلقائياً من آخر كلم
     expect(defaultFamiliesLine(data)).toBe("الراضون بقضاء الله وقدره: آل الحموي، قباني")
   })
 
+  it("يتجاهل الكنية بين قوسين ولا يحتسبها اسم عائلة (مثال: نازك محي الدين قباني (أبو نادر))", () => {
+    const data: ObituaryData = {
+      ...baseData,
+      relatives: [
+        {
+          id: "g1", categoryKey: "parents",
+          members: [
+            { id: "f", name: "أحمد الحموي", isDeceased: true, gender: "male" },
+            { id: "m", name: "نازك محي الدين قباني (أبو نادر)", isDeceased: true, gender: "female" },
+          ],
+        },
+      ],
+    }
+    expect(defaultFamiliesLine(data)).toBe("الراضون بقضاء الله وقدره: آل الحموي، قباني")
+  })
+
   it("يتجاهل الأسماء من كلمة واحدة (لا لقب عائلة فعلي فيها)", () => {
     const data: ObituaryData = {
       ...baseData,
