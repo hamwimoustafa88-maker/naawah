@@ -153,6 +153,17 @@ describe("identityLine — القاعدة: زوجة/أرملة تتغيّر حس
     expect(line).toContain("عبد الكريم عيتاني")
   })
 
+  it("'أرملة' تفرض 'المرحوم' في الناتج حتى لو spouseIsDeceased غير مُحدَّدة — الخانة نفسها مخفيّة عن المستخدم لهذا الأسلوب", () => {
+    const line = identityLine({
+      gender: "female", name: "وفاء عبد الرحمن عيتاني",
+      deathDateISO: "2026-03-19", hijriOffsetDays: 0, country: "لبنان",
+      hasBasmala: false, hasInnaLillah: false,
+      spouseName: "عبد الكريم عيتاني", widowStyle: "أرملة",
+      // spouseIsDeceased غائبة عمداً — القيمة الافتراضية عند تبديل الأسلوب من "زوجة"
+    })
+    expect(line).toBe("أرملة المرحوم عبد الكريم عيتاني")
+  })
+
   it("ذكر توفي في الخارج (المرفق ٥)", () => {
     const line = identityLine({
       gender: "male", name: "عثمان عزالدين عيتاني",

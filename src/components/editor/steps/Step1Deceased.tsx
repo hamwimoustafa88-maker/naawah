@@ -212,16 +212,32 @@ export function BirthInfoFields() {
 export function SpouseFields() {
   const deceased = useEditorStore((s) => s.data.deceased)
   const update = useEditorStore((s) => s.updateDeceased)
+  const widowStyle = deceased.widowStyle ?? "زوجة"
+  // "أرملة"/"حرم المغفور له" تعنيان بالتعريف أن الزوج متوفٍّ فعلاً — لا داعي لخانة
+  // منفصلة تكرّر معنى محسوماً أصلاً بالعبارة نفسها. "زوجة" وحدها تبقى غامضة (الزوج
+  // قد يكون حيّاً أو متوفى)، فتبقى الخانة ظاهرة لهذا الأسلوب حصراً. راجع أيضاً
+  // identityLine في render.ts — تفرض "أرملة" هذا المعنى في النص المطبوع نفسه أيضاً،
+  // بصرف النظر عن قيمة spouseIsDeceased المخزَّنة، فلا يعتمد الناتج على إخفاء الخانة فقط.
+  const showSpouseDeceasedToggle = widowStyle === "زوجة"
 
   return (
     <div className="grid grid-cols-2 gap-4">
       <FieldGroup label="لقب الزوج">
         <Input
-          list="honorifics"
+          list="honorifics-male"
           value={deceased.spouseHonorific ?? ""}
           onChange={(e) => update({ spouseHonorific: e.target.value })}
           placeholder="الحاج، الدكتور…"
         />
+        {/* الزوج ذكر دائماً بصرف النظر عن جنس الفقيدة — datalist مستقلة عن "honorifics"
+            في IdentityFields (تلك تتبع جنس الفقيد/ة نفسه/ها) حتى لا تظهر ألقاب مؤنّثة
+            هنا (عطل حقيقي: كان يتشارك الحقلان نفس القائمة، فتظهر "الحاجة"/"الدكتورة"
+            لِلَقب زوج ذكر). */}
+        <datalist id="honorifics-male">
+          {honorificsFor("male").map((h) => (
+            <option key={h} value={h} />
+          ))}
+        </datalist>
       </FieldGroup>
       <FieldGroup label="اسم الزوج">
         <Input
@@ -232,21 +248,23 @@ export function SpouseFields() {
       </FieldGroup>
       <FieldGroup label="أسلوب سطر الهوية">
         <Select
-          value={deceased.widowStyle ?? "زوجة"}
+          value={widowStyle}
           onChange={(e) => update({ widowStyle: e.target.value as NonNullable<typeof deceased.widowStyle> })}
         >
-          <option value="زوجة">زوجة المرحوم</option>
+          <option value="زوجة">زوجة</option>
           <option value="أرملة">أرملة المرحوم</option>
           <option value="حرم المغفور له">حرم المغفور له</option>
         </Select>
       </FieldGroup>
-      <div className="flex items-end pb-2">
-        <Checkbox
-          label="الزوج متوفٍّ"
-          checked={deceased.spouseIsDeceased ?? false}
-          onChange={(e) => update({ spouseIsDeceased: e.target.checked })}
-        />
-      </div>
+      {showSpouseDeceasedToggle && (
+        <div className="flex items-end pb-2">
+          <Checkbox
+            label="الزوج متوفٍّ"
+            checked={deceased.spouseIsDeceased ?? false}
+            onChange={(e) => update({ spouseIsDeceased: e.target.checked })}
+          />
+        </div>
+      )}
     </div>
   )
 }

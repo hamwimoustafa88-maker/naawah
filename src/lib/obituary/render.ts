@@ -50,7 +50,12 @@ export function identityLine(deceased: DeceasedInfo): string | null {
     // ولا نُضيفها أيضاً إن كتبها المستخدم بالفعل داخل حقل لقب الزوج الحر.
     const honorificAlreadyMarksDeath = deceased.spouseHonorific?.includes("مرحوم") ?? false
     const styleAlreadyMarksDeath = style === "حرم المغفور له"
-    const marker = deceased.spouseIsDeceased && !honorificAlreadyMarksDeath && !styleAlreadyMarksDeath ? "المرحوم" : ""
+    // "أرملة" (أرملة الزوج) تعني بالتعريف أن الزوج متوفٍّ — نفرض هذا في الناتج المطبوع
+    // نفسه بصرف النظر عن قيمة spouseIsDeceased المخزَّنة (خانة "الزوج متوفٍّ" أصلاً
+    // مخفيّة عن المستخدم لهذا الأسلوب تحديداً في Step1Deceased.tsx، فلا يُفترض الاعتماد
+    // على قيمة قد لا تُحدَّث أبداً إن بُدِّل الأسلوب إلى "أرملة" من حالة سابقة).
+    const spouseIsDeceasedEffective = style === "أرملة" ? true : deceased.spouseIsDeceased
+    const marker = spouseIsDeceasedEffective && !honorificAlreadyMarksDeath && !styleAlreadyMarksDeath ? "المرحوم" : ""
     return [style, marker, deceased.spouseHonorific, deceased.spouseName].filter(Boolean).join(" ")
   }
   if (deceased.deathPlaceNote) {
