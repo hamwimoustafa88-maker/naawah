@@ -2,6 +2,7 @@
   "name": "naawah",
   "version": "0.1.0",
   "private": true,
+  "license": "GPL-3.0-or-later",
   "scripts": {
     "predev": "tsx scripts/generate-calligraphy-manifest.ts",
     "dev": "next dev",

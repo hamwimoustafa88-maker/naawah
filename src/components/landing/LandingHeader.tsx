@@ -2,6 +2,9 @@ import Link from "next/link"
 import { Menu, X } from "lucide-react"
 import { ThemeToggle } from "@/components/theme/ThemeToggle"
 import { BrandLogo } from "@/components/common/BrandLogo"
+import { GitHubIcon } from "@/components/landing/BrandIcons"
+
+const GITHUB_REPO_URL = "https://github.com/hamwimoustafa88-maker/naawah"
 
 // روابط الأقسام — نفس القائمة تُستعمل لقائمة سطح المكتب الأفقية ولقائمة الجوال
 // المنسدلة معاً، حتى لا تتفرّق. كل رابط يستهدف id موجود على العنصر <section>
@@ -39,6 +42,17 @@ export function LandingHeader() {
           <Link href="/create" className={CTA_CLASS}>
             إنشاء نعوة الآن
           </Link>
+
+          <a
+            href={GITHUB_REPO_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="المشروع مفتوح المصدر على GitHub"
+            title="المشروع مفتوح المصدر على GitHub"
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-(--home-border) text-(--home-fg) transition-colors hover:bg-(--home-bg)"
+          >
+            <GitHubIcon className="h-4 w-4" />
+          </a>
 
           <ThemeToggle />
 
