@@ -12,6 +12,12 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Prisma's generated client — not our code, don't lint it.
+    "generated/**",
+    // External tools installed alongside the project (own deps, not ours).
+    // Same reason tsconfig.json and vitest.config.ts exclude these.
+    "agent-skills/**",
+    ".agents/**",
   ]),
 ]);
 
