@@ -102,6 +102,13 @@ export interface DeceasedInfo {
    * ٧×١٠سم بلا تمطيط (object-fit: contain) — راجع PhotoUpload.tsx و ObituaryBlocks.tsx.
    */
   photoDataUrl?: string
+  /**
+   * تخطيط الصورة: مفعّل افتراضياً (undefined يُعامل كـtrue) — الصورة جهة اليسار
+   * والنص (جملة النعي + سطر الترحّم + المرحوم + الاسم) جهة اليمين في صفّ واحد،
+   * بدل الاستهلاك الرأسي للمساحة الذي يُفعِّل تصغير auto-fit بسرعة أكبر. إيقافه
+   * يعيد التخطيط المتوسِّط/المكدَّس الرأسي السابق تماماً. راجع ObituaryBlocks.tsx.
+   */
+  photoSideBySide?: boolean
 }
 
 export interface FuneralInfo {

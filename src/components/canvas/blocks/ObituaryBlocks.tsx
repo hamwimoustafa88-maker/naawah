@@ -192,45 +192,98 @@ export function ObituaryContent({
 
       {divider && <div style={{ color: tokens.accent, fontSize: "1em" }}>{divider}</div>}
 
-      {/* ٤. جملة النعي — قابلة للتخصيص عبر "نصوص مخصّصة" */}
-      <p style={{ fontSize: "1.05em", lineHeight: "calc(1.6 * var(--fit-tightness, 1))" }}>{mourningSentence(data)}</p>
+      {/* ٤-٦. جملة النعي + سطر الترحّم + المرحوم + صورة الفقيد + اسم الفقيد.
+          photoSideBySide (مفعّل افتراضياً عند وجود صورة): صفّ واحد — النص (أول
+          عنصر DOM يُرسم يميناً مع dir="rtl") جهة اليمين، والصورة جهة اليسار،
+          بدل الاستهلاك الرأسي للمساحة الذي يُسرِّع تفعيل تصغير auto-fit. بلا صورة،
+          أو والخيار مُعطَّل، يبقى التخطيط المتوسِّط/المكدَّس الرأسي كما هو تماماً. */}
+      {deceased.photoDataUrl && (deceased.photoSideBySide ?? true) ? (
+        <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "1em", width: "100%" }}>
+          <div
+            style={{
+              flex: "1 1 auto",
+              minWidth: 0,
+              textAlign: "right",
+              display: "flex",
+              flexDirection: "column",
+              gap: "calc(0.75em * var(--fit-tightness, 1))",
+            }}
+          >
+            <p style={{ margin: 0, fontSize: "1.05em", lineHeight: "calc(1.6 * var(--fit-tightness, 1))" }}>{mourningSentence(data)}</p>
+            <p style={{ margin: 0, fontSize: "1em", color: tokens.muted }}>{maghfoorLine(data)}</p>
+            <p style={{ margin: 0, fontSize: "1.15em", fontWeight: 700 }}>{marhoomWord(deceased)}</p>
+            <h1
+              style={{
+                fontFamily: nameFontFamily,
+                fontSize: `${nameSizeEm}em`,
+                fontWeight: nameBold ? 700 : 500,
+                lineHeight: 1.25,
+                margin: 0,
+                ...(nameLayout === "badge"
+                  ? { border: `2px solid ${tokens.accent}`, borderRadius: "9999px", padding: "0.3em 1em", display: "inline-block" }
+                  : {}),
+              }}
+            >
+              {divider && nameLayout === "plain" ? `${divider} ${deceasedNameLine(deceased)} ${divider}` : deceasedNameLine(deceased)}
+            </h1>
+          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element -- صورة بيانات المستخدم (data URL) محلياً فقط */}
+          <img
+            src={deceased.photoDataUrl}
+            alt=""
+            style={{
+              flex: "0 0 auto",
+              maxWidth: PHOTO_MAX_WIDTH_PX * photoScale,
+              maxHeight: PHOTO_MAX_HEIGHT_PX * photoScale,
+              width: "auto",
+              height: "auto",
+              objectFit: "contain",
+            }}
+          />
+        </div>
+      ) : (
+        <>
+          {/* ٤. جملة النعي — قابلة للتخصيص عبر "نصوص مخصّصة" */}
+          <p style={{ fontSize: "1.05em", lineHeight: "calc(1.6 * var(--fit-tightness, 1))" }}>{mourningSentence(data)}</p>
 
-      {/* ٥. سطر الترحّم */}
-      <p style={{ fontSize: "1em", color: tokens.muted }}>{maghfoorLine(data)}</p>
-      <p style={{ fontSize: "1.15em", fontWeight: 700 }}>{marhoomWord(deceased)}</p>
+          {/* ٥. سطر الترحّم */}
+          <p style={{ fontSize: "1em", color: tokens.muted }}>{maghfoorLine(data)}</p>
+          <p style={{ fontSize: "1.15em", fontWeight: 700 }}>{marhoomWord(deceased)}</p>
 
-      {/* صورة الفقيد — فوق الاسم، أقصى مقاس فيزيائي ٧×١٠سم، تتقلّص بحد أقصى ٣٠٪ فقط مع كثافة النص */}
-      {deceased.photoDataUrl && (
-        // eslint-disable-next-line @next/next/no-img-element -- صورة بيانات المستخدم (data URL) محلياً فقط
-        <img
-          src={deceased.photoDataUrl}
-          alt=""
-          style={{
-            maxWidth: PHOTO_MAX_WIDTH_PX * photoScale,
-            maxHeight: PHOTO_MAX_HEIGHT_PX * photoScale,
-            width: "auto",
-            height: "auto",
-            objectFit: "contain",
-            marginInline: "auto",
-          }}
-        />
+          {/* صورة الفقيد — فوق الاسم، أقصى مقاس فيزيائي ٧×١٠سم، تتقلّص بحد أقصى ٣٠٪ فقط مع كثافة النص */}
+          {deceased.photoDataUrl && (
+            // eslint-disable-next-line @next/next/no-img-element -- صورة بيانات المستخدم (data URL) محلياً فقط
+            <img
+              src={deceased.photoDataUrl}
+              alt=""
+              style={{
+                maxWidth: PHOTO_MAX_WIDTH_PX * photoScale,
+                maxHeight: PHOTO_MAX_HEIGHT_PX * photoScale,
+                width: "auto",
+                height: "auto",
+                objectFit: "contain",
+                marginInline: "auto",
+              }}
+            />
+          )}
+
+          {/* ٦. اسم الفقيد — أكبر عنصر وأوضحه في الصفحة، بخط/حجم قابلين للتخصيص من الإعدادات */}
+          <h1
+            style={{
+              fontFamily: nameFontFamily,
+              fontSize: `${nameSizeEm}em`,
+              fontWeight: nameBold ? 700 : 500,
+              lineHeight: 1.25,
+              margin: 0,
+              ...(nameLayout === "badge"
+                ? { border: `2px solid ${tokens.accent}`, borderRadius: "9999px", padding: "0.3em 1em", display: "inline-block", marginInline: "auto" }
+                : {}),
+            }}
+          >
+            {divider && nameLayout === "plain" ? `${divider} ${deceasedNameLine(deceased)} ${divider}` : deceasedNameLine(deceased)}
+          </h1>
+        </>
       )}
-
-      {/* ٦. اسم الفقيد — أكبر عنصر وأوضحه في الصفحة، بخط/حجم قابلين للتخصيص من الإعدادات */}
-      <h1
-        style={{
-          fontFamily: nameFontFamily,
-          fontSize: `${nameSizeEm}em`,
-          fontWeight: nameBold ? 700 : 500,
-          lineHeight: 1.25,
-          margin: 0,
-          ...(nameLayout === "badge"
-            ? { border: `2px solid ${tokens.accent}`, borderRadius: "9999px", padding: "0.3em 1em", display: "inline-block", marginInline: "auto" }
-            : {}),
-        }}
-      >
-        {divider && nameLayout === "plain" ? `${divider} ${deceasedNameLine(deceased)} ${divider}` : deceasedNameLine(deceased)}
-      </h1>
 
       {/* ٧. سطر الهوية + معلومات الميلاد */}
       {identity && <p style={{ fontSize: "1.05em" }}>{identity}</p>}

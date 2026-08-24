@@ -21,6 +21,7 @@ function fileToDataUrl(file: File): Promise<string> {
 
 export function PhotoUpload() {
   const photoDataUrl = useEditorStore((s) => s.data.deceased.photoDataUrl)
+  const photoSideBySide = useEditorStore((s) => s.data.deceased.photoSideBySide ?? true)
   const update = useEditorStore((s) => s.updateDeceased)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -67,6 +68,22 @@ export function PhotoUpload() {
           تبقى في متصفحك فقط ولا تُرفع لأي خادم.
         </p>
       </div>
+
+      {/* مفعّل افتراضياً — الصورة جهة اليسار والنص جهة اليمين في صفّ واحد، بدل
+          استهلاك الصورة مساحة رأسية إضافية تُسرِّع تفعيل تصغير auto-fit. إيقافه
+          يعيد التخطيط المتوسِّط/المكدَّس السابق تماماً. يظهر فقط عند وجود صورة. */}
+      {photoDataUrl && (
+        <label className="mt-2 flex items-center gap-2 text-xs text-black/60">
+          <input
+            type="checkbox"
+            checked={photoSideBySide}
+            onChange={(e) => update({ photoSideBySide: e.target.checked })}
+            className="h-3.5 w-3.5 accent-accent"
+          />
+          وضع الصورة جانب النص (الصورة يساراً، النص يميناً) بدل توسيطها فوق الاسم
+        </label>
+      )}
+
       <input
         ref={inputRef}
         type="file"

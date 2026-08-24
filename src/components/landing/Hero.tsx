@@ -12,7 +12,7 @@ export function Hero({ count }: { count: number }) {
           <Image src="/icon.png" alt="" width={56} height={56} className="h-14 w-14" priority />
 
           <span className="rounded-full bg-(--home-accent)/10 px-4 py-1.5 text-sm text-(--home-accent)">
-            عدد النعوات المُنقذة للبيئة: {count.toLocaleString("ar")}
+            عدد النعوات المُنقذة: {count.toLocaleString("ar")}
           </span>
 
           <h1 className="text-4xl font-bold leading-tight sm:text-5xl lg:text-6xl">
@@ -20,7 +20,7 @@ export function Hero({ count }: { count: number }) {
           </h1>
 
           <p className="max-w-xl text-lg text-(--home-muted)">
-            أنشئ نعوة تليق بمقام الفقيد، وشاركها في لحظات.
+            أنشئ نعوة، وشاركها في لحظات.
           </p>
 
           <div className="flex flex-col gap-3 sm:flex-row">
