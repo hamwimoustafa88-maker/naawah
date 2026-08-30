@@ -36,7 +36,8 @@ export const DECEASED_WORDS: Record<Gender, Record<string, string>> = {
 /** جدول تسميات فئات القرابة — يتصرّف حسب جنس الفقيد (مالك القرابة). */
 const RELATIVE_LABELS: Record<Exclude<RelativeCategoryKey, "custom">, Record<Gender, string>> = {
   parents: { male: "الوالدين", female: "الوالدين" },
-  wives: { male: "زوجاته", female: "زوجاته" },
+  // "أرامله" لا "زوجاته" — بطلب صريح (الزوج/الفقيد متوفٍّ فعلاً، فزوجاته أصبحن أرامله).
+  wives: { male: "أرامله", female: "أرامله" },
   husband: { male: "زوجها", female: "زوجها" },
   sons: { male: "أولاده", female: "أولادها" },
   daughters: { male: "بناته", female: "بناتها" },
@@ -58,12 +59,12 @@ const RELATIVE_LABELS: Record<Exclude<RelativeCategoryKey, "custom">, Record<Gen
 
 /**
  * صيغة المفرد لكل فئة قرابة ثابتة الجنس — تظهر بدل صيغة الجمع في `RELATIVE_LABELS`
- * حين تحوي المجموعة عضواً واحداً فقط (مثال: زوجة واحدة ← "زوجته" لا "زوجاته").
+ * حين تحوي المجموعة عضواً واحداً فقط (مثال: أرملة واحدة ← "أرملته" لا "أرامله").
  * الفئات المختلطة الجنس (grandchildren، cousins_*، nephews_*) لها جدول منفصل أدناه
  * لأن صيغة المفرد فيها تعتمد أيضاً على جنس العضو الوحيد نفسه، لا على جنس الفقيد فقط.
  */
 const SINGULAR_LABELS_FIXED: Partial<Record<RelativeCategoryKey, Record<Gender, string>>> = {
-  wives: { male: "زوجته", female: "زوجته" },
+  wives: { male: "أرملته", female: "أرملته" },
   sons: { male: "ولده", female: "ولدها" },
   daughters: { male: "ابنته", female: "ابنتها" },
   brothers: { male: "شقيقه", female: "شقيقها" },
@@ -188,7 +189,9 @@ export function renderPersonCore(p: Person): string {
  * واحدة (المرحومين/المرحومات) خطأ نحوي.
  */
 export function renderRelativeList(members: Person[]): string {
-  const tokens: string[] = []
+  // endsGroup: true فقط لتوكن "المرحومين/المرحومات" (سلسلة ٢+ أسماء) — يُستهلَك
+  // أدناه لإدراج فاصلة قبل "و" التالية له تحديداً (راجع التعليق قبل reduce).
+  const tokens: { text: string; endsGroup: boolean }[] = []
   let i = 0
   while (i < members.length) {
     const p = members[i]
@@ -199,16 +202,27 @@ export function renderRelativeList(members: Person[]): string {
       if (run.length >= 2) {
         const marker = p.gender === "male" ? "المرحومين" : "المرحومات"
         const namesJoined = joinWithWaw(run.map(renderPersonCore))
-        tokens.push(`${marker} ${namesJoined}`)
+        tokens.push({ text: `${marker} ${namesJoined}`, endsGroup: true })
       } else {
         const marker = p.gender === "male" ? "المرحوم" : "المرحومة"
-        tokens.push(`${marker} ${renderPersonCore(run[0])}`)
+        tokens.push({ text: `${marker} ${renderPersonCore(run[0])}`, endsGroup: false })
       }
       i = j
     } else {
-      tokens.push(renderPersonCore(p))
+      tokens.push({ text: renderPersonCore(p), endsGroup: false })
       i++
     }
   }
-  return joinWithWaw(tokens)
+
+  // فاصلة قبل "و" مباشرة بعد مجموعة "المرحومين/المرحومات" (لا بعد "المرحوم/ة"
+  // المفرد) إن تبعتها أسماء أخرى — بلا هذه الفاصلة يلتبس نطاق المجموعة فيبدو
+  // الاسم التالي مشمولاً بها خطأً رغم كونه حيّاً فعلياً. عطل حقيقي واجهناه: ثلاث
+  // زوجات، اثنتان متوفّيتان فقط، لكن "المرحومات فلانة وفلانة وفلانة" يُقرأ وكأن
+  // الثلاث متوفّيات. الحالتان المُختبَرتان سابقاً (مفرد "المرحوم/ة"، أو مجموعة في
+  // آخر القائمة بلا توكن بعدها) لا تُفعِّلان هذا الشرط إطلاقاً، فتبقيان بلا تغيير.
+  return tokens.reduce((acc, cur, idx) => {
+    if (idx === 0) return cur.text
+    const connector = tokens[idx - 1].endsGroup ? "، و" : " و"
+    return `${acc}${connector}${cur.text}`
+  }, "")
 }

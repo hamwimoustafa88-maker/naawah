@@ -36,7 +36,7 @@ export const RELATIVE_CATEGORY_OPTIONS: {
   labelFemale: string
 }[] = [
     { key: "parents", labelMale: "الوالدين", labelFemale: "الوالدين" },
-    { key: "wives", labelMale: "زوجاته", labelFemale: "زوجاته" },
+    { key: "wives", labelMale: "أرامله", labelFemale: "أرامله" },
     { key: "husband", labelMale: "زوجها", labelFemale: "زوجها" },
     { key: "sons", labelMale: "أولاده", labelFemale: "أولادها" },
     { key: "daughters", labelMale: "بناته", labelFemale: "بناتها" },
@@ -80,8 +80,8 @@ export const FIXED_GENDER_BY_CATEGORY: Partial<Record<RelativeCategoryKey, Gende
 }
 
 /**
- * بعض فئات القرابة صالحة لجنس فقيد واحد فقط — "زوجاته" لا معنى لها إلا لفقيد ذكر
- * (تعدّد الزوجات)، و"زوجها" لا معنى له إلا لفقيدة أنثى. تُستبعد من قائمة "إضافة
+ * بعض فئات القرابة صالحة لجنس فقيد واحد فقط — "wives" (أرامله) لا معنى لها إلا
+ * لفقيد ذكر (تعدّد الزوجات)، و"زوجها" لا معنى له إلا لفقيدة أنثى. تُستبعد من قائمة "إضافة
  * فئة قرابة" حين لا تنطبق على جنس الفقيد الحالي (كان عطلاً حقيقياً: "زوجها" تظهر
  * كخيار متاح حتى لفقيد ذكر). لا علاقة لهذا بـ FIXED_GENDER_BY_CATEGORY أعلاه —
  * ذاك يخصّ جنس *أعضاء* الفئة، وهذا يخصّ جنس *الفقيد* نفسه.

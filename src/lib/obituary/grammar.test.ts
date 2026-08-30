@@ -70,6 +70,19 @@ describe("renderRelativeList — القاعدة ٥: تجميع الوفاة ال
       "المرحومة الحاجة سميرة زكريا نعوس والحاجة ناريمان دعبول"
     )
   })
+
+  it("عطل حقيقي: مجموعة (المرحومات) تتبعها حيّة ← فاصلة تفصل نطاق المجموعة، لا 'و' وحدها", () => {
+    // بلا الفاصلة: "المرحومات سارة وجنى وكاملة" تُقرأ وكأن الثلاث متوفّيات رغم
+    // أن كاملة حيّة فعلياً — التبس نطاق "المرحومات" بلا فاصل واضح بعد المجموعة.
+    const members: Person[] = [
+      { id: "w1", name: "سارة غسان سنجر", isDeceased: true, gender: "female" },
+      { id: "w2", name: "جنى سعيدون", isDeceased: true, gender: "female" },
+      { id: "w3", name: "كاملة البزري", isDeceased: false, gender: "female" },
+    ]
+    expect(renderRelativeList(members)).toBe(
+      "المرحومات سارة غسان سنجر وجنى سعيدون، وكاملة البزري"
+    )
+  })
 })
 
 describe("relativeCategoryLabel — يتصرّف حسب جنس الفقيد", () => {
@@ -85,11 +98,11 @@ describe("relativeCategoryLabel — صيغة المفرد عند عضو واحد
   const male = (id: string): Person => ({ id, name: "-", isDeceased: false, gender: "male" })
   const female = (id: string): Person => ({ id, name: "-", isDeceased: false, gender: "female" })
 
-  it("زوجة واحدة ← زوجته لا زوجاته", () => {
-    expect(relativeCategoryLabel("wives", "male", [female("w1")])).toBe("زوجته")
+  it("أرملة واحدة ← أرملته لا أرامله", () => {
+    expect(relativeCategoryLabel("wives", "male", [female("w1")])).toBe("أرملته")
   })
-  it("زوجتان ← تبقى زوجاته (صيغة الجمع)", () => {
-    expect(relativeCategoryLabel("wives", "male", [female("w1"), female("w2")])).toBe("زوجاته")
+  it("أرملتان ← تبقى أرامله (صيغة الجمع)", () => {
+    expect(relativeCategoryLabel("wives", "male", [female("w1"), female("w2")])).toBe("أرامله")
   })
   it("ابن واحد ← ولده لا أولاده", () => {
     expect(relativeCategoryLabel("sons", "male", [male("s1")])).toBe("ولده")

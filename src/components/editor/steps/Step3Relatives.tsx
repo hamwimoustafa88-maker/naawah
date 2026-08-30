@@ -89,8 +89,10 @@ function PersonRow({
         </button>
         <Input placeholder="اللقب" value={person.honorific ?? ""} onChange={(e) => patch({ honorific: e.target.value })} className="w-24 min-w-24" />
         <Input placeholder={hints?.name ?? "الاسم"} value={person.name} onChange={(e) => patch({ name: e.target.value })} className="min-w-32 flex-1" />
-        {/* محدِّد الجنس يظهر فقط في الفئات المختلطة — فئة ثابتة الجنس (بناته مثلاً) لا تحتاجه */}
-        {!fixedGender && (
+        {/* محدِّد الجنس يظهر فقط في الفئات المختلطة — فئة ثابتة الجنس (بناته مثلاً) لا تحتاجه.
+            "الوالدين" مستثناة أيضاً بطلب صريح رغم كونها فئة مختلطة تقنياً — عضواها الاثنان
+            محسومان دائماً (أب ذكر/أم أنثى) عند الإنشاء، فلا داعي لمحدِّد جنس ظاهر. */}
+        {!fixedGender && !isParentsCategory && (
           <Select value={person.gender} onChange={(e) => patch({ gender: e.target.value as Person["gender"] })} className="w-20 shrink-0">
             <option value="male">ذكر</option>
             <option value="female">أنثى</option>
