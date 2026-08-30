@@ -1,6 +1,8 @@
 import type { Metadata } from "next"
+import { Suspense } from "react"
 import { CreateHeader } from "@/components/editor/CreateHeader"
 import { EditorShell } from "@/components/editor/EditorShell"
+import { TemplateFromQuery } from "@/components/editor/TemplateFromQuery"
 
 export const metadata: Metadata = {
   title: "إنشاء نعوة إلكترونية",
@@ -12,6 +14,9 @@ export const metadata: Metadata = {
 export default function CreatePage() {
   return (
     <>
+      <Suspense fallback={null}>
+        <TemplateFromQuery />
+      </Suspense>
       <CreateHeader />
       <EditorShell />
     </>

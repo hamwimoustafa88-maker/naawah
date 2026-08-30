@@ -84,7 +84,7 @@ export default async function TemplatePage({
             <p className="mt-3 text-(--home-muted)">{template.description}</p>
 
             <Link
-              href="/create"
+              href={`/create?template=${template.id}`}
               className="mt-6 inline-flex items-center rounded-xl bg-(--home-accent) px-6 py-3 text-sm font-bold text-white transition-transform hover:scale-[1.02]"
             >
               صمّم نعوتك بهذا القالب

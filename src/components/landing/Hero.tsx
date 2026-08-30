@@ -16,7 +16,7 @@ export function Hero({ count }: { count: number }) {
           </span>
 
           <h1 className="text-4xl font-bold leading-tight sm:text-5xl lg:text-6xl">
-            النعوة الإلكترونية — أنشئ نعوة إسلامية وقورة وشاركها في دقائق
+            النعوة الإلكترونية — أنشئ نعوة إسلامية وشاركها في دقائق
           </h1>
 
           <p className="max-w-xl text-lg text-(--home-muted)">
