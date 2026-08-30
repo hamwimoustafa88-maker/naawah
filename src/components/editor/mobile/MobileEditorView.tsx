@@ -16,7 +16,7 @@
 // حقل الإدخال تركيزه (focus) فوراً بعد أول حرف — عطل تجربة مستخدم خطير وصامت.
 
 import { useState, type ComponentType, type ReactNode } from "react"
-import { Pencil, UserPlus } from "lucide-react"
+import { Check, Pencil, UserPlus } from "lucide-react"
 import type { LucideProps } from "lucide-react"
 import { ObituaryCanvas } from "@/components/canvas/ObituaryCanvas"
 import { ResponsiveCanvasFrame } from "@/components/canvas/ResponsiveCanvasFrame"
@@ -185,6 +185,9 @@ export function MobileEditorView() {
 
   // زرا السابق/التالي يظهران فقط داخل قسم مفتوح فعلياً (لا في شاشة القائمة نفسها)
   // — يسمحان بالتنقّل المباشر بين الأقسام المتتالية بلا رجوع للقائمة في كل مرة.
+  // آخر قسم في orderedIds بأكمله (nextId غائب) هو "إعدادات النصوص" — بلا قسم
+  // تالٍ ليس هناك داعٍ لزر "التالي" المعطَّل دائماً؛ نستبدله بزر "إنهاء البناء"
+  // يُغلق البوتوم-شيت مباشرة ليكشف المعاينة النهائية الكاملة، بطلب صريح.
   const sheetFooter =
     activeId !== null ? (
       <div className="flex items-center justify-between">
@@ -196,14 +199,24 @@ export function MobileEditorView() {
         >
           ← السابق
         </button>
-        <button
-          type="button"
-          disabled={!nextId}
-          onClick={() => nextId && goTo(nextId)}
-          className="text-sm font-medium text-accent disabled:opacity-30"
-        >
-          التالي →
-        </button>
+        {nextId ? (
+          <button
+            type="button"
+            onClick={() => goTo(nextId)}
+            className="text-sm font-medium text-accent"
+          >
+            التالي →
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={closeSheet}
+            className="flex items-center gap-1.5 rounded-full bg-accent px-4 py-1.5 text-sm font-bold text-white"
+          >
+            <Check size={15} />
+            إنهاء البناء
+          </button>
+        )}
       </div>
     ) : undefined
 

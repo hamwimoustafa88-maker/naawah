@@ -4,6 +4,7 @@
 // أسفل الملف (Step2Funeral لسطح المكتب) — نفس الحقول تُعاد استعمالها حرفياً في
 // أقسام الجوال الصغيرة (mobile/sectionRegistry.tsx) بلا أي تكرار للمنطق أو الحقول.
 
+import { useState } from "react"
 import { CustomTextOverride } from "@/components/editor/CustomTextOverride"
 import { todayISO } from "@/lib/obituary/defaults"
 import { formatDualDate } from "@/lib/obituary/hijri"
@@ -84,23 +85,18 @@ export function PrayerBurialFields() {
     }).split("، الموافق")[0] // السطر الهجري فقط، بلا الميلادي المكرَّر هنا
     : null
 
+  // القسم مطويّ افتراضياً — تخفيفاً لطول الشاشة على الجوال تحديداً (كانت هذه
+  // الحقول الثلاثة تُطيل القسم كثيراً، خصوصاً مع فتح لوحة المفاتيح فوقه). يبدأ
+  // مفتوحاً فقط إن كانت إحدى قيمه محفوظة سلفاً — إلغاء التفعيل يطوي العرض فقط
+  // ولا يمسح أي قيمة مُدخَلة.
+  const [showMore, setShowMore] = useState(Boolean(funeral.prayerTimeNote || funeral.burialLocation))
+
   return (
     <div className="flex flex-col gap-4">
       <div className="grid grid-cols-2 gap-4">
         <FieldGroup label="مكان صلاة الجنازة">
           <Input value={funeral.prayerLocation} onChange={(e) => updateFuneral({ prayerLocation: e.target.value })} placeholder="مسجد الشهداء" />
         </FieldGroup>
-        <FieldGroup label="ملاحظة الوقت">
-          <Select value={funeral.prayerTimeNote ?? ""} onChange={(e) => updateFuneral({ prayerTimeNote: e.target.value || undefined })}>
-            <option value="">بلا</option>
-            {PRAYER_TIME_NOTE_OPTIONS.map((label) => (
-              <option key={label} value={label}>{label}</option>
-            ))}
-          </Select>
-        </FieldGroup>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
         <FieldGroup label="تاريخ الصلاة والدفن" hint="فارغ افتراضياً (يُعتمد تاريخ الوفاة) — انقر على الحقل ليُملأ بتاريخ اليوم مباشرة">
           <Input
             type="date"
@@ -111,40 +107,57 @@ export function PrayerBurialFields() {
             onChange={(e) => updateFuneral({ burialDateISO: e.target.value })}
           />
         </FieldGroup>
-
-        {/* نفس فكرة "التاريخ الهجري" في (بيانات الفقيد ← إظهار تاريخ ومكان الوفاة)
-            بالضبط — وتستهلك نفس حقل deceased.hijriOffsetDays المشترك عمداً (لا
-            حقل مستقل خاص بتاريخ الدفن)، فتعديل يوم (+/-) من أيّ من الموضعين
-            ينعكس فوراً في الموضع الآخر أيضاً، كما طُلب صراحةً. */}
-        <FieldGroup label="التاريخ الهجري">
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              className="h-9 w-9 shrink-0 rounded-md border border-black/15 hover:bg-black/5"
-              onClick={() => updateDeceased({ hijriOffsetDays: deceased.hijriOffsetDays - 1 })}
-              aria-label="تأخير يوم"
-            >
-              −
-            </button>
-            <div className="flex-1 rounded-lg border border-black/15 bg-white px-3 py-2 text-center text-sm">
-              {hijriDisplay ?? "—"}
-            </div>
-            <button
-              type="button"
-              className="h-9 w-9 shrink-0 rounded-md border border-black/15 hover:bg-black/5"
-              onClick={() => updateDeceased({ hijriOffsetDays: deceased.hijriOffsetDays + 1 })}
-              aria-label="تقديم يوم"
-            >
-              +
-            </button>
-          </div>
-          <p className="mt-1 text-xs text-black/45">لضبط اختلاف الرؤية ±يوم — نفس الضبط في (إظهار تاريخ ومكان الوفاة)</p>
-        </FieldGroup>
       </div>
 
-      <FieldGroup label="مكان الدفن (اختياري)">
-        <Input value={funeral.burialLocation ?? ""} onChange={(e) => updateFuneral({ burialLocation: e.target.value })} />
-      </FieldGroup>
+      <Checkbox label="تفاصيل إضافية (ملاحظة الوقت، التاريخ الهجري، مكان الدفن)" checked={showMore} onChange={(e) => setShowMore(e.target.checked)} />
+
+      {showMore && (
+        <>
+          <div className="grid grid-cols-2 gap-4">
+            <FieldGroup label="ملاحظة الوقت">
+              <Select value={funeral.prayerTimeNote ?? ""} onChange={(e) => updateFuneral({ prayerTimeNote: e.target.value || undefined })}>
+                <option value="">بلا</option>
+                {PRAYER_TIME_NOTE_OPTIONS.map((label) => (
+                  <option key={label} value={label}>{label}</option>
+                ))}
+              </Select>
+            </FieldGroup>
+
+            {/* نفس فكرة "التاريخ الهجري" في (بيانات الفقيد ← إظهار تاريخ ومكان الوفاة)
+                بالضبط — وتستهلك نفس حقل deceased.hijriOffsetDays المشترك عمداً (لا
+                حقل مستقل خاص بتاريخ الدفن)، فتعديل يوم (+/-) من أيّ من الموضعين
+                ينعكس فوراً في الموضع الآخر أيضاً، كما طُلب صراحةً. */}
+            <FieldGroup label="التاريخ الهجري">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  className="h-9 w-9 shrink-0 rounded-md border border-black/15 hover:bg-black/5"
+                  onClick={() => updateDeceased({ hijriOffsetDays: deceased.hijriOffsetDays - 1 })}
+                  aria-label="تأخير يوم"
+                >
+                  −
+                </button>
+                <div className="flex-1 rounded-lg border border-black/15 bg-white px-3 py-2 text-center text-sm">
+                  {hijriDisplay ?? "—"}
+                </div>
+                <button
+                  type="button"
+                  className="h-9 w-9 shrink-0 rounded-md border border-black/15 hover:bg-black/5"
+                  onClick={() => updateDeceased({ hijriOffsetDays: deceased.hijriOffsetDays + 1 })}
+                  aria-label="تقديم يوم"
+                >
+                  +
+                </button>
+              </div>
+              <p className="mt-1 text-xs text-black/45">لضبط اختلاف الرؤية ±يوم — نفس الضبط في (إظهار تاريخ ومكان الوفاة)</p>
+            </FieldGroup>
+          </div>
+
+          <FieldGroup label="مكان الدفن (اختياري)">
+            <Input value={funeral.burialLocation ?? ""} onChange={(e) => updateFuneral({ burialLocation: e.target.value })} />
+          </FieldGroup>
+        </>
+      )}
     </div>
   )
 }
@@ -152,6 +165,11 @@ export function PrayerBurialFields() {
 export function CondolencesFields() {
   const funeral = useEditorStore((s) => s.data.funeral)
   const updateFuneral = useEditorStore((s) => s.updateFuneral)
+
+  // نفس فكرة showMore في PrayerBurialFields — القسم كان طويلاً جداً على الجوال
+  // (أربعة حقول/خانات إضافية بعد "التعزية العامة")، خصوصاً مع فتح لوحة المفاتيح.
+  // مطويّ افتراضياً، ويبدأ مفتوحاً فقط إن كانت إحدى قيمه المُقسَّمة محفوظة سلفاً.
+  const [showMore, setShowMore] = useState(Boolean(funeral.condolencesMen || funeral.condolencesWomen || funeral.extraNotes))
 
   return (
     <div className="flex flex-col gap-4">
@@ -166,39 +184,45 @@ export function CondolencesFields() {
         />
       </FieldGroup>
 
-      <Checkbox
-        label="نفس المكان للرجال والنساء"
-        checked={funeral.condolencesShared ?? false}
-        onChange={(e) => updateFuneral({ condolencesShared: e.target.checked })}
-      />
+      <Checkbox label="تفاصيل إضافية (أماكن التعزية، الإطار المربع، ملاحظات)" checked={showMore} onChange={(e) => setShowMore(e.target.checked)} />
 
-      {funeral.condolencesShared ? (
-        <FieldGroup label="التعزية للرجال والنساء (اختياري)">
-          <Textarea value={funeral.condolencesMen ?? ""} onChange={(e) => updateFuneral({ condolencesMen: e.target.value })} />
-        </FieldGroup>
-      ) : (
-        <div className="grid grid-cols-2 gap-4">
-          <FieldGroup label="تعزية الرجال (اختياري)">
-            <Textarea value={funeral.condolencesMen ?? ""} onChange={(e) => updateFuneral({ condolencesMen: e.target.value })} />
+      {showMore && (
+        <>
+          <Checkbox
+            label="نفس المكان للرجال والنساء"
+            checked={funeral.condolencesShared ?? false}
+            onChange={(e) => updateFuneral({ condolencesShared: e.target.checked })}
+          />
+
+          {funeral.condolencesShared ? (
+            <FieldGroup label="التعزية للرجال والنساء (اختياري)">
+              <Textarea value={funeral.condolencesMen ?? ""} onChange={(e) => updateFuneral({ condolencesMen: e.target.value })} />
+            </FieldGroup>
+          ) : (
+            <div className="grid grid-cols-2 gap-4">
+              <FieldGroup label="تعزية الرجال (اختياري)">
+                <Textarea value={funeral.condolencesMen ?? ""} onChange={(e) => updateFuneral({ condolencesMen: e.target.value })} />
+              </FieldGroup>
+              <FieldGroup label="تعزية النساء (اختياري)">
+                <Textarea value={funeral.condolencesWomen ?? ""} onChange={(e) => updateFuneral({ condolencesWomen: e.target.value })} />
+              </FieldGroup>
+            </div>
+          )}
+
+          <div>
+            <Checkbox
+              label="إطار مربع حول التشييع والصلاة والدفن والتعزية"
+              checked={funeral.emphasizeFuneralBox ?? true}
+              onChange={(e) => updateFuneral({ emphasizeFuneralBox: e.target.checked })}
+            />
+            <p className="mt-1 text-xs text-black/45">للتركيز على المعلومات المهمة بداخله</p>
+          </div>
+
+          <FieldGroup label="ملاحظات إضافية (اختياري)">
+            <Textarea value={funeral.extraNotes ?? ""} onChange={(e) => updateFuneral({ extraNotes: e.target.value })} />
           </FieldGroup>
-          <FieldGroup label="تعزية النساء (اختياري)">
-            <Textarea value={funeral.condolencesWomen ?? ""} onChange={(e) => updateFuneral({ condolencesWomen: e.target.value })} />
-          </FieldGroup>
-        </div>
+        </>
       )}
-
-      <div>
-        <Checkbox
-          label="إطار مربع حول التشييع والصلاة والدفن والتعزية"
-          checked={funeral.emphasizeFuneralBox ?? true}
-          onChange={(e) => updateFuneral({ emphasizeFuneralBox: e.target.checked })}
-        />
-        <p className="mt-1 text-xs text-black/45">للتركيز على المعلومات المهمة بداخله</p>
-      </div>
-
-      <FieldGroup label="ملاحظات إضافية (اختياري)">
-        <Textarea value={funeral.extraNotes ?? ""} onChange={(e) => updateFuneral({ extraNotes: e.target.value })} />
-      </FieldGroup>
     </div>
   )
 }
