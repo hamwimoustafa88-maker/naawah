@@ -39,6 +39,9 @@ export interface StaticSectionDescriptor {
   /** بعض الأقسام شرطية (هوية الزوج تظهر فقط للفقيدة الأنثى) — تُفلتَر بقراءة هذه القيمة
    * من المتجر في مكوّن القائمة نفسه (راجع MobileSectionMenu)، لا هنا (الملف ثابت بلا hooks). */
   requiresFemale?: boolean
+  /** يختفي أيضاً حين "عازب/ة" (deceased.isSingle) مفعّل — "هوية الزوج" لا معنى
+   * لها لفقيدة لم تتزوّج قط، بنفس منطق إخفاء فئات القرابة المرتبطة بالزواج. */
+  hiddenWhenSingle?: boolean
 }
 
 export const STATIC_SECTIONS: StaticSectionDescriptor[] = [
@@ -47,7 +50,10 @@ export const STATIC_SECTIONS: StaticSectionDescriptor[] = [
   { id: "death-date", title: "تاريخ الوفاة", icon: Calendar, group: "deceased", Content: DeathDateFields },
   { id: "birth-info", title: "معلومات الميلاد", icon: Cake, group: "deceased", Content: BirthInfoFields },
   { id: "photo", title: "صورة الفقيد", icon: ImagePlus, group: "deceased", Content: PhotoUpload },
-  { id: "spouse", title: "هوية الزوج", icon: Users, group: "deceased", Content: SpouseFields, requiresFemale: true },
+  {
+    id: "spouse", title: "هوية الزوج", icon: Users, group: "deceased", Content: SpouseFields,
+    requiresFemale: true, hiddenWhenSingle: true,
+  },
   { id: "quran", title: "المخطوطة القرآنية", icon: BookOpen, group: "deceased", Content: QuranFields },
 
   // "families" مصنَّفة "relatives" لكنها ليست فئة قرابة قابلة للحذف مثل البقية —

@@ -41,6 +41,7 @@ export function MobileEditorView() {
   // أيضاً — بلا حذف بياناتها من data.relatives نفسها (راجع visibleRelativeGroups).
   const relatives = visibleRelativeGroups(data)
   const deceasedGender = data.deceased.gender
+  const isSingle = data.deceased.isSingle ?? false
 
   // اللائحة تُفتح تلقائياً فور دخول الصفحة على الجوال (بلا حاجة لضغط الزر العائم
   // أولاً) — طُلب صراحة أن تظهر "وكأنها مفتوحة" من البداية، لا مطفأة.
@@ -63,7 +64,12 @@ export function MobileEditorView() {
   }
 
   const staticFor = (groupId: SectionGroupId) =>
-    STATIC_SECTIONS.filter((s) => s.group === groupId && (!s.requiresFemale || deceasedGender === "female"))
+    STATIC_SECTIONS.filter(
+      (s) =>
+        s.group === groupId &&
+        (!s.requiresFemale || deceasedGender === "female") &&
+        (!s.hiddenWhenSingle || !isSingle)
+    )
 
   // قائمة مُسطَّحة بترتيب كل الأقسام القابلة للتنقّل — تُبنى فرقة بفرقة بنفس ترتيب
   // SECTION_GROUPS (بيانات الفقيد ثم الجنازة والتعزية، فالأقارب، فالقالب) لضمان

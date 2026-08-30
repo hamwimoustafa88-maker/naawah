@@ -446,6 +446,7 @@ export function QuranFields() {
 
 export function Step1Deceased() {
   const deceasedGender = useEditorStore((s) => s.data.deceased.gender)
+  const isSingle = useEditorStore((s) => s.data.deceased.isSingle ?? false)
 
   return (
     <div className="flex flex-col gap-5">
@@ -464,7 +465,10 @@ export function Step1Deceased() {
         </div>
       </Card>
 
-      {deceasedGender === "female" && (
+      {/* تختفي أيضاً حين "عازبة" مفعّل — لا هوية زوج لفقيدة لم تتزوّج قط، بنفس
+          منطق إخفاء فئات القرابة المرتبطة بالزواج (راجع IdentityFields أعلاه
+          وSINGLE_HIDDEN_RELATIVE_CATEGORIES في defaults.ts). */}
+      {deceasedGender === "female" && !isSingle && (
         <Card>
           <CardTitle>هوية الزوج (اختياري)</CardTitle>
           <SpouseFields />

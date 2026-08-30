@@ -7,6 +7,7 @@
 import { useState } from "react"
 import { CustomTextOverride } from "@/components/editor/CustomTextOverride"
 import { todayISO } from "@/lib/obituary/defaults"
+import { DECEASED_WORDS } from "@/lib/obituary/grammar"
 import { formatDualDate } from "@/lib/obituary/hijri"
 import {
   defaultClosingDua, defaultMourningLine, defaultPrintFooterText,
@@ -15,10 +16,15 @@ import { getTemplate } from "@/lib/templates/registry"
 import { useEditorStore } from "@/store/editorStore"
 import { Checkbox, FieldGroup, Input, Select, Textarea } from "@/components/ui/Field"
 import { Card, CardTitle } from "@/components/ui/Card"
+import type { Gender } from "@/lib/obituary/types"
 
 /** نص افتراضي جاهز للتعديل — يُملأ فعلياً (لا مجرد placeholder رمادي) عند أول
- * تركيز على حقل "التعزية العامة" إن كان فارغاً، فيتمكّن المستخدم من تعديله مباشرة. */
-const DEFAULT_CONDOLENCES_GENERAL = "تُقبل التعازي قبل الدفن وبعده في منزل الفقيد"
+ * تركيز على حقل "التعزية العامة" إن كان فارغاً، فيتمكّن المستخدم من تعديله مباشرة.
+ * "الفقيد/ة" يتصرّف حسب جنس الفقيد (راجع DECEASED_WORDS في grammar.ts) — كان
+ * نصاً ثابتاً بصيغة المذكّر دائماً حتى لفقيدة أنثى، عطل حقيقي واجهناه. */
+function defaultCondolencesGeneral(gender: Gender): string {
+  return `تُقبل التعازي قبل الدفن وبعده في منزل ${DECEASED_WORDS[gender].faqeed}`
+}
 
 /** نفس نمط DEFAULT_CONDOLENCES_GENERAL — يُملأ فعلياً (لا placeholder رمادي فقط)
  * عند أول تركيز على حقل "من أين سيُشيَّع الجثمان"، فيتابع المستخدم الكتابة مباشرة
@@ -170,8 +176,10 @@ export function PrayerBurialFields() {
 }
 
 export function CondolencesFields() {
+  const deceased = useEditorStore((s) => s.data.deceased)
   const funeral = useEditorStore((s) => s.data.funeral)
   const updateFuneral = useEditorStore((s) => s.updateFuneral)
+  const defaultCondolences = defaultCondolencesGeneral(deceased.gender)
 
   // نفس فكرة showMore في PrayerBurialFields — القسم كان طويلاً جداً على الجوال
   // (أربعة حقول/خانات إضافية بعد "التعزية العامة")، خصوصاً مع فتح لوحة المفاتيح.
@@ -184,10 +192,10 @@ export function CondolencesFields() {
         <Textarea
           value={funeral.condolencesGeneral ?? ""}
           onFocus={() => {
-            if (!funeral.condolencesGeneral) updateFuneral({ condolencesGeneral: DEFAULT_CONDOLENCES_GENERAL })
+            if (!funeral.condolencesGeneral) updateFuneral({ condolencesGeneral: defaultCondolences })
           }}
           onChange={(e) => updateFuneral({ condolencesGeneral: e.target.value })}
-          placeholder={DEFAULT_CONDOLENCES_GENERAL}
+          placeholder={defaultCondolences}
         />
       </FieldGroup>
 
