@@ -13,7 +13,7 @@ export function DeveloperSection() {
   return (
     <section id="developer" className="w-full scroll-mt-20 bg-[#161311] py-16 text-[#f2e8d8]">
       <Reveal className="mx-auto flex max-w-2xl flex-col items-center gap-4 px-6 text-center">
-        <span className="text-xs tracking-widest text-[#c9a94a]">المطوّر</span>
+        <h2 className="text-xs tracking-widest text-[#c9a94a]">المطوّر</h2>
 
         <div className="overflow-hidden rounded-full ring-2 ring-[#c9a94a]" style={{ width: 96, height: 96 }}>
           <Image

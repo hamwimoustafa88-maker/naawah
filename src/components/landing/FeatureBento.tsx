@@ -34,6 +34,7 @@ export function FeatureBento() {
   return (
     <section id="features" className="w-full scroll-mt-20 bg-(--home-surface)">
       <div className="mx-auto w-full max-w-5xl px-6 py-16">
+        <h2 className="sr-only">لماذا النعوة الإلكترونية</h2>
         <div className="grid grid-cols-1 gap-px overflow-hidden rounded-2xl border border-(--home-border) bg-(--home-border) sm:grid-cols-3">
           {PILLARS.map((f, i) => (
             <Reveal key={f.title} delayMs={i * 80} className="bg-(--home-bg) p-8">

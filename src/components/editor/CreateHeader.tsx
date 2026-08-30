@@ -35,8 +35,7 @@ const SHOW_JSON_IO_TOOLS = false
 export function CreateHeader() {
   const data = useEditorStore((s) => s.data)
   const loadData = useEditorStore((s) => s.loadData)
-  const templateId = data.templateId
-  const deceasedName = data.deceased.name
+  const archiveKey = useEditorStore((s) => s.archiveKey)
   const [busy, setBusy] = useState<ExportKind | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -82,9 +81,9 @@ export function CreateHeader() {
     }
   }
 
-  const handlePng = () => runExport("png", "تعذّر التصدير", () => exportPng(templateId, deceasedName))
-  const handlePdf = () => runExport("pdf", "تعذّر التصدير", () => exportPdf(templateId, deceasedName))
-  const handleShare = () => runExport("share", "تعذّرت المشاركة", () => exportShare(templateId, data))
+  const handlePng = () => runExport("png", "تعذّر التصدير", () => exportPng(data, archiveKey))
+  const handlePdf = () => runExport("pdf", "تعذّر التصدير", () => exportPdf(data, archiveKey))
+  const handleShare = () => runExport("share", "تعذّرت المشاركة", () => exportShare(data, archiveKey))
 
   const iconButtonClass =
     "inline-flex h-9 w-9 items-center justify-center rounded-full border border-(--home-border) text-(--home-fg) transition-colors hover:bg-(--home-bg) disabled:opacity-40 disabled:pointer-events-none"

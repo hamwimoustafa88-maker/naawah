@@ -8,6 +8,21 @@ interface EditorState {
   data: ObituaryData
 
   /**
+   * معرّف جلسة تحرير النعوة الحالية — أساس منع التكرار عند أرشفة التصدير في
+   * Google Drive (راجع src/lib/export/archive.ts وsrc/app/api/archive/route.ts):
+   * تصدير PNG ثم PDF ثم مشاركة لنفس النعوة يحمل نفس archiveKey فيُحدَّث ملف Drive
+   * نفسه بدل تكراره. **خارج ObituaryData عمداً** — ليس بياناً للنعوة، لا يُصدَّر
+   * ولا يُستورَد ولا يُحفَظ، تماماً كـpreviewBodyFontFamily أدناه.
+   * قيمته الابتدائية هنا ثابتة (بلا crypto.randomUUID()) لنفس سبب معرّفات فئات
+   * القرابة الثابتة في createEmptyData() أسفل — تقييم الوحدة يحدث في بيئتين
+   * (SSR + hydration)، فمعرّف عشوائي هنا يُنتج قيمتين مختلفتين ويكسر hydration.
+   * القيمة الحقيقية تُولَّد فقط بعد التركيب عبر regenerateArchiveKey() (راجع
+   * useEffect في EditorShell.tsx) ثم تتجدّد مع كل نعوة جديدة (reset/loadData/loadSample).
+   */
+  archiveKey: string
+  regenerateArchiveKey: () => void
+
+  /**
    * معاينة خط عابرة (hover) — منفصلة عمداً عن data.bodyFontFamily/nameStyle.fontFamily
    * الفعليَّين: تُطبَّق فوراً على الكانفاس بأولوية أعلى منهما (راجع ObituaryBlocks.tsx)
    * أثناء تمرير المؤشر فوق اسم خط في FontPicker.tsx فقط، بلا أي تعديل على البيانات
@@ -100,6 +115,9 @@ function createEmptyData(): ObituaryData {
 export const useEditorStore = create<EditorState>((set) => ({
   data: createEmptyData(),
 
+  archiveKey: "",
+  regenerateArchiveKey: () => set({ archiveKey: crypto.randomUUID() }),
+
   previewBodyFontFamily: undefined,
   previewNameFontFamily: undefined,
   setPreviewBodyFontFamily: (fontFamily) => set({ previewBodyFontFamily: fontFamily }),
@@ -186,7 +204,8 @@ export const useEditorStore = create<EditorState>((set) => ({
       data: { ...s.data, relatives: s.data.relatives.map((g) => (g.id === groupId ? { ...g, members } : g)) },
     })),
 
-  loadSample: () => set({ data: SAMPLE_OBITUARY_DATA }),
-  reset: () => set({ data: createEmptyData() }),
-  loadData: (data) => set({ data }),
+  // نعوة جديدة = ملف أرشيف جديد في Drive — تجديد archiveKey مع كل استبدال كامل للبيانات.
+  loadSample: () => set({ data: SAMPLE_OBITUARY_DATA, archiveKey: crypto.randomUUID() }),
+  reset: () => set({ data: createEmptyData(), archiveKey: crypto.randomUUID() }),
+  loadData: (data) => set({ data, archiveKey: crypto.randomUUID() }),
 }))

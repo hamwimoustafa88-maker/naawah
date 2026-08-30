@@ -28,3 +28,39 @@ model Template {
   isDefault Boolean  @default(false)
   createdAt DateTime @default(now())
 }
+
+/// أرشيف النعوات المُصدَّرة فعلياً (PNG/PDF/مشاركة) — صورة JPEG واحدة لكل نعوة
+/// في Google Drive (راجع src/lib/drive/client.ts)، مُحدَّثة مكانياً عند إعادة
+/// تصدير نفس النعوة بدل تكرارها (archiveKey يمنع التكرار — راجع src/app/api/archive/route.ts).
+model ArchivedObituary {
+  id              String   @id @default(cuid())
+  /// معرّف جلسة المحرر (crypto.randomUUID في editorStore.ts) — أساس منع التكرار،
+  /// لا علاقة له بمحتوى النعوة نفسه.
+  archiveKey      String   @unique
+  deceasedName    String
+  /// تاريخ الوفاة الأصلي بصيغة ISO — للفرز والفلترة.
+  deathDateISO    String
+  /// التاريخ المزدوج المنسّق (هجري وميلادي) كما يُعرض في النعوة نفسها — لم يعد
+  /// يُعرض في جدول /admin (صار يعرض الميلادي فقط، مُشتقّاً من deathDateISO
+  /// مباشرة)، لكن يبقى محفوظاً هنا كسجلّ كامل لصيغة العرض الأصلية وقت الأرشفة.
+  deathDateAr     String
+  /// مكان الوفاة إن اختلف عن مكان الإقامة (deceased.deathPlaceNote) — اختياري.
+  deathPlaceNote  String?
+  /// نص التعزية للرجال والنساء مُجمَّعاً كسطر واحد جاهز للعرض (يُبنى في
+  /// lib/export/archive.ts من condolencesGeneral/condolencesShared/Men/Women) — اختياري.
+  condolencesInfo String?
+  driveFileId     String
+  driveViewUrl    String
+  templateId      String
+  /// آخر صيغة صدّرها المستخدم لهذه النعوة: "png" | "pdf" | "share".
+  exportKind      String
+  exportCount     Int      @default(1)
+  ipHash          String?
+  country         String?
+  region          String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([createdAt])
+  @@index([deathDateISO])
+}

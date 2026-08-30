@@ -1,6 +1,5 @@
 import type { MetadataRoute } from "next"
-
-const SITE_URL = "https://enaawah.scouthub.dev"
+import { SITE_URL } from "@/lib/seo/site"
 
 export default function robots(): MetadataRoute.Robots {
   return {
@@ -8,8 +7,9 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        // نقاط API إحصائية داخلية فقط — لا فائدة SEO من فهرستها.
-        disallow: "/api/",
+        // نقاط API إحصائية داخلية فقط — لا فائدة SEO من فهرستها. /admin لوحة
+        // إدارة داخلية محميّة بكلمة مرور، غير مرتبطة من أي مكان في الموقع.
+        disallow: ["/api/", "/admin"],
       },
     ],
     sitemap: `${SITE_URL}/sitemap.xml`,

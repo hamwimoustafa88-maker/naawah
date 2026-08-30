@@ -208,6 +208,83 @@ export const ARAB_COUNTRIES = [
   "اليمن", "المغرب", "الجزائر", "تونس", "ليبيا", "السودان",
 ]
 
+/**
+ * قائمة دول العالم لحقل "بلد الأصل" — الدول العربية أولاً (أولوية جمهور
+ * التطبيق)، ثم بقية العالم. كل دولة غير موجودة هنا (كيانات صغيرة نادرة) تُدخَل
+ * كنص حرّ عبر خيار "دولة أخرى" في CountryPicker.tsx، فلا حاجة لقائمة شاملة ١٠٠٪.
+ */
+export const WORLD_COUNTRIES: { code: string; name: string }[] = [
+  // الدول العربية
+  { code: "LB", name: "لبنان" }, { code: "SY", name: "سوريا" }, { code: "JO", name: "الأردن" },
+  { code: "PS", name: "فلسطين" }, { code: "EG", name: "مصر" }, { code: "IQ", name: "العراق" },
+  { code: "SA", name: "السعودية" }, { code: "AE", name: "الإمارات" }, { code: "KW", name: "الكويت" },
+  { code: "QA", name: "قطر" }, { code: "BH", name: "البحرين" }, { code: "OM", name: "عمان" },
+  { code: "YE", name: "اليمن" }, { code: "MA", name: "المغرب" }, { code: "DZ", name: "الجزائر" },
+  { code: "TN", name: "تونس" }, { code: "LY", name: "ليبيا" }, { code: "SD", name: "السودان" },
+  { code: "MR", name: "موريتانيا" }, { code: "SO", name: "الصومال" }, { code: "DJ", name: "جيبوتي" },
+  { code: "KM", name: "جزر القمر" },
+  // آسيا
+  { code: "TR", name: "تركيا" }, { code: "IR", name: "إيران" }, { code: "AF", name: "أفغانستان" },
+  { code: "PK", name: "باكستان" }, { code: "IN", name: "الهند" }, { code: "BD", name: "بنغلاديش" },
+  { code: "LK", name: "سريلانكا" }, { code: "NP", name: "نيبال" }, { code: "BT", name: "بوتان" },
+  { code: "MM", name: "ميانمار" }, { code: "TH", name: "تايلاند" }, { code: "VN", name: "فيتنام" },
+  { code: "LA", name: "لاوس" }, { code: "KH", name: "كمبوديا" }, { code: "MY", name: "ماليزيا" },
+  { code: "SG", name: "سنغافورة" }, { code: "ID", name: "إندونيسيا" }, { code: "PH", name: "الفلبين" },
+  { code: "BN", name: "بروناي" }, { code: "TL", name: "تيمور الشرقية" }, { code: "CN", name: "الصين" },
+  { code: "JP", name: "اليابان" }, { code: "KR", name: "كوريا الجنوبية" }, { code: "KP", name: "كوريا الشمالية" },
+  { code: "MN", name: "منغوليا" }, { code: "TW", name: "تايوان" }, { code: "HK", name: "هونغ كونغ" },
+  { code: "KZ", name: "كازاخستان" }, { code: "UZ", name: "أوزبكستان" }, { code: "TM", name: "تركمانستان" },
+  { code: "TJ", name: "طاجيكستان" }, { code: "KG", name: "قيرغيزستان" },
+  { code: "AM", name: "أرمينيا" }, { code: "AZ", name: "أذربيجان" }, { code: "GE", name: "جورجيا" },
+  // أوروبا
+  { code: "RU", name: "روسيا" }, { code: "UA", name: "أوكرانيا" }, { code: "BY", name: "بيلاروسيا" },
+  { code: "PL", name: "بولندا" }, { code: "DE", name: "ألمانيا" }, { code: "FR", name: "فرنسا" },
+  { code: "GB", name: "المملكة المتحدة" }, { code: "IE", name: "أيرلندا" }, { code: "NL", name: "هولندا" },
+  { code: "BE", name: "بلجيكا" }, { code: "LU", name: "لوكسمبورغ" }, { code: "CH", name: "سويسرا" },
+  { code: "AT", name: "النمسا" }, { code: "IT", name: "إيطاليا" }, { code: "ES", name: "إسبانيا" },
+  { code: "PT", name: "البرتغال" }, { code: "GR", name: "اليونان" }, { code: "CY", name: "قبرص" },
+  { code: "MT", name: "مالطا" }, { code: "DK", name: "الدنمارك" }, { code: "SE", name: "السويد" },
+  { code: "NO", name: "النرويج" }, { code: "FI", name: "فنلندا" }, { code: "IS", name: "آيسلندا" },
+  { code: "EE", name: "إستونيا" }, { code: "LV", name: "لاتفيا" }, { code: "LT", name: "ليتوانيا" },
+  { code: "CZ", name: "التشيك" }, { code: "SK", name: "سلوفاكيا" }, { code: "HU", name: "المجر" },
+  { code: "RO", name: "رومانيا" }, { code: "BG", name: "بلغاريا" }, { code: "RS", name: "صربيا" },
+  { code: "HR", name: "كرواتيا" }, { code: "SI", name: "سلوفينيا" }, { code: "BA", name: "البوسنة والهرسك" },
+  { code: "ME", name: "الجبل الأسود" }, { code: "MK", name: "مقدونيا الشمالية" }, { code: "AL", name: "ألبانيا" },
+  { code: "XK", name: "كوسوفو" }, { code: "MD", name: "مولدوفا" }, { code: "AD", name: "أندورا" },
+  { code: "MC", name: "موناكو" }, { code: "SM", name: "سان مارينو" }, { code: "LI", name: "ليختنشتاين" },
+  { code: "VA", name: "الفاتيكان" },
+  // أفريقيا
+  { code: "NG", name: "نيجيريا" }, { code: "ET", name: "إثيوبيا" }, { code: "KE", name: "كينيا" },
+  { code: "TZ", name: "تنزانيا" }, { code: "UG", name: "أوغندا" }, { code: "GH", name: "غانا" },
+  { code: "CI", name: "ساحل العاج" }, { code: "SN", name: "السنغال" }, { code: "ML", name: "مالي" },
+  { code: "NE", name: "النيجر" }, { code: "TD", name: "تشاد" }, { code: "BF", name: "بوركينا فاسو" },
+  { code: "GN", name: "غينيا" }, { code: "SL", name: "سيراليون" }, { code: "LR", name: "ليبيريا" },
+  { code: "CM", name: "الكاميرون" }, { code: "CF", name: "جمهورية إفريقيا الوسطى" }, { code: "GA", name: "الغابون" },
+  { code: "CG", name: "الكونغو" }, { code: "CD", name: "الكونغو الديمقراطية" }, { code: "AO", name: "أنغولا" },
+  { code: "ZM", name: "زامبيا" }, { code: "ZW", name: "زيمبابوي" }, { code: "MZ", name: "موزمبيق" },
+  { code: "MW", name: "مالاوي" }, { code: "NA", name: "ناميبيا" }, { code: "BW", name: "بوتسوانا" },
+  { code: "ZA", name: "جنوب أفريقيا" }, { code: "LS", name: "ليسوتو" }, { code: "SZ", name: "إسواتيني" },
+  { code: "MG", name: "مدغشقر" }, { code: "RW", name: "رواندا" }, { code: "BI", name: "بوروندي" },
+  { code: "SS", name: "جنوب السودان" }, { code: "ER", name: "إريتريا" }, { code: "GM", name: "غامبيا" },
+  { code: "GW", name: "غينيا بيساو" }, { code: "TG", name: "توغو" }, { code: "BJ", name: "بنين" },
+  { code: "GQ", name: "غينيا الاستوائية" }, { code: "CV", name: "الرأس الأخضر" }, { code: "ST", name: "سان تومي وبرينسيبي" },
+  { code: "SC", name: "سيشل" }, { code: "MU", name: "موريشيوس" },
+  // الأمريكتان
+  { code: "US", name: "الولايات المتحدة الأمريكية" }, { code: "CA", name: "كندا" }, { code: "MX", name: "المكسيك" },
+  { code: "BR", name: "البرازيل" }, { code: "AR", name: "الأرجنتين" }, { code: "CL", name: "تشيلي" },
+  { code: "PE", name: "بيرو" }, { code: "CO", name: "كولومبيا" }, { code: "VE", name: "فنزويلا" },
+  { code: "EC", name: "الإكوادور" }, { code: "BO", name: "بوليفيا" }, { code: "PY", name: "باراغواي" },
+  { code: "UY", name: "الأوروغواي" }, { code: "GY", name: "غيانا" }, { code: "SR", name: "سورينام" },
+  { code: "PA", name: "بنما" }, { code: "CR", name: "كوستاريكا" }, { code: "NI", name: "نيكاراغوا" },
+  { code: "HN", name: "هندوراس" }, { code: "SV", name: "السلفادور" }, { code: "GT", name: "غواتيمالا" },
+  { code: "BZ", name: "بليز" }, { code: "CU", name: "كوبا" }, { code: "JM", name: "جامايكا" },
+  { code: "HT", name: "هايتي" }, { code: "DO", name: "جمهورية الدومينيكان" }, { code: "TT", name: "ترينيداد وتوباغو" },
+  { code: "BS", name: "جزر البهاما" }, { code: "BB", name: "بربادوس" },
+  // أوقيانوسيا
+  { code: "AU", name: "أستراليا" }, { code: "NZ", name: "نيوزيلندا" }, { code: "PG", name: "بابوا غينيا الجديدة" },
+  { code: "FJ", name: "فيجي" },
+]
+
 /** تاريخ اليوم بصيغة ISO (YYYY-MM-DD) محلياً — يُستعمل كقيمة افتراضية لتاريخ الوفاة/الدفن. */
 export function todayISO(): string {
   const d = new Date()

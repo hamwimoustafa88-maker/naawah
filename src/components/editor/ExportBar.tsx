@@ -9,8 +9,7 @@ import { TextSettingsPanel } from "@/components/editor/TextSettingsPanel"
 
 export function ExportBar() {
   const data = useEditorStore((s) => s.data)
-  const templateId = data.templateId
-  const deceasedName = data.deceased.name
+  const archiveKey = useEditorStore((s) => s.archiveKey)
   const [busy, setBusy] = useState<ExportKind | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -28,9 +27,9 @@ export function ExportBar() {
     }
   }
 
-  const handlePng = () => runExport("png", "تعذّر تصدير الصورة. حاول مجدداً.", () => exportPng(templateId, deceasedName))
-  const handlePdf = () => runExport("pdf", "تعذّر تصدير PDF. حاول مجدداً.", () => exportPdf(templateId, deceasedName))
-  const handleShare = () => runExport("share", "تعذّرت المشاركة. حاول مجدداً.", () => exportShare(templateId, data))
+  const handlePng = () => runExport("png", "تعذّر تصدير الصورة. حاول مجدداً.", () => exportPng(data, archiveKey))
+  const handlePdf = () => runExport("pdf", "تعذّر تصدير PDF. حاول مجدداً.", () => exportPdf(data, archiveKey))
+  const handleShare = () => runExport("share", "تعذّرت المشاركة. حاول مجدداً.", () => exportShare(data, archiveKey))
 
   return (
     <div className="flex flex-col gap-3 border-t border-black/10 pt-4">
@@ -52,7 +51,6 @@ export function ExportBar() {
       {error && <p className="text-xs font-medium text-red-600">{error}</p>}
       <p className="text-xs leading-relaxed text-black/45">
         ملاحظة هامة: باستخدامك لهذا التطبيق فإنك تتعهد بصحة المعلومات والبيانات الواردة في تصميم النعوة.
-        كل المعالجة تتم في متصفحك — لا تُرفع بيانات النعوة إلى أي خادم.
       </p>
     </div>
   )

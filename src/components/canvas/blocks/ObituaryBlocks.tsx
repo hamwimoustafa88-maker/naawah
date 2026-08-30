@@ -112,13 +112,23 @@ function DeceasedPhoto({
 }
 
 export function ObituaryContent({
-  data, template, scale,
+  data, template, scale, nameHeadingLevel = "h1",
 }: {
   data: ObituaryData
   template: TemplateDefinition
   /** حجم auto-fit الحالي (0.625-1.0 — الخط يفضّل عدم النزول تحت ١٢px، ولا ينزل تحت ١٠px إطلاقاً حتى كملاذ أخير) — تستهلكه صورة الفقيد لتتقلّص بحد أدنى ٦٠٪. */
   scale: number
+  /**
+   * وسم اسم الفقيد الدلالي — "h1" افتراضياً (صحيح داخل /create حيث اسم الفقيد
+   * هو فعلاً العنوان الرئيسي الوحيد لتلك الصفحة). مرِّر "div" حين يُستهلَك هذا
+   * المكوّن نفسه ضمن سياق له h1 خاص به فعلاً (كمعاينة عرض حيّ ضمن الصفحة
+   * الرئيسية عبر LivePreview.tsx) — وإلا يظهر h1 ثانٍ متنافس على نفس الصفحة
+   * بنص عيّنة عشوائي (SAMPLE_OBITUARY_DATA)، وهذا يربك ترتيب العناوين للسيو.
+   * التنسيق البصري مطابق تماماً بين الحالتين، الفرق دلالي (semantic) بحت.
+   */
+  nameHeadingLevel?: "h1" | "div"
 }) {
+  const NameTag = nameHeadingLevel
   const { deceased, funeral } = data
   const {
     tokens, divider, nameLayout, showPrintFooter, relativesLayout,
@@ -280,25 +290,30 @@ export function ObituaryContent({
       {divider && <div style={{ color: tokens.accent, fontSize: "1em" }}>{divider}</div>}
 
       {/* ٤-٦. جملة النعي + سطر الترحّم + المرحوم + صورة الفقيد + اسم الفقيد.
-          photoSideBySide (مفعّل افتراضياً عند وجود صورة): صفّ واحد — النص (أول
-          عنصر DOM يُرسم يميناً مع dir="rtl") جهة اليمين، والصورة جهة اليسار،
-          بدل الاستهلاك الرأسي للمساحة الذي يُسرِّع تفعيل تصغير auto-fit. بلا صورة،
-          أو والخيار مُعطَّل، يبقى التخطيط المتوسِّط/المكدَّس الرأسي كما هو تماماً. */}
-      {deceased.photoDataUrl && (deceased.photoSideBySide ?? true) ? (
+          photoSideBySide (معطَّل افتراضياً، undefined=false — طُلب صراحةً توسيط
+          الصورة فوق الاسم كوضع افتراضي): صفّ واحد — النص (أول عنصر DOM يُرسم
+          يميناً مع dir="rtl") جهة اليمين، والصورة جهة اليسار، بدل الاستهلاك
+          الرأسي للمساحة الذي يُسرِّع تفعيل تصغير auto-fit. بلا صورة، أو والخيار
+          مُعطَّل، يبقى التخطيط المتوسِّط/المكدَّس الرأسي هو الافتراضي. */}
+      {deceased.photoDataUrl && deceased.photoSideBySide ? (
         <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "1em", width: "100%" }}>
+          {/* النص بين الفراغ والصورة يُتوسَّط كتلةً وسطراً (بدل الالتصاق يميناً) —
+              alignItems يُتوسِّط عرض العنصر (مهم لصيغة "badge" ذات العرض inline-block)
+              وtextAlign يُتوسِّط سطور النص نفسها. */}
           <div
             style={{
               flex: "1 1 auto",
               minWidth: 0,
-              textAlign: "right",
+              textAlign: "center",
               display: "flex",
               flexDirection: "column",
+              alignItems: "center",
               gap: "calc(0.75em * var(--fit-tightness, 1))",
             }}
           >
             <p style={{ margin: 0, fontSize: "1.05em", lineHeight: "calc(1.6 * var(--fit-tightness, 1))" }}>{mourningLine(data)}</p>
             <p style={{ margin: 0, fontSize: `${marhoomFontSizeEm}em`, fontWeight: 700 }}>{marhoomWord(deceased)}</p>
-            <h1
+            <NameTag
               style={{
                 fontFamily: nameFontFamily,
                 fontSize: `${nameSizeEm}em`,
@@ -311,12 +326,12 @@ export function ObituaryContent({
               }}
             >
               {divider && nameLayout === "plain" ? `${divider} ${deceasedNameLine(deceased)} ${divider}` : deceasedNameLine(deceased)}
-            </h1>
+            </NameTag>
           </div>
           <DeceasedPhoto
             photoDataUrl={deceased.photoDataUrl}
             crop={deceased.photoCrop ?? DEFAULT_PHOTO_CROP}
-            photoScale={photoScale}
+            photoScale={photoScale * (deceased.photoSizeScale ?? 1)}
             style={{ flex: "0 0 auto" }}
           />
         </div>
@@ -334,13 +349,13 @@ export function ObituaryContent({
             <DeceasedPhoto
               photoDataUrl={deceased.photoDataUrl}
               crop={deceased.photoCrop ?? DEFAULT_PHOTO_CROP}
-              photoScale={photoScale}
+              photoScale={photoScale * (deceased.photoSizeScale ?? 1)}
               style={{ marginInline: "auto" }}
             />
           )}
 
           {/* ٦. اسم الفقيد — أكبر عنصر وأوضحه في الصفحة، بخط/حجم قابلين للتخصيص من الإعدادات */}
-          <h1
+          <NameTag
             style={{
               fontFamily: nameFontFamily,
               fontSize: `${nameSizeEm}em`,
@@ -353,7 +368,7 @@ export function ObituaryContent({
             }}
           >
             {divider && nameLayout === "plain" ? `${divider} ${deceasedNameLine(deceased)} ${divider}` : deceasedNameLine(deceased)}
-          </h1>
+          </NameTag>
         </>
       )}
 
@@ -567,9 +582,10 @@ export function ObituaryContent({
             حصراً): عائلة الأب وعائلة الأم فقط، لا كل عائلات الأقارب والأصهار. */}
         <p style={{ fontSize: "1.1em", fontWeight: 700, margin: 0 }}>{familiesLine(data, familiesLineScope)}</p>
 
-        {/* ١٤. فوتر المطبعة — قابل للتفعيل والتحرير من المحرر */}
+        {/* ١٤. فوتر المطبعة — قابل للتفعيل والتحرير من المحرر. الحجم ٠.٧٨em (كان
+            ٠.٦٥em) — مكبَّر ٢٠٪ بطلب صريح. */}
         {footerText && (
-          <div style={{ paddingTop: "0.6em", borderTop: `1px solid ${tokens.ink}`, fontSize: "0.65em", color: tokens.muted }}>
+          <div style={{ paddingTop: "0.6em", borderTop: `1px solid ${tokens.ink}`, fontSize: "0.78em", color: tokens.muted }}>
             {footerText}
           </div>
         )}

@@ -2,13 +2,17 @@ import type { Metadata, Viewport } from "next"
 import Script from "next/script"
 import { GoogleAnalytics } from "@next/third-parties/google"
 import {
-  Alexandria, Almarai, Amiri, Amiri_Quran, Aref_Ruqaa_Ink, Cairo, El_Messiri,
-  IBM_Plex_Sans_Arabic, Lalezar, Markazi_Text, Noto_Naskh_Arabic, Reem_Kufi, Reem_Kufi_Ink,
-  Scheherazade_New, Tajawal,
+  Amiri, Amiri_Quran, Aref_Ruqaa_Ink, Cairo, Reem_Kufi_Ink, Scheherazade_New, Tajawal,
 } from "next/font/google"
 import { THEME_INIT_SCRIPT } from "@/lib/theme/initScript"
+import { SITE_URL, SITE_NAME, SITE_DESCRIPTION, SITE_TITLE_DEFAULT, SITE_KEYWORDS } from "@/lib/seo/site"
 import "./globals.css"
 
+// ملاحظة: كانت هذه السبعة تشارك التخطيط الجذري مع ٨ خطوط أخرى مخصّصة لـ"إعدادات
+// النصوص" (اختيار خط عام/اسم الفقيد داخل /create فقط) — تلك الثمانية انتقلت إلى
+// src/app/create/layout.tsx (تخطيط متداخل مستقلّ) لأن الصفحة الرئيسية لا تستهلكها
+// إطلاقاً (LivePreview/TemplateGallery تعرضان VISIBLE_TEMPLATES السبعة فقط، وكلها
+// تستعمل هذه السبعة حصراً). ١٥ عائلة خط على كل مسار كانت عبئاً حقيقياً على LCP.
 const amiri = Amiri({ variable: "--font-amiri", subsets: ["arabic"], weight: ["400", "700"] })
 const amiriQuran = Amiri_Quran({ variable: "--font-amiri-quran", subsets: ["arabic"], weight: "400" })
 const arefRuqaa = Aref_Ruqaa_Ink({ variable: "--font-aref-ruqaa", subsets: ["arabic"], weight: "400" })
@@ -16,41 +20,15 @@ const reemKufiInk = Reem_Kufi_Ink({ variable: "--font-reem-kufi", subsets: ["ara
 const scheherazade = Scheherazade_New({ variable: "--font-scheherazade", subsets: ["arabic"], weight: ["400", "700"] })
 const tajawal = Tajawal({ variable: "--font-tajawal", subsets: ["arabic"], weight: ["400", "500", "700"] })
 const cairo = Cairo({ variable: "--font-cairo", subsets: ["arabic", "latin"] })
-// أربعة خطوط إضافية — تصل بخطوط اسم الفقيد القابلة للاختيار من الإعدادات إلى ١٠،
-// كلها مستضافة ذاتياً عبر next/font/google (تُحمَّل مع التطبيق، لا من شبكة خارجية وقت التشغيل).
-const almarai = Almarai({ variable: "--font-almarai", subsets: ["arabic"], weight: ["400", "700"] })
-const elMessiri = El_Messiri({ variable: "--font-el-messiri", subsets: ["arabic"], weight: ["400", "700"] })
-const lalezar = Lalezar({ variable: "--font-lalezar", subsets: ["arabic"], weight: "400" })
-const markaziText = Markazi_Text({ variable: "--font-markazi", subsets: ["arabic"], weight: ["400", "700"] })
-// أربعة أخرى لإعدادات النصوص العامة (خط جميع النصوص) — كلها تدعم subset "arabic"
-// رسمياً في next/font/google (تحقّقنا من ملف تعريف الأنواع قبل إضافتها)، فلا مشاكل
-// تشكيل متوقَّعة (النص يُعرض حيّاً بمحرك المتصفح دائماً، لا مسارات مولَّدة — نفس مبدأ
-// المخطوطات القرآنية). Reem_Kufi هنا هو العائلة العادية القابلة للقراءة، منفصلة عمداً
-// عن Reem_Kufi_Ink الزخرفي أعلاه (يُستعمل لخط "royal-monogram" calligraphyFont تحديداً).
-const alexandria = Alexandria({ variable: "--font-alexandria", subsets: ["arabic"], weight: ["400", "700"] })
-const ibmPlexArabic = IBM_Plex_Sans_Arabic({ variable: "--font-ibm-plex-arabic", subsets: ["arabic"], weight: ["400", "700"] })
-const notoNaskh = Noto_Naskh_Arabic({ variable: "--font-noto-naskh", subsets: ["arabic"], weight: ["400", "700"] })
-const reemKufi = Reem_Kufi({ variable: "--font-reem-kufi-plain", subsets: ["arabic"], weight: ["400", "700"] })
-
-// نطاق الإنتاج — مصدر وحيد لكل روابط SEO المطلقة (metadataBase، sitemap.ts،
-// robots.ts، JSON-LD). عدّله هنا فقط إن تغيّر النطاق مستقبلاً.
-const SITE_URL = "https://enaawah.scouthub.dev"
-const SITE_NAME = "النعوة الإلكترونية"
-const SITE_DESCRIPTION =
-  "أنشئ نعوة إلكترونية عربية إسلامية وقورة تليق بمقام الفقيد خلال دقائق — اختر من ٧ قوالب احترافية، ودع محرك الصياغة يكتب نص النعي والأقارب تلقائياً بالتصريف الصحيح، ثم صدّرها PNG أو PDF جاهزة للطباعة والمشاركة. مجاناً وبلا تسجيل."
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: `${SITE_NAME} | مولّد نعوات إسلامية احترافية مجاناً`,
+    default: SITE_TITLE_DEFAULT,
     template: `%s | ${SITE_NAME}`,
   },
   description: SITE_DESCRIPTION,
-  keywords: [
-    "نعوة إلكترونية", "نعي إلكتروني", "تصميم نعوة", "مولد نعوات",
-    "نعوة إسلامية", "إنشاء نعوة أونلاين", "نعوة PDF", "نعي عربي",
-    "قوالب نعوة", "نعوة مجانية",
-  ],
+  keywords: SITE_KEYWORDS,
   authors: [{ name: SITE_NAME, url: SITE_URL }],
   category: "lifestyle",
   alternates: { canonical: "/" },
@@ -60,7 +38,7 @@ export const metadata: Metadata = {
     googleBot: { index: true, follow: true, "max-image-preview": "large" },
   },
   openGraph: {
-    title: `${SITE_NAME} | مولّد نعوات إسلامية احترافية مجاناً`,
+    title: SITE_TITLE_DEFAULT,
     description: SITE_DESCRIPTION,
     url: SITE_URL,
     siteName: SITE_NAME,
@@ -69,17 +47,29 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: `${SITE_NAME} | مولّد نعوات إسلامية احترافية مجاناً`,
+    title: SITE_TITLE_DEFAULT,
     description: SITE_DESCRIPTION,
   },
   icons: {
-    icon: "/icon.png",
-    shortcut: "/icon.png",
-    apple: "/icon.png",
+    // icon.png الأصلي ٨٠٦×٩٨٢ (غير مربّع) — يبقى مصدراً للأيقونات الكبيرة عبر
+    // icon-512/icon-192 المربّعتين، وapple-icon.png (١٨٠×١٨٠، مولَّدة عبر sharp
+    // من icon-512 مع خلفية معتّمة #161311 بدل الشفافية — توصية آبل لأيقونات الشاشة
+    // الرئيسية). favicon-32.png يضيف حجماً صغيراً صريحاً لشريط التبويب.
+    icon: [
+      { url: "/favicon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    shortcut: "/icon-192.png",
+    apple: "/apple-icon.png",
   },
   manifest: "/manifest.webmanifest",
-  // ضع رمز تحقّق Google Search Console هنا بعد إنشائه (Property من نوع "URL prefix"):
-  // verification: { google: "xxxxxxxxxxxxxxxxxxxx" },
+  // رمز تحقّق Google Search Console — يُملأ فور إنشاء الخاصية (Property من نوع
+  // "URL prefix") في: https://search.google.com/search-console. حتى ذلك الحين
+  // يمكن التحقّق بديلاً عبر ملف HTML أو سجلّ DNS (الطريقتان لا تحتاجان هذا الحقل).
+  verification: process.env.GOOGLE_SITE_VERIFICATION
+    ? { google: process.env.GOOGLE_SITE_VERIFICATION }
+    : undefined,
 }
 
 // معرّف قياس GA4 (يبدأ بـG-) — من env var لا مكتوباً حرفياً، حتى لا يُرسِل
@@ -105,8 +95,6 @@ export const viewport: Viewport = {
 const fontVariables = [
   amiri.variable, amiriQuran.variable, arefRuqaa.variable, reemKufiInk.variable,
   scheherazade.variable, tajawal.variable, cairo.variable,
-  almarai.variable, elMessiri.variable, lalezar.variable, markaziText.variable,
-  alexandria.variable, ibmPlexArabic.variable, notoNaskh.variable, reemKufi.variable,
 ].join(" ")
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

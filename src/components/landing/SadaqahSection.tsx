@@ -7,6 +7,7 @@ export function SadaqahSection() {
         <span className="rounded-full bg-(--home-accent)/10 px-4 py-1.5 text-sm font-bold text-(--home-accent)">
           صدقة جارية
         </span>
+        <h2 className="sr-only">لماذا التطبيق مجاني بالكامل</h2>
         <p className="text-xl leading-relaxed sm:text-2xl" style={{ fontFamily: "var(--font-amiri)" }}>
           هذا التطبيق مجاني بالكامل، ووُضع صدقة جارية عن أرواح المسلمين
         </p>

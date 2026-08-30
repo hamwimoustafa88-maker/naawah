@@ -66,7 +66,15 @@ export function LivePreview() {
       >
         <div className="rounded-xl border border-(--home-border) bg-(--home-bg) p-2.5">
           <ResponsiveCanvasFrame>
-            <ObituaryCanvas data={{ ...SAMPLE_OBITUARY_DATA, templateId }} id="landing-preview" />
+            {/* nameHeadingLevel="div": هذا عرض حيّ زخرفي داخل الصفحة الرئيسية التي
+                لها h1 خاص بها فعلاً (Hero.tsx) — بلا هذا التمرير كان اسم العيّنة
+                العشوائي (SAMPLE_OBITUARY_DATA) يظهر كـh1 ثانٍ متنافس على الصفحة،
+                عطل سيو حقيقي رصدناه أثناء التحقّق. */}
+            <ObituaryCanvas
+              data={{ ...SAMPLE_OBITUARY_DATA, templateId }}
+              id="landing-preview"
+              nameHeadingLevel="div"
+            />
           </ResponsiveCanvasFrame>
         </div>
 

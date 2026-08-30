@@ -8,7 +8,16 @@ import { useAutoFit } from "@/components/canvas/useAutoFit"
 import { getTemplate } from "@/lib/templates/registry"
 import type { ObituaryData } from "@/lib/obituary/types"
 
-export function ObituaryCanvas({ data, id = "obituary-canvas" }: { data: ObituaryData; id?: string }) {
+export function ObituaryCanvas({
+  data, id = "obituary-canvas", nameHeadingLevel = "h1",
+}: {
+  data: ObituaryData
+  id?: string
+  /** يُمرَّر حرفياً إلى ObituaryContent — راجع تعليقها هناك. "h1" افتراضياً (صحيح
+   * دائماً داخل /create). مرِّر "div" فقط حين يُستهلَك هذا الكانفاس ضمن صفحة لها
+   * h1 خاص بها فعلاً (مثال: LivePreview.tsx على الصفحة الرئيسية). */
+  nameHeadingLevel?: "h1" | "div"
+}) {
   const template = getTemplate(data.templateId)
   const { tokens, Frame } = template
   const { containerRef, contentRef, scale } = useAutoFit([data])
@@ -33,7 +42,7 @@ export function ObituaryCanvas({ data, id = "obituary-canvas" }: { data: Obituar
     >
       <Frame className="absolute inset-0 h-full w-full" />
       <div ref={contentRef} style={{ position: "relative" }}>
-        <ObituaryContent data={data} template={template} scale={scale} />
+        <ObituaryContent data={data} template={template} scale={scale} nameHeadingLevel={nameHeadingLevel} />
       </div>
     </div>
   )

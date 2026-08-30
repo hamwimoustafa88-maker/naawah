@@ -7,11 +7,43 @@
 // الفعلي في النعوة، نفس الحساب بالضبط عبر lib/obituary/photoCrop.ts).
 
 import { useRef } from "react"
-import { ImagePlus, X } from "lucide-react"
+import { ImagePlus, Minus, Plus, X } from "lucide-react"
 import { useEditorStore } from "@/store/editorStore"
 import { Label } from "@/components/ui/Field"
 import { PhotoCropper } from "@/components/editor/PhotoCropper"
-import { DEFAULT_PHOTO_CROP } from "@/lib/obituary/photoCrop"
+import {
+  DEFAULT_PHOTO_CROP, DEFAULT_PHOTO_SIZE_SCALE, PHOTO_SIZE_SCALE_MAX, PHOTO_SIZE_SCALE_MIN, PHOTO_SIZE_SCALE_STEP,
+} from "@/lib/obituary/photoCrop"
+
+/** زرا تكبير/تصغير حجم إطار الصورة نفسه على الصفحة (لا محتواها الداخلي — راجع
+ * PhotoCropper.tsx لذلك) — بخطوات ١٠٪، نفس نمط أزرار تكبير المخطوطات القرآنية. */
+function PhotoSizeStepper({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  const clamp = (v: number) => Math.min(PHOTO_SIZE_SCALE_MAX, Math.max(PHOTO_SIZE_SCALE_MIN, +v.toFixed(2)))
+  return (
+    <div className="mt-2 flex items-center gap-1.5">
+      <button
+        type="button"
+        onClick={() => onChange(clamp(value - PHOTO_SIZE_SCALE_STEP))}
+        disabled={value <= PHOTO_SIZE_SCALE_MIN}
+        aria-label="تصغير الصورة"
+        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-black/15 hover:bg-black/5 disabled:opacity-30"
+      >
+        <Minus size={14} />
+      </button>
+      <span className="w-11 shrink-0 text-center text-xs tabular-nums text-black/60">{Math.round(value * 100)}%</span>
+      <button
+        type="button"
+        onClick={() => onChange(clamp(value + PHOTO_SIZE_SCALE_STEP))}
+        disabled={value >= PHOTO_SIZE_SCALE_MAX}
+        aria-label="تكبير الصورة"
+        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-black/15 hover:bg-black/5 disabled:opacity-30"
+      >
+        <Plus size={14} />
+      </button>
+      <span className="text-xs text-black/45">حجم الصورة</span>
+    </div>
+  )
+}
 
 function fileToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -25,16 +57,19 @@ function fileToDataUrl(file: File): Promise<string> {
 export function PhotoUpload() {
   const photoDataUrl = useEditorStore((s) => s.data.deceased.photoDataUrl)
   const photoCrop = useEditorStore((s) => s.data.deceased.photoCrop)
-  const photoSideBySide = useEditorStore((s) => s.data.deceased.photoSideBySide ?? true)
+  const photoSizeScale = useEditorStore((s) => s.data.deceased.photoSizeScale ?? DEFAULT_PHOTO_SIZE_SCALE)
+  // معطَّل افتراضياً (undefined=false) بطلب صريح — الصورة متوسِّطة فوق الاسم
+  // كوضع افتراضي، لا جانب النص.
+  const photoSideBySide = useEditorStore((s) => s.data.deceased.photoSideBySide ?? false)
   const update = useEditorStore((s) => s.updateDeceased)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const handleFile = async (file: File | undefined) => {
     if (!file) return
     const dataUrl = await fileToDataUrl(file)
-    // صورة جديدة = وضعية جديدة دائماً (لا نُبقي تكبير/تحريك الصورة السابقة عالقاً
-    // على صورة مختلفة تماماً).
-    update({ photoDataUrl: dataUrl, photoCrop: DEFAULT_PHOTO_CROP })
+    // صورة جديدة = وضعية جديدة دائماً (لا نُبقي تكبير/تحريك/حجم الصورة السابقة
+    // عالقاً على صورة مختلفة تماماً).
+    update({ photoDataUrl: dataUrl, photoCrop: DEFAULT_PHOTO_CROP, photoSizeScale: DEFAULT_PHOTO_SIZE_SCALE })
   }
 
   return (
@@ -50,7 +85,7 @@ export function PhotoUpload() {
           />
           <button
             type="button"
-            onClick={() => update({ photoDataUrl: undefined, photoCrop: undefined })}
+            onClick={() => update({ photoDataUrl: undefined, photoCrop: undefined, photoSizeScale: undefined })}
             // مكبَّر ١٤٠٪ عن حجمه الأصلي بطلب صريح (كان صغيراً جداً) — scale بدل
             // تكبير size/padding يدوياً، فيحافظ على تناسق الشكل (أيقونة+حشوة+ظل) تماماً.
             className="absolute -left-2 -top-2 scale-[1.4] rounded-full bg-white p-1 text-black/50 shadow hover:text-red-600"
@@ -58,6 +93,9 @@ export function PhotoUpload() {
           >
             <X size={14} />
           </button>
+
+          {/* حجم الصورة على الصفحة — منفصل عن التكبير/التحريك داخل الإطار أعلاه. */}
+          <PhotoSizeStepper value={photoSizeScale} onChange={(v) => update({ photoSizeScale: v })} />
         </div>
       ) : (
         <div className="flex items-center gap-3">
@@ -78,9 +116,10 @@ export function PhotoUpload() {
         </div>
       )}
 
-      {/* مفعّل افتراضياً — الصورة جهة اليسار والنص جهة اليمين في صفّ واحد، بدل
-          استهلاك الصورة مساحة رأسية إضافية تُسرِّع تفعيل تصغير auto-fit. إيقافه
-          يعيد التخطيط المتوسِّط/المكدَّس السابق تماماً. يظهر فقط عند وجود صورة. */}
+      {/* معطَّل افتراضياً بطلب صريح (الصورة متوسِّطة فوق الاسم كوضع افتراضي) —
+          تفعيله يضع الصورة جهة اليسار والنص جهة اليمين في صفّ واحد بدل ذلك،
+          مفيد لتقليل الاستهلاك الرأسي للمساحة الذي يُسرِّع تفعيل تصغير auto-fit.
+          يظهر فقط عند وجود صورة. */}
       {photoDataUrl && (
         <label className="mt-2 flex items-center gap-2 text-xs text-black/60">
           <input

@@ -1,6 +1,8 @@
 import { Reveal } from "@/components/landing/Reveal"
 
-const STEPS = [
+// مُصدَّرة لاستهلاك src/app/page.tsx إياها في بناء عقدة HowTo المهيكلة (JSON-LD)
+// — نفس النص المرئي هنا يُعاد استعماله حرفياً هناك، بلا تكرار الكتابة.
+export const STEPS = [
   {
     n: "٠١",
     title: "أدخل البيانات والألقاب",

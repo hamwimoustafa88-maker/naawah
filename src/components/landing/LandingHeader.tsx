@@ -3,8 +3,7 @@ import { Menu, X } from "lucide-react"
 import { ThemeToggle } from "@/components/theme/ThemeToggle"
 import { BrandLogo } from "@/components/common/BrandLogo"
 import { GitHubIcon } from "@/components/landing/BrandIcons"
-
-const GITHUB_REPO_URL = "https://github.com/hamwimoustafa88-maker/naawah"
+import { GITHUB_URL } from "@/lib/seo/site"
 
 // روابط الأقسام — نفس القائمة تُستعمل لقائمة سطح المكتب الأفقية ولقائمة الجوال
 // المنسدلة معاً، حتى لا تتفرّق. كل رابط يستهدف id موجود على العنصر <section>
@@ -13,8 +12,9 @@ const GITHUB_REPO_URL = "https://github.com/hamwimoustafa88-maker/naawah"
 const NAV_LINKS = [
   { href: "#how-it-works", label: "كيف يعمل" },
   { href: "#features", label: "المزايا" },
-  { href: "#sadaqah", label: "صدقة جارية" },
-  { href: "#developer", label: "المطوّر" },
+  { href: "/templates", label: "القوالب" },
+  { href: "/guides", label: "الأدلّة" },
+  { href: "#open-source", label: "مفتوح المصدر" },
 ]
 
 const CTA_CLASS =
@@ -44,7 +44,7 @@ export function LandingHeader() {
           </Link>
 
           <a
-            href={GITHUB_REPO_URL}
+            href={GITHUB_URL}
             target="_blank"
             rel="noopener noreferrer"
             aria-label="المشروع مفتوح المصدر على GitHub"

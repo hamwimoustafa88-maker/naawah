@@ -7,7 +7,7 @@
 import { useState } from "react"
 import { Minus, Plus } from "lucide-react"
 import { cn } from "@/lib/utils/cn"
-import { ARAB_COUNTRIES, honorificsFor, QURAN_VERSES, todayISO } from "@/lib/obituary/defaults"
+import { honorificsFor, QURAN_VERSES, todayISO } from "@/lib/obituary/defaults"
 import { formatDualDate } from "@/lib/obituary/hijri"
 import { detectWriterPlaceAr } from "@/lib/location/detectPlace"
 import { useEditorStore } from "@/store/editorStore"
@@ -15,6 +15,7 @@ import { Checkbox, FieldGroup, Input, Select, Textarea } from "@/components/ui/F
 import { Card, CardTitle } from "@/components/ui/Card"
 import { PhotoUpload } from "@/components/editor/PhotoUpload"
 import { FontPicker } from "@/components/editor/FontPicker"
+import { CountryPicker } from "@/components/editor/CountryPicker"
 
 export function IdentityFields() {
   const deceased = useEditorStore((s) => s.data.deceased)
@@ -69,7 +70,7 @@ export function IdentityFields() {
       </FieldGroup>
 
       <div className="col-span-2">
-        <FieldGroup label="الاسم الثلاثي/الرباعي">
+        <FieldGroup label="الاسم الكامل">
           <Input value={deceased.name} onChange={(e) => update({ name: e.target.value })} placeholder="محمود محمد شهاب" />
         </FieldGroup>
       </div>
@@ -263,12 +264,7 @@ export function BirthInfoFields() {
             <Input type="date" value={deceased.birthDateISO ?? ""} onChange={(e) => update({ birthDateISO: e.target.value })} />
           </FieldGroup>
           <FieldGroup label="بلد الأصل">
-            <Select value={deceased.birthCountry ?? ""} onChange={(e) => update({ birthCountry: e.target.value })}>
-              <option value="">—</option>
-              {ARAB_COUNTRIES.map((c) => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </Select>
+            <CountryPicker value={deceased.birthCountry ?? ""} onChange={(v) => update({ birthCountry: v })} />
           </FieldGroup>
         </div>
       )}

@@ -86,34 +86,39 @@ export function PrayerBurialFields() {
     : null
 
   // القسم مطويّ افتراضياً — تخفيفاً لطول الشاشة على الجوال تحديداً (كانت هذه
-  // الحقول الثلاثة تُطيل القسم كثيراً، خصوصاً مع فتح لوحة المفاتيح فوقه). يبدأ
-  // مفتوحاً فقط إن كانت إحدى قيمه محفوظة سلفاً — إلغاء التفعيل يطوي العرض فقط
-  // ولا يمسح أي قيمة مُدخَلة.
-  const [showMore, setShowMore] = useState(Boolean(funeral.prayerTimeNote || funeral.burialLocation))
+  // الحقول تُطيل القسم كثيراً، خصوصاً مع فتح لوحة المفاتيح فوقه). "تاريخ الصلاة
+  // والدفن" نفسه داخل هذا الطيّ أيضاً (لا خارجه) — بطلب صريح. يبدأ القسم مفتوحاً
+  // فقط إن كانت إحدى قيمه محفوظة سلفاً — إلغاء التفعيل يطوي العرض فقط ولا يمسح
+  // أي قيمة مُدخَلة.
+  const [showMore, setShowMore] = useState(
+    Boolean(funeral.burialDateISO || funeral.prayerTimeNote || funeral.burialLocation)
+  )
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="grid grid-cols-2 gap-4">
-        <FieldGroup label="مكان صلاة الجنازة">
-          <Input value={funeral.prayerLocation} onChange={(e) => updateFuneral({ prayerLocation: e.target.value })} placeholder="مسجد الشهداء" />
-        </FieldGroup>
-        <FieldGroup label="تاريخ الصلاة والدفن" hint="فارغ افتراضياً (يُعتمد تاريخ الوفاة) — انقر على الحقل ليُملأ بتاريخ اليوم مباشرة">
-          <Input
-            type="date"
-            value={funeral.burialDateISO ?? ""}
-            onFocus={() => {
-              if (!funeral.burialDateISO) updateFuneral({ burialDateISO: todayISO() })
-            }}
-            onChange={(e) => updateFuneral({ burialDateISO: e.target.value })}
-          />
-        </FieldGroup>
-      </div>
+      <FieldGroup label="مكان صلاة الجنازة">
+        <Input value={funeral.prayerLocation} onChange={(e) => updateFuneral({ prayerLocation: e.target.value })} placeholder="مسجد الشهداء" />
+      </FieldGroup>
 
-      <Checkbox label="تفاصيل إضافية (ملاحظة الوقت، التاريخ الهجري، مكان الدفن)" checked={showMore} onChange={(e) => setShowMore(e.target.checked)} />
+      <Checkbox
+        label="تفاصيل إضافية (تاريخ الصلاة والدفن، ملاحظة الوقت، التاريخ الهجري، مكان الدفن)"
+        checked={showMore}
+        onChange={(e) => setShowMore(e.target.checked)}
+      />
 
       {showMore && (
         <>
           <div className="grid grid-cols-2 gap-4">
+            <FieldGroup label="تاريخ الصلاة والدفن" hint="فارغ افتراضياً (يُعتمد تاريخ الوفاة) — انقر على الحقل ليُملأ بتاريخ اليوم مباشرة">
+              <Input
+                type="date"
+                value={funeral.burialDateISO ?? ""}
+                onFocus={() => {
+                  if (!funeral.burialDateISO) updateFuneral({ burialDateISO: todayISO() })
+                }}
+                onChange={(e) => updateFuneral({ burialDateISO: e.target.value })}
+              />
+            </FieldGroup>
             <FieldGroup label="ملاحظة الوقت">
               <Select value={funeral.prayerTimeNote ?? ""} onChange={(e) => updateFuneral({ prayerTimeNote: e.target.value || undefined })}>
                 <option value="">بلا</option>
@@ -122,7 +127,9 @@ export function PrayerBurialFields() {
                 ))}
               </Select>
             </FieldGroup>
+          </div>
 
+          <div className="grid grid-cols-2 gap-4">
             {/* نفس فكرة "التاريخ الهجري" في (بيانات الفقيد ← إظهار تاريخ ومكان الوفاة)
                 بالضبط — وتستهلك نفس حقل deceased.hijriOffsetDays المشترك عمداً (لا
                 حقل مستقل خاص بتاريخ الدفن)، فتعديل يوم (+/-) من أيّ من الموضعين
@@ -151,11 +158,11 @@ export function PrayerBurialFields() {
               </div>
               <p className="mt-1 text-xs text-black/45">لضبط اختلاف الرؤية ±يوم — نفس الضبط في (إظهار تاريخ ومكان الوفاة)</p>
             </FieldGroup>
-          </div>
 
-          <FieldGroup label="مكان الدفن (اختياري)">
-            <Input value={funeral.burialLocation ?? ""} onChange={(e) => updateFuneral({ burialLocation: e.target.value })} />
-          </FieldGroup>
+            <FieldGroup label="مكان الدفن (اختياري)">
+              <Input value={funeral.burialLocation ?? ""} onChange={(e) => updateFuneral({ burialLocation: e.target.value })} />
+            </FieldGroup>
+          </div>
         </>
       )}
     </div>
@@ -235,7 +242,7 @@ export function FillGapFields() {
     <div className="flex flex-col gap-3">
       <p className="-mt-1 text-xs text-black/45">
         الفقرات الثلاث الأخيرة (الراضون بقضاء الله وقدره، إنّا لله وإنّا إليه راجعون، للفقيد الرحمة ولكم الأجر والثواب)
-        تبقى ثابتة أسفل الصفحة دائماً. إن كانت النعوة قصيرة، أضف مسافة أو خطاً فاصلاً فوقها لملء الفراغ بشكل أنيق.
+        تبقى ثابتة أسفل الصفحة دائماً. إن كانت النعوة قصيرة، أضف مسافة أو خطاً فاصلاً فوقها لملء الفراغ.
       </p>
       <FieldGroup label="مسافة إضافية قبل الفقرات الأخيرة (اختياري)">
         <Input

@@ -16,11 +16,13 @@ export function Hero({ count }: { count: number }) {
           </span>
 
           <h1 className="text-4xl font-bold leading-tight sm:text-5xl lg:text-6xl">
-            تطبيق النعوة الإلكترونية
+            النعوة الإلكترونية — أنشئ نعوة إسلامية وقورة وشاركها في دقائق
           </h1>
 
           <p className="max-w-xl text-lg text-(--home-muted)">
-            أنشئ نعوة، وشاركها في لحظات.
+            مجاناً وبلا تسجيل، من أي جهاز. اختر من ٧ قوالب إسلامية، ودع محرك الصياغة
+            يكتب نص النعي والأقارب تلقائياً، ثم صدّر نعوتك PNG أو PDF جاهزة للطباعة
+            والمشاركة على واتساب. التطبيق مفتوح المصدر بالكامل، ووُضع صدقة جارية.
           </p>
 
           <div className="flex flex-col gap-3 sm:flex-row">

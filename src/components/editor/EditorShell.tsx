@@ -1,6 +1,6 @@
 "use client"
 
-import { Fragment } from "react"
+import { Fragment, useEffect } from "react"
 import { ObituaryCanvas } from "@/components/canvas/ObituaryCanvas"
 import { ResponsiveCanvasFrame } from "@/components/canvas/ResponsiveCanvasFrame"
 import { useEditorStore } from "@/store/editorStore"
@@ -46,6 +46,16 @@ function SectionDivider({ number, title }: { number: string; title: string }) {
 
 export function EditorShell() {
   const data = useEditorStore((s) => s.data)
+  const regenerateArchiveKey = useEditorStore((s) => s.regenerateArchiveKey)
+
+  // توليد archiveKey الفعلي بعد التركيب فقط — راجع تعليق الحقل في editorStore.ts
+  // (قيمته الابتدائية ثابتة تفادياً لعطل hydration mismatch). EditorShell هو نقطة
+  // تركيب وحيدة لصفحة /create (مع CreateHeader)، فتشغيله هنا مرة واحدة يكفي
+  // لكلا نسختي الكانفاس (سطح مكتب/جوال) المُركَّبتين معاً دائماً.
+  useEffect(() => {
+    regenerateArchiveKey()
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- مرة واحدة عند التركيب فقط
+  }, [])
 
   return (
     <>
@@ -71,7 +81,15 @@ export function EditorShell() {
               overflow-x تلقائياً إلى auto (قاعدة CSS قياسية)، فيقصّ الكانفاس المصغَّر أفقياً. */}
           <div className="w-full overflow-x-hidden overflow-y-auto rounded-lg" style={{ maxHeight: "calc(100vh - 220px)" }}>
             <ResponsiveCanvasFrame>
-              <ObituaryCanvas data={data} />
+              {/* nameHeadingLevel="div": هذا القسم "سطح المكتب حصراً" (راجع تعليق
+                  الملف أعلاه)، والكانفاس المكافئ في MobileEditorView.tsx (id
+                  obituary-canvas-mobile) يظهر بالتوازي على الجوال — كلاهما في DOM
+                  الصفحة معاً (إخفاء بصري عبر lg:hidden فقط، لا إزالة من الشجرة)،
+                  فكان ذلك يُنتج h1 مكرَّراً بنفس اسم الفقيد على /create. أبقينا h1
+                  الحقيقي على نسخة الجوال (الافتراضي في ObituaryCanvas) تحديداً لأن
+                  Google يفهرس بمحرّك زحف الجوال أولاً (mobile-first indexing) منذ
+                  سنوات — عطل سيو حقيقي رصدناه أثناء التحقّق. */}
+              <ObituaryCanvas data={data} nameHeadingLevel="div" />
             </ResponsiveCanvasFrame>
           </div>
           <ExportBar />

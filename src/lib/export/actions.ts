@@ -6,6 +6,7 @@ import { toBlob, toJpeg } from "html-to-image"
 import { jsPDF } from "jspdf"
 import { getTemplate } from "@/lib/templates/registry"
 import { shareMessage } from "@/lib/obituary/render"
+import { archiveExport } from "@/lib/export/archive"
 import type { ObituaryData } from "@/lib/obituary/types"
 
 export type ExportKind = "png" | "pdf" | "share"
@@ -89,18 +90,37 @@ async function notifyStats(templateId: string) {
   }
 }
 
-export async function exportPng(templateId: string, deceasedName: string) {
-  const blob = await capturePngBlob()
-  downloadBlob(blob, buildFileName(deceasedName, "png"))
-  void notifyStats(templateId)
+/**
+ * يؤرشف نسخة عن النعوة المُصدَّرة في Google Drive عبر /api/archive — صامت تماماً
+ * (نفس نمط notifyStats أعلاه بالضبط): أي فشل هنا (شبكة، خادم غير مُهيَّأ لـDrive،
+ * قاعدة بيانات) لا يظهر للمستخدم إطلاقاً ولا يعطّل التصدير الذي استلمه فعلاً، لأنه
+ * يُستدعى دائماً بـvoid بعد اكتمال التنزيل/المشاركة. jpegDataUrl مُمرَّرة جاهزة من
+ * exportPdf (تلتقطها أصلاً لبناء الملف) لتفادي التقاط الكانفاس مرتين؛ exportPng
+ * وexportShare يلتقطانها هنا من الصفر — التكلفة تقع بعد نزول ملف المستخدم فلا يشعر بها.
+ */
+async function archiveAfterExport(data: ObituaryData, archiveKey: string, kind: ExportKind, jpegDataUrl?: string) {
+  try {
+    const dataUrl = jpegDataUrl ?? (await captureJpeg(data.templateId))
+    await archiveExport({ data, archiveKey, exportKind: kind, jpegDataUrl: dataUrl })
+  } catch {
+    // أرشفة صامتة — لا نعطّل التصدير إن فشلت
+  }
 }
 
-export async function exportPdf(templateId: string, deceasedName: string) {
-  const dataUrl = await captureJpeg(templateId)
+export async function exportPng(data: ObituaryData, archiveKey: string) {
+  const blob = await capturePngBlob()
+  downloadBlob(blob, buildFileName(data.deceased.name, "png"))
+  void notifyStats(data.templateId)
+  void archiveAfterExport(data, archiveKey, "png")
+}
+
+export async function exportPdf(data: ObituaryData, archiveKey: string) {
+  const dataUrl = await captureJpeg(data.templateId)
   const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4", compress: true })
   pdf.addImage(dataUrl, "JPEG", 0, 0, 210, 297)
-  pdf.save(buildFileName(deceasedName, "pdf"))
-  void notifyStats(templateId)
+  pdf.save(buildFileName(data.deceased.name, "pdf"))
+  void notifyStats(data.templateId)
+  void archiveAfterExport(data, archiveKey, "pdf", dataUrl)
 }
 
 /**
@@ -110,7 +130,7 @@ export async function exportPdf(templateId: string, deceasedName: string) {
  * files وtext معاً). الاحتياط (متصفحات بلا دعم مشاركة ملفات، غالباً سطح المكتب)
  * يبقى تنزيلاً صامتاً بلا نص — كما كان، خارج نطاق هذا التعديل.
  */
-export async function exportShare(templateId: string, data: ObituaryData) {
+export async function exportShare(data: ObituaryData, archiveKey: string) {
   const blob = await capturePngBlob()
   const filename = buildFileName(data.deceased.name, "png")
   const file = new File([blob], filename, { type: "image/png" })
@@ -119,5 +139,6 @@ export async function exportShare(templateId: string, data: ObituaryData) {
   } else {
     downloadBlob(blob, filename)
   }
-  void notifyStats(templateId)
+  void notifyStats(data.templateId)
+  void archiveAfterExport(data, archiveKey, "share")
 }

@@ -138,6 +138,26 @@ exports.Prisma.TemplateScalarFieldEnum = {
   createdAt: 'createdAt'
 };
 
+exports.Prisma.ArchivedObituaryScalarFieldEnum = {
+  id: 'id',
+  archiveKey: 'archiveKey',
+  deceasedName: 'deceasedName',
+  deathDateISO: 'deathDateISO',
+  deathDateAr: 'deathDateAr',
+  deathPlaceNote: 'deathPlaceNote',
+  condolencesInfo: 'condolencesInfo',
+  driveFileId: 'driveFileId',
+  driveViewUrl: 'driveViewUrl',
+  templateId: 'templateId',
+  exportKind: 'exportKind',
+  exportCount: 'exportCount',
+  ipHash: 'ipHash',
+  country: 'country',
+  region: 'region',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -156,7 +176,8 @@ exports.Prisma.NullsOrder = {
 
 exports.Prisma.ModelName = {
   ObituaryStat: 'ObituaryStat',
-  Template: 'Template'
+  Template: 'Template',
+  ArchivedObituary: 'ArchivedObituary'
 };
 
 /**
