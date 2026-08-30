@@ -154,70 +154,93 @@ export function DeathDateFields() {
     : null
 
   return (
-    <div className="grid grid-cols-2 gap-4">
-      <FieldGroup label="تاريخ الوفاة" hint="فارغ افتراضياً — انقر على الحقل ليُملأ بتاريخ اليوم مباشرة">
-        <Input
-          type="date"
-          value={deceased.deathDateISO}
-          onFocus={() => {
-            if (!deceased.deathDateISO) update({ deathDateISO: todayISO() })
-          }}
-          onChange={(e) => update({ deathDateISO: e.target.value })}
-        />
-      </FieldGroup>
-
-      <FieldGroup label="التاريخ الهجري">
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            className="h-9 w-9 shrink-0 rounded-md border border-black/15 hover:bg-black/5"
-            onClick={() => update({ hijriOffsetDays: deceased.hijriOffsetDays - 1 })}
-            aria-label="تأخير يوم"
-          >
-            −
-          </button>
-          <div className="flex-1 rounded-lg border border-black/15 bg-white px-3 py-2 text-center text-sm">
-            {hijriDisplay ?? "—"}
-          </div>
-          <button
-            type="button"
-            className="h-9 w-9 shrink-0 rounded-md border border-black/15 hover:bg-black/5"
-            onClick={() => update({ hijriOffsetDays: deceased.hijriOffsetDays + 1 })}
-            aria-label="تقديم يوم"
-          >
-            +
-          </button>
-        </div>
-        <p className="mt-1 text-xs text-black/45">لضبط اختلاف الرؤية ±يوم</p>
-      </FieldGroup>
-
+    <div className="flex flex-col gap-4">
       {/* حقل "بلد الوفاة" مخفيّ من الواجهة بطلب صريح — القيمة الافتراضية (createEmptyData)
           تبقى محفوظة في البيانات لأغراض الإحصاءات المجهولة فقط، بلا واجهة تعديل. */}
 
-      <div className="col-span-2">
-        <FieldGroup
-          label="مكان وفاة (اختياري)"
-          hint={
-            placeDetectState === "detecting"
-              ? "جارٍ اكتشاف موقعك تلقائياً…"
-              : "فارغ افتراضياً — انقر على الحقل ليُقتَرح مكانك الحالي تلقائياً (قابل للتعديل الكامل). مثال: كاليفورنيا ← يظهر «المتوفي/المتوفاة في كاليفورنيا»"
-          }
-        >
-          <Input
-            value={deceased.deathPlaceNote ?? ""}
-            onFocus={async () => {
-              // نحاول مرة واحدة فقط لكل تركيب — لا نُعيد المحاولة عند كل تركيز
-              // لاحق (خصوصاً بعد فشل أول محاولة: بلا اتصال، أو تعذّر ترجمة الاسم للعربية).
-              if (deceased.deathPlaceNote || placeDetectState !== "idle") return
-              setPlaceDetectState("detecting")
-              const place = await detectWriterPlaceAr()
-              setPlaceDetectState("done")
-              if (place) update({ deathPlaceNote: place })
-            }}
-            onChange={(e) => update({ deathPlaceNote: e.target.value })}
-          />
-        </FieldGroup>
-      </div>
+      {/*
+        تاريخ ومكان الوفاة (والتاريخ الهجري المرافق لهما) مخفيّة من الطباعة
+        افتراضياً (بنفس نمط "إظهار معلومات الميلاد" في BirthInfoFields أسفل) —
+        عطل حقيقي واجهناه: مكان الوفاة كان يُطبع دائماً بلا أي تحكّم، وتاريخ
+        الوفاة لا يُطبع إطلاقاً، بصرف النظر عن رغبة المستخدم. الحقول الثلاثة
+        تختفي معاً كليّاً حين إلغاء التفعيل (لا حقل ظاهر فارغ فقط) — نفس سلوك
+        BirthInfoFields تماماً، بلا مسح أي قيمة محفوظة.
+        ملاحظة: التاريخ الهجري (hijriOffsetDays) يُستهلَك أيضاً في تحويل تاريخ
+        الصلاة والدفن (funeralSentence في render.ts)، المطبوع دائماً بلا علاقة
+        بهذا الخيار — إخفاء الأداة هنا لا يمسح القيمة المخزَّنة (تبقى مُستعملة
+        لذلك الغرض)، فقط تصبح غير قابلة للتعديل من الواجهة ما لم يُفعَّل هذا
+        الخيار. طُلب صراحةً تجميعها هنا رغم هذا الاستهلاك المزدوج.
+      */}
+      <Checkbox
+        label="إظهار تاريخ ومكان الوفاة في النعوة"
+        checked={deceased.showDeathInfo ?? false}
+        onChange={(e) => update({ showDeathInfo: e.target.checked })}
+      />
+
+      {deceased.showDeathInfo && (
+        <div className="grid grid-cols-2 gap-4">
+          <FieldGroup label="تاريخ الوفاة" hint="فارغ افتراضياً — انقر على الحقل ليُملأ بتاريخ اليوم مباشرة">
+            <Input
+              type="date"
+              value={deceased.deathDateISO}
+              onFocus={() => {
+                if (!deceased.deathDateISO) update({ deathDateISO: todayISO() })
+              }}
+              onChange={(e) => update({ deathDateISO: e.target.value })}
+            />
+          </FieldGroup>
+
+          <FieldGroup label="التاريخ الهجري">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                className="h-9 w-9 shrink-0 rounded-md border border-black/15 hover:bg-black/5"
+                onClick={() => update({ hijriOffsetDays: deceased.hijriOffsetDays - 1 })}
+                aria-label="تأخير يوم"
+              >
+                −
+              </button>
+              <div className="flex-1 rounded-lg border border-black/15 bg-white px-3 py-2 text-center text-sm">
+                {hijriDisplay ?? "—"}
+              </div>
+              <button
+                type="button"
+                className="h-9 w-9 shrink-0 rounded-md border border-black/15 hover:bg-black/5"
+                onClick={() => update({ hijriOffsetDays: deceased.hijriOffsetDays + 1 })}
+                aria-label="تقديم يوم"
+              >
+                +
+              </button>
+            </div>
+            <p className="mt-1 text-xs text-black/45">لضبط اختلاف الرؤية ±يوم</p>
+          </FieldGroup>
+
+          <div className="col-span-2">
+            <FieldGroup
+              label="مكان وفاة (اختياري)"
+              hint={
+                placeDetectState === "detecting"
+                  ? "جارٍ اكتشاف موقعك تلقائياً…"
+                  : "فارغ افتراضياً — انقر على الحقل ليُقتَرح مكانك الحالي تلقائياً (قابل للتعديل الكامل). مثال: كاليفورنيا ← يظهر «المتوفي/المتوفاة في كاليفورنيا»"
+              }
+            >
+              <Input
+                value={deceased.deathPlaceNote ?? ""}
+                onFocus={async () => {
+                  // نحاول مرة واحدة فقط لكل تركيب — لا نُعيد المحاولة عند كل تركيز
+                  // لاحق (خصوصاً بعد فشل أول محاولة: بلا اتصال، أو تعذّر ترجمة الاسم للعربية).
+                  if (deceased.deathPlaceNote || placeDetectState !== "idle") return
+                  setPlaceDetectState("detecting")
+                  const place = await detectWriterPlaceAr()
+                  setPlaceDetectState("done")
+                  if (place) update({ deathPlaceNote: place })
+                }}
+                onChange={(e) => update({ deathPlaceNote: e.target.value })}
+              />
+            </FieldGroup>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

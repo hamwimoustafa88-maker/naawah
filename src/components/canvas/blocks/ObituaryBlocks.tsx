@@ -134,7 +134,7 @@ export function ObituaryContent({
    * المرسومة يدوياً (نفس سبب liveTextFontSizeEm الخاص بآية "نفس مطمئنة"). */
   const CUSTOM_TOP_TEXT_FONT_SIZE_EM = 2
   const innaLillahVerse = QURAN_VERSES.find((v) => v.id === "inna-lillah")
-  const identity = identityLine(deceased)
+  const identity = identityLine(deceased, data.format)
   const birthInfo = birthInfoLine(data)
   const relatives = relativesBlocks(data)
   const procession = processionLine(data)

@@ -18,7 +18,7 @@ import { useEditorStore } from "@/store/editorStore"
 import type { Person, RelativeCategoryKey } from "@/lib/obituary/types"
 import { CustomTextOverride } from "@/components/editor/CustomTextOverride"
 import { Card, CardTitle } from "@/components/ui/Card"
-import { Checkbox, Input, Select } from "@/components/ui/Field"
+import { Input, Select, Toggle } from "@/components/ui/Field"
 
 /**
  * تلميحا مكان (placeholder) — لا سطر منفصل — يظهران فقط في فئة "الوالدين"
@@ -31,6 +31,23 @@ function parentHints(gender: Person["gender"]): { name: string; spouse: string }
   return gender === "male"
     ? { name: "اسم الأب", spouse: "زوجة الأب — في حال كان متزوجاً من امرأة ثانية" }
     : { name: "اسم الأم", spouse: "زوج الأم — في حال كانت متزوجة من رجل آخر" }
+}
+
+/** "متوفى" أو "متوفاة" بجنس الشخص نفسه — بلا صيغة "مذكر/مؤنث" مدمَجة، بطلب صريح. */
+function deceasedWordFor(gender: Person["gender"]): "متوفى" | "متوفاة" {
+  return gender === "male" ? "متوفى" : "متوفاة"
+}
+
+/**
+ * كلمتا "الزوج/ة" (اسم/لقب الزوج-ة) و"متوفى/ة" الخاصتَين بالزوج-ة نفسه/ها —
+ * بجنس *الزوج المُدخَل*، أي عكس جنس الشخص صاحب السطر (الأب رجل فزوجه امرأة
+ * "زوجة"، والأم امرأة فزوجها رجل "زوج") — لا بجنس الشخص نفسه. بلا صيغة مدمَجة،
+ * بطلب صريح: "أريد كل جنس أن يكون له زر خاص به بدون عبارة (مذكر/مؤنث)".
+ */
+function spouseTerms(personGender: Person["gender"]): { noun: "زوجة" | "زوج"; deceasedWord: "متوفاة" | "متوفى" } {
+  return personGender === "male"
+    ? { noun: "زوجة", deceasedWord: "متوفاة" }
+    : { noun: "زوج", deceasedWord: "متوفى" }
 }
 
 function PersonRow({
@@ -53,6 +70,7 @@ function PersonRow({
 
   const patch = (p: Partial<Person>) => updatePerson(groupId, person.id, p)
   const hints = isParentsCategory ? parentHints(person.gender) : undefined
+  const spouse = spouseTerms(person.gender)
 
   // السطر الثاني (لقب/اسم الزوج/ة) مطويّ افتراضياً — تخفيفاً للتفاصيل الظاهرة دفعة
   // واحدة لكل قريب. يبدأ مفتوحاً فقط إن كانت بيانات زوج/ة محفوظة سلفاً (بيانات
@@ -78,9 +96,9 @@ function PersonRow({
             <option value="female">أنثى</option>
           </Select>
         )}
-        <Checkbox label="متوفى" checked={person.isDeceased} onChange={(e) => patch({ isDeceased: e.target.checked })} className="shrink-0" />
+        <Toggle label={deceasedWordFor(person.gender)} checked={person.isDeceased} onChange={(checked) => patch({ isDeceased: checked })} className="shrink-0" />
         {allowSpouse && (
-          <Checkbox label="زوج/ة" checked={showSpouse} onChange={(e) => setShowSpouse(e.target.checked)} className="shrink-0" />
+          <Toggle label={spouse.noun} checked={showSpouse} onChange={setShowSpouse} className="shrink-0" />
         )}
         <button type="button" onClick={() => removePerson(groupId, person.id)} className="shrink-0 text-black/30 hover:text-red-600">
           <Trash2 size={16} />
@@ -88,14 +106,14 @@ function PersonRow({
       </div>
       {allowSpouse && showSpouse && (
         <div className="flex flex-wrap items-center gap-1.5 pr-6">
-          <Input placeholder="لقب الزوج/ة" value={person.spouseHonorific ?? ""} onChange={(e) => patch({ spouseHonorific: e.target.value })} className="w-24 min-w-24" />
+          <Input placeholder={`لقب ${spouse.noun}`} value={person.spouseHonorific ?? ""} onChange={(e) => patch({ spouseHonorific: e.target.value })} className="w-24 min-w-24" />
           <Input
-            placeholder={hints?.spouse ?? "اسم الزوج/ة (اختياري)"}
+            placeholder={hints?.spouse ?? `اسم ${spouse.noun} (اختياري)`}
             value={person.spouseName ?? ""}
             onChange={(e) => patch({ spouseName: e.target.value || undefined })}
             className="min-w-32 flex-1"
           />
-          <Checkbox label="الزوج/ة متوفى/ة" checked={person.spouseIsDeceased ?? false} onChange={(e) => patch({ spouseIsDeceased: e.target.checked })} className="shrink-0" />
+          <Toggle label={`${spouse.noun} ${spouse.deceasedWord}`} checked={person.spouseIsDeceased ?? false} onChange={(checked) => patch({ spouseIsDeceased: checked })} className="shrink-0" />
         </div>
       )}
     </div>

@@ -3,7 +3,12 @@
 import { DECEASED_WORDS, MARHOOM_STYLE_WORDS, PARENT_LABELS, relativeCategoryLabel, renderRelativeList } from "./grammar"
 import { formatDualDate, formatWeekdayName } from "./hijri"
 import { DEFAULT_PRINT_FOOTER_TEXT, MOURNING_OPENINGS, SINGLE_HIDDEN_RELATIVE_CATEGORIES } from "./defaults"
-import type { DeceasedInfo, ObituaryData, RelativeGroup } from "./types"
+import type { DeceasedInfo, FormatPrefs, ObituaryData, RelativeGroup } from "./types"
+
+// تُستعمل فقط حين يُستدعى identityLine بلا format صريح (توافقاً مع استدعاءات
+// قديمة/اختبارات لا تمرّره — راجع تعليق identityLine أسفل). مطابقة لافتراضيات
+// createEmptyData() في editorStore.ts حرفياً.
+const DEFAULT_FORMAT_PREFS: FormatPrefs = { numerals: "arabic-indic", months: "levantine", dateOrder: "hijri-first" }
 
 /** يُلحق لام الجر بكلمة تبدأ بـ"ال" التعريف: "الفقيد" → "للفقيد" */
 function attachLam(word: string): string {
@@ -48,8 +53,15 @@ export function deceasedNameLine(deceased: DeceasedInfo): string {
   return [deceased.honorific, deceased.name].filter(Boolean).join(" ")
 }
 
-/** سطر الهوية: زوجة/أرملة المرحوم فلان — أو "المتوفي/المتوفاة في {مكان}". null إن لم ينطبق شيء. */
-export function identityLine(deceased: DeceasedInfo): string | null {
+/**
+ * سطر الهوية: زوجة/أرملة المرحوم فلان — أو "المتوفي/المتوفاة [في {مكان}] [بتاريخ
+ * {تاريخ}]" حين يُفعِّل المستخدم showDeathInfo صراحةً (بنفس نمط showBirthInfo:
+ * تاريخ الوفاة ومكانه مخفيّان من الطباعة افتراضياً، ويظهران معاً حين التفعيل —
+ * لا مكان الوفاة وحده بلا تحكّم كما كان). format بارامتر اختياري (لتنسيق
+ * التاريخ) يحمل افتراضاً معقولاً لتوافق استدعاءات لا تمرّره (اختبارات لا تلمس
+ * هذا الفرع تحديداً). null إن لم ينطبق شيء.
+ */
+export function identityLine(deceased: DeceasedInfo, format: FormatPrefs = DEFAULT_FORMAT_PREFS): string | null {
   if (deceased.gender === "female" && deceased.spouseName) {
     const style = deceased.widowStyle ?? "زوجة"
     // "حرم المغفور له" تحمل معنى الوفاة داخل العبارة نفسها — لا نُضيف "المرحوم" بعدها.
@@ -64,9 +76,22 @@ export function identityLine(deceased: DeceasedInfo): string | null {
     const marker = spouseIsDeceasedEffective && !honorificAlreadyMarksDeath && !styleAlreadyMarksDeath ? "المرحوم" : ""
     return [style, marker, deceased.spouseHonorific, deceased.spouseName].filter(Boolean).join(" ")
   }
-  if (deceased.deathPlaceNote) {
+  if (deceased.showDeathInfo && (deceased.deathPlaceNote || deceased.deathDateISO)) {
     const word = deceased.gender === "male" ? "المتوفي" : "المتوفاة"
-    return `${word} في ${deceased.deathPlaceNote}`
+    const dateStr = deceased.deathDateISO
+      ? formatDualDate(deceased.deathDateISO, {
+          hijriOffsetDays: deceased.hijriOffsetDays,
+          order: format.dateOrder,
+          numerals: format.numerals,
+          months: format.months,
+        })
+      : ""
+    const parts = [
+      word,
+      deceased.deathPlaceNote && `في ${deceased.deathPlaceNote}`,
+      dateStr && `بتاريخ ${dateStr}`,
+    ]
+    return parts.filter(Boolean).join(" ")
   }
   return null
 }

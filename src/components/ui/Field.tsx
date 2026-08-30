@@ -44,6 +44,41 @@ export function Checkbox({ className, label, ...props }: InputHTMLAttributes<HTM
   )
 }
 
+/**
+ * زر تبديل (on/off) بنصّه الكامل داخله — بدل مربّع اختيار تقليدي (وبدل مفتاح
+ * انزلاقي/switch جُرِّب أولاً ثم رُفض صراحةً: طُلب زر بنص "ليكون مفهوماً بنفس
+ * الشكل" الشائع في التطبيق). لذا نفس أصناف زرَّي "ذكر/أنثى" في IdentityFields
+ * أعلاه بالضبط — حدّ خفيف وخلفية بيضاء حين متوقف، تعبئة accent كاملة بنص أبيض
+ * حين مفعّل — فيبدو عضواً طبيعياً من نفس عائلة الأزرار في التطبيق لا عنصراً
+ * غريباً عنها. <button> حقيقي لا <input> مخفياً خلفه (لا حاجة له بعد اختفاء شكل
+ * المفتاح)؛ role="switch"+aria-checked يحملان الدلالة الصحيحة لقارئ الشاشة مع
+ * سلوك الأزرار الطبيعي (Enter/Space، تركيز واضح) دون أي عنصر إضافي خفي.
+ */
+export function Toggle({
+  className, label, checked, onChange,
+}: {
+  className?: string
+  label: string
+  checked: boolean
+  onChange: (checked: boolean) => void
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={() => onChange(!checked)}
+      className={cn(
+        "rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors",
+        checked ? "border-accent bg-accent text-white" : "border-black/15 bg-white text-foreground hover:bg-black/5",
+        className
+      )}
+    >
+      {label}
+    </button>
+  )
+}
+
 export function FieldGroup({ label, children, hint }: { label: string; children: ReactNode; hint?: string }) {
   return (
     <div>

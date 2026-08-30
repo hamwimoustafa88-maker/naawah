@@ -59,6 +59,38 @@ export function BottomSheet({
     return () => clearTimeout(timeout)
   }, [open])
 
+  // ارتفاع الكيبورد الظاهر حالياً (px) — يُستعمل لرفع اللوحة فوقه تماماً. مقصور
+  // على هذا المكوّن وحده عمداً (لا حلّ عام على مستوى الصفحة عبر meta
+  // interactiveWidget): جُرِّب ذاك أولاً فعلاً وتسبّب بتعليق حقيقي على الجهاز —
+  // إجبار Chrome على إعادة تخطيط layout viewport للصفحة *كاملة* (بما فيها معاينة
+  // الكانفاس الحيّة الثقيلة أسفل الصفحة) عند كل حرف يُكتَب فتح/أغلق تلميحات لوحة
+  // المفاتيح. الحل هنا يقرأ VisualViewport API (يُبلَّغ فيها المتصفح فعلياً بارتفاع
+  // الكيبورد بلا أي تغيير في layout viewport العام) ويُحرّك عنصر اللوحة نفسه فقط
+  // عبر transform — صفر أثر على بقية شجرة الصفحة.
+  const [keyboardInset, setKeyboardInset] = useState(0)
+
+  useEffect(() => {
+    if (!open) return
+    const vv = window.visualViewport
+    if (!vv) return
+    const updateInset = () => {
+      // الفرق بين ارتفاع نافذة التخطيط الكامل وارتفاع المنطقة المرئية الفعلية
+      // (+ إزاحتها العلوية إن انزلقت الصفحة لأعلى لإظهار الحقل المركَّز) هو
+      // تقريباً ارتفاع الكيبورد المُغطّى؛ Math.max يمنع رقماً سالباً وقت تكبير/تصغير
+      // بالقرص (pinch-zoom) بلا كيبورد مفتوح أصلاً.
+      const inset = window.innerHeight - vv.height - vv.offsetTop
+      setKeyboardInset(Math.max(0, Math.round(inset)))
+    }
+    updateInset()
+    vv.addEventListener("resize", updateInset)
+    vv.addEventListener("scroll", updateInset)
+    return () => {
+      vv.removeEventListener("resize", updateInset)
+      vv.removeEventListener("scroll", updateInset)
+      setKeyboardInset(0)
+    }
+  }, [open])
+
   useEffect(() => {
     if (!open) return
     const onKeyDown = (e: KeyboardEvent) => {
@@ -103,11 +135,16 @@ export function BottomSheet({
         onClick={onClose}
       />
       <div
-        className={cn(
-          "absolute inset-x-0 bottom-0 flex max-h-[86vh] flex-col rounded-t-2xl bg-white shadow-2xl transition-transform duration-200 ease-out",
-          entered ? "translate-y-0" : "translate-y-full"
-        )}
-        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+        className="absolute inset-x-0 bottom-0 flex max-h-[86vh] flex-col rounded-t-2xl bg-white shadow-2xl transition-transform duration-200 ease-out"
+        style={{
+          paddingBottom: keyboardInset > 0 ? 0 : "env(safe-area-inset-bottom)",
+          // إغلاق/فتح اللوحة (انزلاق كامل الطول) ورفعها فوق الكيبورد (keyboardInset)
+          // كلاهما بترجمة (translate) واحدة مدمجة هنا — لا صنف Tailwind منفصل
+          // (translate-y-0/translate-y-full) لتفادي تعارض تحريكَين مستقلَّين على نفس
+          // transform. راجع تعليق keyboardInset أعلى لسبب اعتماد VisualViewport API
+          // هنا حصراً بدل حل عام على مستوى الصفحة.
+          transform: entered ? `translateY(-${keyboardInset}px)` : "translateY(100%)",
+        }}
         onTransitionEnd={(e) => {
           // نزيل اللوحة من الـDOM فقط بعد اكتمال حركة الانزلاق للخارج فعلياً
           // (لا فور تغيّر open) — بلا هذا الشرط تُقطع حركة الإغلاق منتصفها.

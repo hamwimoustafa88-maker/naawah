@@ -6,6 +6,7 @@
 
 import { CustomTextOverride } from "@/components/editor/CustomTextOverride"
 import { todayISO } from "@/lib/obituary/defaults"
+import { formatDualDate } from "@/lib/obituary/hijri"
 import {
   defaultClosingDua, defaultMourningLine, defaultPrintFooterText,
 } from "@/lib/obituary/render"
@@ -17,6 +18,11 @@ import { Card, CardTitle } from "@/components/ui/Card"
 /** نص افتراضي جاهز للتعديل — يُملأ فعلياً (لا مجرد placeholder رمادي) عند أول
  * تركيز على حقل "التعزية العامة" إن كان فارغاً، فيتمكّن المستخدم من تعديله مباشرة. */
 const DEFAULT_CONDOLENCES_GENERAL = "تُقبل التعازي قبل الدفن وبعده في منزل الفقيد"
+
+/** نفس نمط DEFAULT_CONDOLENCES_GENERAL — يُملأ فعلياً (لا placeholder رمادي فقط)
+ * عند أول تركيز على حقل "من أين سيُشيَّع الجثمان"، فيتابع المستخدم الكتابة مباشرة
+ * بعد "محلة" بدل الحاجة لمسح النص الرمادي وكتابة الجملة كاملة من الصفر. */
+const DEFAULT_PROCESSION_FROM = "منزله الكائن في محلة "
 
 /**
  * "ملاحظة الوقت" — كانت حقل نص حرّ (بطلب صريح صارت لائحة اختيار ثابتة بدل ذلك).
@@ -48,8 +54,11 @@ export function InstitutionFields() {
       <FieldGroup label="من أين سيُشيَّع الجثمان" hint="يُضاف تلقائياً في المقدمة: «سيُشيَّع الجثمان من …»">
         <Input
           value={funeral.processionFrom ?? ""}
+          onFocus={() => {
+            if (!funeral.processionFrom) updateFuneral({ processionFrom: DEFAULT_PROCESSION_FROM })
+          }}
           onChange={(e) => updateFuneral({ processionFrom: e.target.value })}
-          placeholder="منزله الكائن في محلة …"
+          placeholder={DEFAULT_PROCESSION_FROM}
         />
       </FieldGroup>
     </div>
@@ -58,7 +67,22 @@ export function InstitutionFields() {
 
 export function PrayerBurialFields() {
   const funeral = useEditorStore((s) => s.data.funeral)
+  const deceased = useEditorStore((s) => s.data.deceased)
+  const format = useEditorStore((s) => s.data.format)
   const updateFuneral = useEditorStore((s) => s.updateFuneral)
+  const updateDeceased = useEditorStore((s) => s.updateDeceased)
+
+  // نفس منطق funeralSentence() في render.ts بالضبط: تاريخ الدفن إن حُدِّد، وإلا
+  // تاريخ الوفاة احتياطياً — الهجري المعروض هنا يطابق ما يُطبع فعلياً في النعوة.
+  const effectiveBurialDate = funeral.burialDateISO || deceased.deathDateISO
+  const hijriDisplay = effectiveBurialDate
+    ? formatDualDate(effectiveBurialDate, {
+      hijriOffsetDays: deceased.hijriOffsetDays,
+      order: "hijri-first",
+      numerals: format.numerals,
+      months: format.months,
+    }).split("، الموافق")[0] // السطر الهجري فقط، بلا الميلادي المكرَّر هنا
+    : null
 
   return (
     <div className="flex flex-col gap-4">
@@ -76,16 +100,47 @@ export function PrayerBurialFields() {
         </FieldGroup>
       </div>
 
-      <FieldGroup label="تاريخ الصلاة والدفن" hint="فارغ افتراضياً (يُعتمد تاريخ الوفاة) — انقر على الحقل ليُملأ بتاريخ اليوم مباشرة">
-        <Input
-          type="date"
-          value={funeral.burialDateISO ?? ""}
-          onFocus={() => {
-            if (!funeral.burialDateISO) updateFuneral({ burialDateISO: todayISO() })
-          }}
-          onChange={(e) => updateFuneral({ burialDateISO: e.target.value })}
-        />
-      </FieldGroup>
+      <div className="grid grid-cols-2 gap-4">
+        <FieldGroup label="تاريخ الصلاة والدفن" hint="فارغ افتراضياً (يُعتمد تاريخ الوفاة) — انقر على الحقل ليُملأ بتاريخ اليوم مباشرة">
+          <Input
+            type="date"
+            value={funeral.burialDateISO ?? ""}
+            onFocus={() => {
+              if (!funeral.burialDateISO) updateFuneral({ burialDateISO: todayISO() })
+            }}
+            onChange={(e) => updateFuneral({ burialDateISO: e.target.value })}
+          />
+        </FieldGroup>
+
+        {/* نفس فكرة "التاريخ الهجري" في (بيانات الفقيد ← إظهار تاريخ ومكان الوفاة)
+            بالضبط — وتستهلك نفس حقل deceased.hijriOffsetDays المشترك عمداً (لا
+            حقل مستقل خاص بتاريخ الدفن)، فتعديل يوم (+/-) من أيّ من الموضعين
+            ينعكس فوراً في الموضع الآخر أيضاً، كما طُلب صراحةً. */}
+        <FieldGroup label="التاريخ الهجري">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              className="h-9 w-9 shrink-0 rounded-md border border-black/15 hover:bg-black/5"
+              onClick={() => updateDeceased({ hijriOffsetDays: deceased.hijriOffsetDays - 1 })}
+              aria-label="تأخير يوم"
+            >
+              −
+            </button>
+            <div className="flex-1 rounded-lg border border-black/15 bg-white px-3 py-2 text-center text-sm">
+              {hijriDisplay ?? "—"}
+            </div>
+            <button
+              type="button"
+              className="h-9 w-9 shrink-0 rounded-md border border-black/15 hover:bg-black/5"
+              onClick={() => updateDeceased({ hijriOffsetDays: deceased.hijriOffsetDays + 1 })}
+              aria-label="تقديم يوم"
+            >
+              +
+            </button>
+          </div>
+          <p className="mt-1 text-xs text-black/45">لضبط اختلاف الرؤية ±يوم — نفس الضبط في (إظهار تاريخ ومكان الوفاة)</p>
+        </FieldGroup>
+      </div>
 
       <FieldGroup label="مكان الدفن (اختياري)">
         <Input value={funeral.burialLocation ?? ""} onChange={(e) => updateFuneral({ burialLocation: e.target.value })} />

@@ -164,13 +164,24 @@ describe("identityLine — القاعدة: زوجة/أرملة تتغيّر حس
     expect(line).toBe("أرملة المرحوم عبد الكريم عيتاني")
   })
 
-  it("ذكر توفي في الخارج (المرفق ٥)", () => {
+  it("ذكر توفي في الخارج، بلا تفعيل إظهار تاريخ/مكان الوفاة ← لا يُطبع شيء (عطل حقيقي سابق: كان المكان يُطبع دائماً بلا تحكّم)", () => {
     const line = identityLine({
       gender: "male", name: "عثمان عزالدين عيتاني",
       deathDateISO: "2026-07-14", hijriOffsetDays: 0, country: "لبنان",
       hasBasmala: false, hasInnaLillah: false, deathPlaceNote: "كاليفورنيا",
     })
-    expect(line).toBe("المتوفي في كاليفورنيا")
+    expect(line).toBeNull()
+  })
+
+  it("ذكر توفي في الخارج (المرفق ٥)، بعد تفعيل showDeathInfo ← المكان والتاريخ معاً", () => {
+    const line = identityLine({
+      gender: "male", name: "عثمان عزالدين عيتاني",
+      deathDateISO: "2026-07-14", hijriOffsetDays: 0, country: "لبنان",
+      hasBasmala: false, hasInnaLillah: false, deathPlaceNote: "كاليفورنيا",
+      showDeathInfo: true,
+    })
+    expect(line).toContain("المتوفي في كاليفورنيا")
+    expect(line).toContain("بتاريخ")
   })
 })
 
