@@ -5,7 +5,7 @@
 // مثبَّتة في المشروع) — نفس أسلوب TextSettingsPanel.tsx (إغلاق بالنقر خارجاً + Esc) لكن
 // بتصميم بوتوم-شيت كامل الشاشة بدل بوب-أوفر صغير، ومع حركة انزلاق دخول/خروج بسيطة.
 
-import { useEffect, useState, type ReactNode } from "react"
+import { useEffect, useRef, useState, type ReactNode } from "react"
 import { ChevronRight, X } from "lucide-react"
 import { cn } from "@/lib/utils/cn"
 
@@ -74,27 +74,42 @@ export function BottomSheet({
     const vv = window.visualViewport
     if (!vv) return
     const updateInset = () => {
-      // الفرق بين ارتفاع نافذة التخطيط الكامل وارتفاع المنطقة المرئية الفعلية
-      // (+ إزاحتها العلوية إن انزلقت الصفحة لأعلى لإظهار الحقل المركَّز) هو
-      // تقريباً ارتفاع الكيبورد المُغطّى؛ Math.max يمنع رقماً سالباً وقت تكبير/تصغير
-      // بالقرص (pinch-zoom) بلا كيبورد مفتوح أصلاً.
-      const inset = window.innerHeight - vv.height - vv.offsetTop
-      setKeyboardInset(Math.max(0, Math.round(inset)))
+      // ارتفاع الكيبورد = ارتفاع نافذة التخطيط − ارتفاع المنطقة المرئية. **بلا
+      // vv.offsetTop عمداً**: إدخاله هنا يفتح حلقة تغذية راجعة حقيقية مع المتصفح —
+      // Chrome على أندرويد يُزحلق المنطقة المرئية بنفسه ليُظهر الحقل المركَّز
+      // (offsetTop يكبر) فيصغر المقدار المحسوب فتهبط اللوحة فيُحجب الحقل مجدداً
+      // فيُزحلق Chrome ثانيةً… بلا نهاية. الفرق بين الارتفاعين وحده هو ارتفاع
+      // الكيبورد فعلياً، وهو ثابت بصرف النظر عن أي تزحلق. Math.max يمنع قيمة
+      // سالبة عند التكبير بالقرص (pinch-zoom) بلا كيبورد مفتوح أصلاً.
+      setKeyboardInset(Math.max(0, Math.round(window.innerHeight - vv.height)))
     }
     updateInset()
+    // "resize" وحده — **بلا مستمع "scroll"**: القيمة أعلاه لم تعد تعتمد على تزحلق
+    // المنطقة المرئية إطلاقاً، وأحداث scroll تنهمر بكثافة أثناء تحريك المتصفح
+    // للحقل المركَّز، فمستمعها صار عبئاً بلا أي فائدة (وكان نصف الحلقة المذكورة أعلاه).
+    // تغيّر ارتفاع الكيبورد نفسه يصل عبر "resize" دائماً.
     vv.addEventListener("resize", updateInset)
-    vv.addEventListener("scroll", updateInset)
     return () => {
       vv.removeEventListener("resize", updateInset)
-      vv.removeEventListener("scroll", updateInset)
       setKeyboardInset(0)
     }
   }, [open])
 
+  // onClose يصل كدالة سهمية جديدة في كل تصيير للأب (MobileEditorView.tsx يعرّف
+  // closeSheet داخل جسم المكوّن) — فلو بقي ضمن deps الـeffect أدناه، لأُعيد تشغيل
+  // ذلك الـeffect مع **كل ضغطة مفتاح**: فكّ مستمعات وإعادة تركيبها، واستدعاء
+  // matchMedia من جديد، والأهمّ الكتابة على document.body.style.overflow مرتين
+  // (تنظيف ثم ضبط) — وكل كتابة على نمط <body> تُبطِل حساب الأنماط للمستند بأكمله.
+  // مرجع ثابت يُبقي الـeffect معتمداً على `open` وحدها، بلا تغيير أي سلوك.
+  const onCloseRef = useRef(onClose)
+  useEffect(() => {
+    onCloseRef.current = onClose
+  }, [onClose])
+
   useEffect(() => {
     if (!open) return
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose()
+      if (e.key === "Escape") onCloseRef.current()
     }
     document.addEventListener("keydown", onKeyDown)
 
@@ -119,7 +134,7 @@ export function BottomSheet({
       desktopQuery.removeEventListener("change", syncOverflow)
       document.body.style.overflow = prevOverflow
     }
-  }, [open, onClose])
+  }, [open])
 
   if (!mounted) return null
 
