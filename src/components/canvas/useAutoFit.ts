@@ -180,8 +180,24 @@ export function useAutoFit(deps: unknown[]) {
       }
     }
 
-    if (typeof document !== "undefined" && document.fonts?.ready?.then) {
-      document.fonts.ready.then(remeasureIfLive)
+    // **الشرط `status !== "loaded"` إلزامي، وغيابه كان عطلاً حقيقياً**: `document.fonts.ready`
+    // وعدٌ (Promise) يُحسم مرة واحدة عند اكتمال تحميل الخطوط ويبقى محسوماً بعدها للأبد.
+    // فبلا هذا الشرط، كان `.then(...)` يُسجَّل في *كل* تشغيل لهذا الـeffect (أي مع كل
+    // ضغطة مفتاح)، ولأنه محسوم سلفاً كان ينطلق فوراً كمهمة دقيقة (microtask) في كل مرة.
+    // وremeasureIfLive يُصفّر roundRef — أي يُبطِل قاطع الأمان MAX_SETTLE_ROUNDS كلياً:
+    // تنفد الجولات الثلاث، ثم تُصفَّر من جديد، فتبدأ ثلاث أخرى… بلا نهاية.
+    // هذا لا يُلاحَظ ما دام القياس يستقرّ على قيمة واحدة (fs === scale فلا setState).
+    // لكنه يتحوّل إلى **حلقة لا نهائية** متى تذبذب القياس بين قيمتين — وهو ما يحدث
+    // تحديداً عند وجود صورة الفقيد: `photoScale = Math.max(scale, 0.6)` في
+    // ObituaryBlocks.tsx يجعل ارتفاع الصورة بالبكسل المطلق مشتقاً من ناتج auto-fit
+    // نفسه، فيصير الارتفاع المقيس دالةً في scale الذي نحسبه منه (تغذية راجعة).
+    // كل دورة تُنفّذ حتى ٢٤ قياس تخطيط متزامناً للصفحة كاملة، فلا يُفلت الخيط
+    // الرئيسي أبداً: تتجمّد الصفحة والكيبورد والمتصفح. بلا صورة لا تذبذب ولا تجمّد.
+    // بهذا الشرط يُسجَّل المستمع مرة واحدة فقط أثناء التحميل الفعلي للخطوط (وهو
+    // الغرض الأصلي المشروح أعلاه)، فيستعيد MAX_SETTLE_ROUNDS دوره كقاطع أمان حقيقي.
+    const fontSet = typeof document !== "undefined" ? document.fonts : undefined
+    if (fontSet && fontSet.status !== "loaded" && fontSet.ready?.then) {
+      fontSet.ready.then(remeasureIfLive)
     }
 
     // نفس فئة العطل تماماً، لكن مصدرها هنا مخطوطات SVG اليدوية (Calligraphy.tsx):
