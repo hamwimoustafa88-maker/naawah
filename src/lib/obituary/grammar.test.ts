@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest"
 import { joinWithWaw, relativeCategoryLabel, renderPersonCore, renderRelativeList } from "./grammar"
 import { calculateAge, formatDualDate, formatWeekdayName, toNumerals } from "./hijri"
 import {
-  closingDua, deceasedNameLine, defaultFamiliesLine, familiesLine, funeralSentence, identityLine, maghfoorLine, relativesBlocks,
+  closingDua, deceasedNameLine, defaultFamiliesLine, familiesLine, funeralSentence, identityLine, mourningLine, relativesBlocks,
 } from "./render"
 import { SAMPLE_OBITUARY_DATA } from "./defaults"
 import type { ObituaryData, Person } from "./types"
@@ -174,9 +174,11 @@ describe("identityLine — القاعدة: زوجة/أرملة تتغيّر حس
   })
 })
 
-describe("maghfoorLine و deceasedNameLine و closingDua — تصريف حسب جنس الفقيد", () => {
-  it("ذكر", () => {
-    expect(maghfoorLine(SAMPLE_OBITUARY_DATA)).toBe("المغفور له بإذن الله")
+describe("mourningLine و deceasedNameLine و closingDua — تصريف حسب جنس الفقيد", () => {
+  it("ذكر — جملة النعي وسطر الترحّم مدمجان في سطر واحد", () => {
+    expect(mourningLine(SAMPLE_OBITUARY_DATA)).toBe(
+      "بمزيد من الرضا والتسليم بقضاء الله وقدره ننعي إليكم وفاة المغفور له بإذن الله"
+    )
     expect(deceasedNameLine(SAMPLE_OBITUARY_DATA.deceased)).toBe("الحاج محمود محمد شهاب")
   })
 

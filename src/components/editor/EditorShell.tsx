@@ -1,45 +1,51 @@
 "use client"
 
+import { Fragment } from "react"
 import { ObituaryCanvas } from "@/components/canvas/ObituaryCanvas"
 import { ResponsiveCanvasFrame } from "@/components/canvas/ResponsiveCanvasFrame"
 import { useEditorStore } from "@/store/editorStore"
-import { cn } from "@/lib/utils/cn"
 import { ExportBar } from "@/components/editor/ExportBar"
 import { MobileEditorView } from "@/components/editor/mobile/MobileEditorView"
+import { SECTION_GROUPS } from "@/components/editor/mobile/sectionRegistry"
 import { Step1Deceased } from "@/components/editor/steps/Step1Deceased"
 import { Step2Funeral } from "@/components/editor/steps/Step2Funeral"
 import { Step3Relatives } from "@/components/editor/steps/Step3Relatives"
 import { Step4Template } from "@/components/editor/steps/Step4Template"
 
-const STEPS = [
-  { id: 1, label: "بيانات الفقيد", Component: Step1Deceased },
-  { id: 2, label: "الجنازة والتعزية", Component: Step2Funeral },
-  { id: 3, label: "الأقارب", Component: Step3Relatives },
-  { id: 4, label: "القالب", Component: Step4Template },
-]
+/**
+ * سطح المكتب حصراً (استثناءً صريحاً — الجوال يبقى بلا أي تغيير، MobileEditorView.tsx
+ * مستقل بالكامل): الأقسام الأربعة (كانت خطوات منفصلة بتبويبات + زرَّي سابق/تالي)
+ * صارت مجمَّعة معاً في عمود تمرير واحد متواصل — بطلب صريح لتقليل عدد الأزرار.
+ * كل قسم يحتفظ ببطاقاته الداخلية الخاصة (Card/CardTitle) كما هي تماماً — العنوان
+ * أسفل خاص بالقسم الأربعة نفسها (تُطابق SECTION_GROUPS المُستعملة أصلاً في قائمة
+ * الجوال — مصدر واحد للتسميات بلا تكرار حرفي)، لا ببطاقاته الفرعية الداخلية.
+ */
+const STEPS = [Step1Deceased, Step2Funeral, Step3Relatives, Step4Template]
 
-/** زرا التنقّل بين الخطوات — يظهران أعلى النموذج وأسفله معاً. */
-function StepNav({ step, onPrev, onNext }: { step: number; onPrev: () => void; onNext: () => void }) {
+// أرقام عربية-هندية ثابتة (١-٤) — زخرفة بصرية بحتة لواجهة المحرر نفسها، لا صلة لها
+// بخيار "نظام الأرقام" الخاص بمحتوى النعوة (data.format.numerals)، فلا داعٍ لأي
+// أداة تنسيق مشتركة هنا.
+const SECTION_NUMERALS = ["١", "٢", "٣", "٤"]
+
+/**
+ * عنوان القسم مدمَج داخل الخط الفاصل نفسه (لا سطر مستقل فوقه) — بطلب صريح: رقم
+ * القسم داخل دائرة صغيرة بلون accent ثم التسمية، يليهما خط رفيع يمتدّ لبقية
+ * العرض. يظهر أيضاً فوق القسم الأول (لا بين الأقسام فقط) فيحمل كل قسم عنوانه.
+ */
+function SectionDivider({ number, title }: { number: string; title: string }) {
   return (
-    <div className="flex justify-between">
-      <button disabled={step === 1} onClick={onPrev} className="text-sm font-medium text-black/55 disabled:opacity-30">
-        ← السابق
-      </button>
-      <button disabled={step === STEPS.length} onClick={onNext} className="text-sm font-medium text-accent disabled:opacity-30">
-        التالي →
-      </button>
+    <div className="flex items-center gap-3">
+      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent/15 text-[11px] font-bold text-accent">
+        {number}
+      </span>
+      <span className="shrink-0 text-sm font-bold text-black/70">{title}</span>
+      <div className="h-px flex-1 bg-black/10" />
     </div>
   )
 }
 
 export function EditorShell() {
   const data = useEditorStore((s) => s.data)
-  const step = useEditorStore((s) => s.step)
-  const setStep = useEditorStore((s) => s.setStep)
-
-  const Active = STEPS.find((s) => s.id === step)?.Component ?? Step1Deceased
-  const goPrev = () => setStep(step - 1)
-  const goNext = () => setStep(step + 1)
 
   return (
     <>
@@ -48,31 +54,15 @@ export function EditorShell() {
         <MobileEditorView />
       </div>
 
-      {/* سطح المكتب: نموذج خطوات + معاينة جنباً إلى جنب — بلا أي تغيير عن السابق */}
+      {/* سطح المكتب: الأقسام الأربعة معاً في عمود واحد + معاينة جنباً إلى جنب */}
       <div className="mx-auto hidden max-w-7xl grid-cols-1 gap-6 px-4 py-6 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(280px,480px)]">
-        <div className="flex min-w-0 flex-col gap-4">
-          <div className="flex gap-1 overflow-x-auto rounded-xl bg-black/5 p-1">
-            {STEPS.map((s) => (
-              <button
-                key={s.id}
-                onClick={() => setStep(s.id)}
-                className={cn(
-                  "flex-1 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                  step === s.id ? "bg-white shadow-sm text-foreground" : "text-black/55 hover:text-black/80"
-                )}
-              >
-                {s.id}. {s.label}
-              </button>
-            ))}
-          </div>
-
-          <StepNav step={step} onPrev={goPrev} onNext={goNext} />
-
-          <Active />
-
-          <div className="pt-2">
-            <StepNav step={step} onPrev={goPrev} onNext={goNext} />
-          </div>
+        <div className="flex min-w-0 flex-col gap-6">
+          {STEPS.map((Section, i) => (
+            <Fragment key={i}>
+              <SectionDivider number={SECTION_NUMERALS[i]} title={SECTION_GROUPS[i].label} />
+              <Section />
+            </Fragment>
+          ))}
         </div>
 
         {/* لوحة المعاينة — تتقلّص لتملأ عرض حاويتها بالضبط، بلا أي scroll أفقي */}

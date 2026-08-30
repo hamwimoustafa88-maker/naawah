@@ -7,7 +7,7 @@
 import { CustomTextOverride } from "@/components/editor/CustomTextOverride"
 import { todayISO } from "@/lib/obituary/defaults"
 import {
-  defaultClosingDua, defaultMaghfoorLine, defaultMourningSentence, defaultPrintFooterText,
+  defaultClosingDua, defaultMourningLine, defaultPrintFooterText,
 } from "@/lib/obituary/render"
 import { getTemplate } from "@/lib/templates/registry"
 import { useEditorStore } from "@/store/editorStore"
@@ -17,6 +17,17 @@ import { Card, CardTitle } from "@/components/ui/Card"
 /** نص افتراضي جاهز للتعديل — يُملأ فعلياً (لا مجرد placeholder رمادي) عند أول
  * تركيز على حقل "التعزية العامة" إن كان فارغاً، فيتمكّن المستخدم من تعديله مباشرة. */
 const DEFAULT_CONDOLENCES_GENERAL = "تُقبل التعازي قبل الدفن وبعده في منزل الفقيد"
+
+/**
+ * "ملاحظة الوقت" — كانت حقل نص حرّ (بطلب صريح صارت لائحة اختيار ثابتة بدل ذلك).
+ * القيمة تتضمّن "بعد صلاة" صراحةً (بطلب صريح) — تُدرَج كما هي مباشرة داخل
+ * funeralSentence (راجع render.ts) فتُطبع حرفياً "...جثمانه الطاهر بعد صلاة
+ * الفجر يوم...". هذا يخالف عمداً صيغة SAMPLE_OBITUARY_DATA المنفصلة ("عصر" وحدها
+ * بلا بادئة) — تلك مطابقة حرفية لمرفق مرجعي حقيقي مختلف، تبقى كما هي بلا تغيير.
+ */
+const PRAYER_TIME_NOTE_OPTIONS = [
+  "بعد صلاة الفجر", "بعد صلاة الظهر", "بعد صلاة العصر", "بعد صلاة المغرب", "بعد صلاة العشاء", "بعد صلاة الجمعة",
+]
 
 export function InstitutionFields() {
   const funeral = useEditorStore((s) => s.data.funeral)
@@ -55,12 +66,13 @@ export function PrayerBurialFields() {
         <FieldGroup label="مكان صلاة الجنازة">
           <Input value={funeral.prayerLocation} onChange={(e) => updateFuneral({ prayerLocation: e.target.value })} placeholder="مسجد الشهداء" />
         </FieldGroup>
-        <FieldGroup label="ملاحظة الوقت" hint="مثال: بعد صلاة الظهر/العصر">
-          <Input
-            value={funeral.prayerTimeNote ?? ""}
-            onChange={(e) => updateFuneral({ prayerTimeNote: e.target.value })}
-            placeholder="عصر"
-          />
+        <FieldGroup label="ملاحظة الوقت">
+          <Select value={funeral.prayerTimeNote ?? ""} onChange={(e) => updateFuneral({ prayerTimeNote: e.target.value || undefined })}>
+            <option value="">بلا</option>
+            {PRAYER_TIME_NOTE_OPTIONS.map((label) => (
+              <option key={label} value={label}>{label}</option>
+            ))}
+          </Select>
         </FieldGroup>
       </div>
 
@@ -120,6 +132,15 @@ export function CondolencesFields() {
         </div>
       )}
 
+      <div>
+        <Checkbox
+          label="إطار مربع حول التشييع والصلاة والدفن والتعزية"
+          checked={funeral.emphasizeFuneralBox ?? true}
+          onChange={(e) => updateFuneral({ emphasizeFuneralBox: e.target.checked })}
+        />
+        <p className="mt-1 text-xs text-black/45">للتركيز على المعلومات المهمة بداخله</p>
+      </div>
+
       <FieldGroup label="ملاحظات إضافية (اختياري)">
         <Textarea value={funeral.extraNotes ?? ""} onChange={(e) => updateFuneral({ extraNotes: e.target.value })} />
       </FieldGroup>
@@ -174,18 +195,17 @@ export function CustomTextsFields() {
       <p className="-mt-1 text-xs text-black/45">
         كل جملة ثابتة في النعوة قابلة للتحكم — فعّل &quot;تخصيص&quot; لتغيير أي منها بنصّك الخاص.
       </p>
-      <CustomTextOverride
-        label="جملة النعي"
-        computedDefault={defaultMourningSentence()}
-        value={customTexts?.mourningSentence}
-        onChange={(v) => updateCustomText("mourningSentence", v)}
-      />
-      <CustomTextOverride
-        label="سطر الترحّم"
-        computedDefault={defaultMaghfoorLine(deceased.gender)}
-        value={customTexts?.maghfoorLine}
-        onChange={(v) => updateCustomText("maghfoorLine", v)}
-      />
+      <div>
+        <CustomTextOverride
+          label="جملة النعي"
+          computedDefault={defaultMourningLine(deceased.gender)}
+          value={customTexts?.mourningLine}
+          onChange={(v) => updateCustomText("mourningLine", v)}
+        />
+        <p className="mt-1 text-xs text-black/45">
+          مدمجة الآن مع سطر الترحّم في سطر واحد — عبارة الترحّم (المرحوم/الشهيد) في (١. بيانات الفقيد) منفصلة تماماً عن هذا السطر.
+        </p>
+      </div>
       <CustomTextOverride
         label="خاتمة الدعاء"
         computedDefault={defaultClosingDua(deceased.gender)}
@@ -195,7 +215,7 @@ export function CustomTextsFields() {
 
       <div className="border-t border-black/10 pt-4">
         <Checkbox
-          label="إظهار فوتر المطبعة أسفل النعوة"
+          label="إظهار فوتر سطر أسفل النعوة"
           checked={printFooterChecked}
           onChange={(e) => updateFuneral({ printFooterEnabled: e.target.checked })}
         />

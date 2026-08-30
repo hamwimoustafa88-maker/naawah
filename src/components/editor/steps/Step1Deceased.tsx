@@ -5,13 +5,16 @@
 // أقسام الجوال الصغيرة (mobile/sectionRegistry.tsx) بلا أي تكرار للمنطق أو الحقول.
 
 import { useState } from "react"
+import { Minus, Plus } from "lucide-react"
+import { cn } from "@/lib/utils/cn"
 import { ARAB_COUNTRIES, honorificsFor, QURAN_VERSES, todayISO } from "@/lib/obituary/defaults"
 import { formatDualDate } from "@/lib/obituary/hijri"
 import { detectWriterPlaceAr } from "@/lib/location/detectPlace"
 import { useEditorStore } from "@/store/editorStore"
-import { Checkbox, FieldGroup, Input, Select } from "@/components/ui/Field"
+import { Checkbox, FieldGroup, Input, Select, Textarea } from "@/components/ui/Field"
 import { Card, CardTitle } from "@/components/ui/Card"
 import { PhotoUpload } from "@/components/editor/PhotoUpload"
+import { FontPicker } from "@/components/editor/FontPicker"
 
 export function IdentityFields() {
   const deceased = useEditorStore((s) => s.data.deceased)
@@ -20,15 +23,33 @@ export function IdentityFields() {
   return (
     <div className="grid grid-cols-2 gap-4">
       <FieldGroup label="الجنس">
-        <div className="flex gap-4 pt-1.5">
-          <label className="flex items-center gap-1.5 text-sm">
-            <input type="radio" checked={deceased.gender === "male"} onChange={() => update({ gender: "male" })} />
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => update({ gender: "male" })}
+            aria-pressed={deceased.gender === "male"}
+            className={cn(
+              "rounded-lg border px-3 py-2 text-sm font-medium transition-colors",
+              deceased.gender === "male"
+                ? "border-accent bg-accent text-white"
+                : "border-black/15 bg-white text-foreground hover:bg-black/5"
+            )}
+          >
             ذكر
-          </label>
-          <label className="flex items-center gap-1.5 text-sm">
-            <input type="radio" checked={deceased.gender === "female"} onChange={() => update({ gender: "female" })} />
+          </button>
+          <button
+            type="button"
+            onClick={() => update({ gender: "female" })}
+            aria-pressed={deceased.gender === "female"}
+            className={cn(
+              "rounded-lg border px-3 py-2 text-sm font-medium transition-colors",
+              deceased.gender === "female"
+                ? "border-accent bg-accent text-white"
+                : "border-black/15 bg-white text-foreground hover:bg-black/5"
+            )}
+          >
             أنثى
-          </label>
+          </button>
         </div>
       </FieldGroup>
 
@@ -55,6 +76,14 @@ export function IdentityFields() {
       {/* حقل "العائلات" اليدوي انتقل من هنا — صار مُشتقّاً تلقائياً من أسماء
           الأقارب المُدخَلين في (٣. الأقارب)، فظهر هناك (FamiliesField في
           Step3Relatives.tsx) لا هنا. راجع defaultFamiliesLine في render.ts. */}
+
+      <div className="col-span-2">
+        <Checkbox
+          label={deceased.gender === "male" ? "عازب (لم يتزوّج قط)" : "عازبة (لم تتزوّج قط)"}
+          checked={deceased.isSingle ?? false}
+          onChange={(e) => update({ isSingle: e.target.checked })}
+        />
+      </div>
     </div>
   )
 }
@@ -67,14 +96,29 @@ export function MarhoomFields() {
     <div className="grid grid-cols-2 gap-4">
       <div className={deceased.marhoomStyle === "custom" ? "col-span-1" : "col-span-2"}>
         <FieldGroup label="عبارة الترحّم" hint="تظهر مباشرة فوق اسم الفقيد">
-          <Select
-            value={deceased.marhoomStyle ?? "marhoom"}
-            onChange={(e) => update({ marhoomStyle: e.target.value as NonNullable<typeof deceased.marhoomStyle> })}
-          >
-            <option value="marhoom">{deceased.gender === "male" ? "المرحوم" : "المرحومة"}</option>
-            <option value="shaheed">{deceased.gender === "male" ? "الشهيد" : "الشهيدة"}</option>
-            <option value="custom">أخرى (نص مخصّص)</option>
-          </Select>
+          <div className="flex items-center gap-2">
+            <Select
+              className="flex-1"
+              value={deceased.marhoomStyle ?? "marhoom"}
+              onChange={(e) => update({ marhoomStyle: e.target.value as NonNullable<typeof deceased.marhoomStyle> })}
+            >
+              <option value="marhoom">{deceased.gender === "male" ? "المرحوم" : "المرحومة"}</option>
+              <option value="shaheed">{deceased.gender === "male" ? "الشهيد" : "الشهيدة"}</option>
+              <option value="custom">أخرى (نص مخصّص)</option>
+            </Select>
+            {/* تبديل واحد: تكبير العبارة لحجم اسم الفقيد، أو إعادتها لحجمها الصغير
+                المعتاد — بلا نص/خانة اختيار، فقط أيقونة تتبدّل مع الحالة. */}
+            <button
+              type="button"
+              onClick={() => update({ marhoomEnlarged: !(deceased.marhoomEnlarged ?? false) })}
+              aria-pressed={deceased.marhoomEnlarged ?? false}
+              title={deceased.marhoomEnlarged ? "تصغير إلى الحجم المعتاد" : "تكبير لحجم اسم الفقيد"}
+              aria-label={deceased.marhoomEnlarged ? "تصغير عبارة الترحّم إلى الحجم المعتاد" : "تكبير عبارة الترحّم لحجم اسم الفقيد"}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-black/15 hover:bg-black/5"
+            >
+              {deceased.marhoomEnlarged ? <Minus size={16} /> : <Plus size={16} />}
+            </button>
+          </div>
         </FieldGroup>
       </div>
       {deceased.marhoomStyle === "custom" && (
@@ -269,9 +313,16 @@ export function SpouseFields() {
   )
 }
 
-/** أقصى/أدنى تكبير للمخطوطات القرآنية: درجتان (٪١٠ لكل درجة) في أي من الاتجاهين. */
-const CALLIGRAPHY_SCALE_MIN = 0.8
-const CALLIGRAPHY_SCALE_MAX = 1.2
+/**
+ * حدود تكبير/تصغير المخطوطات القرآنية — كل نقرة ١٠٪. الحد الأدنى/الأقصى واسعان
+ * عمداً (لم يعودا ٠.٨-١.٢ كما كانا، بحدّ درجتين فقط في كل اتجاه — ضيّق جداً
+ * فعلياً). الحد الأقصى الحقيقي على الشاشة يُفرَض بقيد CSS نسبي (min(widthPx,100%)
+ * في Calligraphy.tsx) لا برقم ثابت هنا — فالتكبير يستمر فعلياً "حتى حدود الصفحة"
+ * بصرياً، وMAX هنا مجرّد سقف عددي بعيد يمنع استمرار الرقم بلا معنى بعد بلوغ ذلك
+ * القيد المرئي فعلياً.
+ */
+const CALLIGRAPHY_SCALE_MIN = 0.1
+const CALLIGRAPHY_SCALE_MAX = 5
 const CALLIGRAPHY_SCALE_STEP = 0.1
 
 /** زرا تكبير/تصغير صغيران لمخطوطة قرآنية واحدة — يظهران فقط أثناء عرضها فعلياً. */
@@ -319,6 +370,7 @@ export function QuranFields() {
             {QURAN_VERSES.map((v) => (
               <option key={v.id} value={v.id}>{v.label}</option>
             ))}
+            <option value="custom">نص مخصّص</option>
           </Select>
           {deceased.quranVerseId && (
             <CalligraphyScaleStepper
@@ -329,6 +381,24 @@ export function QuranFields() {
           )}
         </div>
       </FieldGroup>
+
+      {deceased.quranVerseId === "custom" && (
+        <div className="flex flex-col gap-3 rounded-lg border border-black/10 bg-black/2 p-3">
+          <FieldGroup label="النص المخصّص" hint="يحلّ محلّ الآية أعلى النعوة — يُعرض بخط فني قابل للاختيار أدناه">
+            <Textarea
+              value={deceased.customTopText ?? ""}
+              onChange={(e) => update({ customTopText: e.target.value })}
+              placeholder="اكتب النص الذي تريد ظهوره أعلى النعوة…"
+            />
+          </FieldGroup>
+          <FieldGroup label="خط النص المخصّص">
+            <FontPicker
+              value={deceased.customTopTextFontFamily ?? ""}
+              onChange={(v) => update({ customTopTextFontFamily: v })}
+            />
+          </FieldGroup>
+        </div>
+      )}
       <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
         <div className="flex items-center gap-2">
           <Checkbox label="إظهار البسملة" checked={deceased.hasBasmala} onChange={(e) => update({ hasBasmala: e.target.checked })} />

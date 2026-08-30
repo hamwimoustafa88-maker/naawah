@@ -6,6 +6,18 @@ export type NumeralSystem = "arabic-indic" | "western"
 export type MonthStyle = "levantine" | "egyptian"
 export type DateOrder = "hijri-first" | "gregorian-first"
 
+/**
+ * موضع/تكبير صورة داخل إطار ثابت الأبعاد (object-fit: cover كأساس، ثم تكبير/تحريك
+ * إضافيان فوقه). offsetXFrac/offsetYFrac كسور من عرض/طول الإطار نفسه (لا بكسل
+ * مطلق) — محايدة تماماً تجاه الحجم الفعلي للإطار وقت العرض. راجع lib/obituary/photoCrop.ts.
+ */
+export interface PhotoCrop {
+  /** ١ = الحد الأدنى (الصورة تملأ الإطار تماماً بلا هامش تحريك) — لا حدّ تحريك عنده. */
+  zoom: number
+  offsetXFrac: number
+  offsetYFrac: number
+}
+
 /** شخص واحد — الفقيد نفسه، أو أحد أقاربه. */
 export interface Person {
   id: string
@@ -60,6 +72,14 @@ export interface DeceasedInfo {
   gender: Gender
   name: string
   honorific?: string
+  /**
+   * عازب/عازبة — لم يتزوّج قط. تُخفي فئات القرابة التي لا معنى لها بلا زواج/أبناء
+   * (الزوجات/الزوج، الأبناء، البنات، الأحفاد) من قائمة "إضافة فئة قرابة" ومن العرض
+   * والطباعة أيضاً — بلا حذف بياناتها إن كانت مُدخَلة سلفاً (إلغاء التفعيل يُعيدها
+   * كما كانت). راجع SINGLE_HIDDEN_RELATIVE_CATEGORIES في defaults.ts وvisibleRelativeGroups
+   * في render.ts.
+   */
+  isSingle?: boolean
   /** إن كانت الفقيدة أنثى وزوجها متوفى: "حرم المرحوم …" */
   spouseName?: string
   spouseHonorific?: string
@@ -82,8 +102,17 @@ export interface DeceasedInfo {
   birthCountry?: string
   country: string
   quranVerseId?: string
-  /** مضاعف حجم المخطوطة القرآنية الرئيسية — تكبير/تصغير يدوي بخطوات ١٠٪، ٠.٨-١.٢ (افتراضياً ١). */
+  /** مضاعف حجم المخطوطة القرآنية الرئيسية — تكبير/تصغير يدوي بخطوات ١٠٪ (افتراضياً ١). */
   quranVerseScale?: number
+  /**
+   * نص حر يستبدل الآية القرآنية أعلى النعوة — يُستعمل فقط حين quranVerseId === "custom".
+   * يُعرض كنص حيّ (لا صورة) بخط فني قابل للاختيار عبر customTopTextFontFamily، مستقل
+   * تماماً عن bodyFontFamily ونمط الاسم. راجع Calligraphy.tsx (customText prop).
+   */
+  customTopText?: string
+  /** خط النص المخصص أعلاه — cssVar من نفس كتالوج TEXT_FONT_OPTIONS (lib/textFonts.ts)
+   * المستعمل في "إعدادات النصوص". فارغ/غائب يعني استعمال خط المخطوطة الافتراضي للقالب. */
+  customTopTextFontFamily?: string
   hasBasmala: boolean
   /** مضاعف حجم البسملة (٠.٨-١.٢، افتراضياً ١) — نفس نمط quranVerseScale. */
   basmalaScale?: number
@@ -97,11 +126,28 @@ export interface DeceasedInfo {
   marhoomStyle?: "marhoom" | "shaheed" | "custom"
   marhoomCustomText?: string
   /**
+   * تكبير عبارة الترحّم ("المرحوم" مثلاً) لتصبح بنفس حجم اسم الفقيد — افتراضياً
+   * أصغر بكثير (١.١٥em ثابت). زر تبديل واحد في (١. بيانات الفقيد)، لا حقل مقاس
+   * حرّ — إمّا الحجم الصغير المعتاد أو مطابقة حجم الاسم بالضبط. راجع nameSizeEm
+   * في ObituaryBlocks.tsx (المستعمل هنا أيضاً حين مفعّل).
+   */
+  marhoomEnlarged?: boolean
+  /**
    * صورة الفقيد كـ data URL (base64) — تبقى في الذاكرة/المتصفح فقط، لا تُرسل
-   * لأي خادم إطلاقاً (لا توجد في أي حمولة API بهذا المشروع). تُعرض بمقاس أقصى
-   * ٧×١٠سم بلا تمطيط (object-fit: contain) — راجع PhotoUpload.tsx و ObituaryBlocks.tsx.
+   * لأي خادم إطلاقاً (لا توجد في أي حمولة API بهذا المشروع). تُعرض دائماً داخل
+   * إطار ثابت طولي ٧×١٠سم (object-fit: cover — لا contain) بصرف النظر عن اتجاه
+   * الصورة الأصلية (عرضية أو طولية)، مع تحكّم المستخدم بالتكبير/التحريك داخل
+   * الإطار عبر photoCrop. راجع PhotoUpload.tsx (التعديل التفاعلي) و
+   * ObituaryBlocks.tsx (العرض النهائي) وليب lib/obituary/photoCrop.ts (الحساب المشترك).
    */
   photoDataUrl?: string
+  /**
+   * موضع/تكبير صورة الفقيد داخل الإطار الثابت — يُنشأ افتراضياً (DEFAULT_PHOTO_CROP)
+   * عند أول رفع، ويُحدَّث من سحب/تصغير المستخدم في PhotoUpload.tsx. الإزاحة كسور
+   * من أبعاد الإطار (لا بكسل مطلق) لتبقى صحيحة بصرياً بصرف النظر عن حجم الإطار
+   * الفعلي وقت العرض (معاينة المحرّر مقابل الكانفاس المصغَّر بـauto-fit).
+   */
+  photoCrop?: PhotoCrop
   /**
    * تخطيط الصورة: مفعّل افتراضياً (undefined يُعامل كـtrue) — الصورة جهة اليسار
    * والنص (جملة النعي + سطر الترحّم + المرحوم + الاسم) جهة اليمين في صفّ واحد،
@@ -126,6 +172,13 @@ export interface FuneralInfo {
   condolencesShared?: boolean
   condolencesMen?: string
   condolencesWomen?: string
+  /**
+   * إطار (stroke) مربع حول قسم "التشييع والصلاة والدفن والتعزية" بالكامل (من
+   * جملة التشييع حتى نهاية التعزية، بلا "ملاحظات إضافية")، لتركيز الانتباه على
+   * المعلومات المهمة. مفعّل افتراضياً (undefined يُعامل كـ true) — راجع
+   * ObituaryBlocks.tsx للتطبيق الفعلي.
+   */
+  emphasizeFuneralBox?: boolean
   extraNotes?: string
   /** بلا هذا الحقل: يُستعمل اقتراح القالب الافتراضي (template.showPrintFooter). */
   printFooterEnabled?: boolean
@@ -140,7 +193,7 @@ export interface FuneralInfo {
  * جنس الفقيد افتراضياً، ويمكن للمستخدم استبدالها بنص حرّ من "نصوص مخصّصة".
  * إضافة سطر قابل للتخصيص جديد = مفتاح واحد هنا + دالة تقرأه في render.ts.
  */
-export type CustomTextKey = "mourningSentence" | "maghfoorLine" | "closingDua" | "printFooterText" | "familiesLine"
+export type CustomTextKey = "mourningLine" | "closingDua" | "printFooterText" | "familiesLine"
 
 export interface FormatPrefs {
   numerals: NumeralSystem

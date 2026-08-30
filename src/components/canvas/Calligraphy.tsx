@@ -37,6 +37,12 @@ interface CalligraphyProps {
   invert?: boolean
   /** حجم خط النص الحيّ بوحدة em — يُستهلَك فقط في غياب ملف SVG يدوي. راجع QuranVerse.liveTextFontSizeEm. */
   fontSizeEm?: number
+  /**
+   * نص حرّ يستبدل بحث id/handmadeFile في السجلّ تماماً — يُستعمل حصراً لخيار "نص
+   * مخصّص" في quranVerseId (راجع DeceasedInfo.customTopText). أسطر متعددة عبر "\n".
+   * وجوده (حتى لو فارغاً) يتجاوز أي مسار SVG يدوي، فيُعرض دائماً كنص حيّ.
+   */
+  customText?: string
 }
 
 function verseLines(id: string): string[] {
@@ -44,9 +50,9 @@ function verseLines(id: string): string[] {
   return QURAN_VERSES.find((v) => v.id === id)?.lines ?? []
 }
 
-export function Calligraphy({ id, handmadeFile, className, style, widthPx, fontFamily, invert, fontSizeEm }: CalligraphyProps) {
+export function Calligraphy({ id, handmadeFile, className, style, widthPx, fontFamily, invert, fontSizeEm, customText }: CalligraphyProps) {
   const fileKey = handmadeFile ?? id
-  if (HANDMADE_CALLIGRAPHY_IDS.has(fileKey)) {
+  if (customText === undefined && HANDMADE_CALLIGRAPHY_IDS.has(fileKey)) {
     return (
       // eslint-disable-next-line @next/next/no-img-element -- SVG محلي بسيط، لا يحتاج next/image
       <img
@@ -66,7 +72,7 @@ export function Calligraphy({ id, handmadeFile, className, style, widthPx, fontF
     )
   }
 
-  const lines = verseLines(id)
+  const lines = customText !== undefined ? (customText.trim() ? customText.split("\n") : []) : verseLines(id)
   if (lines.length === 0) return null
 
   return (
@@ -77,7 +83,11 @@ export function Calligraphy({ id, handmadeFile, className, style, widthPx, fontF
         fontFamily,
         direction: "rtl",
         textAlign: "center",
-        maxWidth: widthPx,
+        // min(...) لا widthPx وحده — يضمن ألا يفيض النص الحيّ خارج حدود عمود
+        // المحتوى (صفّ فليكس بعرض ١٠٠٪ يستوعب كل عناصر ObituaryContent) بصرف
+        // النظر عن مقدار التكبير المطلوب عبر quranVerseScale، فـ"التكبير لحدود
+        // الصفحة" يتحقق فعلياً بقيد CSS نسبي، لا برقم تكبير أقصى مضبوط يدوياً.
+        maxWidth: `min(${widthPx}px, 100%)`,
         marginInline: "auto",
         ...(fontSizeEm ? { fontSize: `${fontSizeEm}em` } : {}),
       }}

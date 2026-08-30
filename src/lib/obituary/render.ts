@@ -2,8 +2,8 @@
 
 import { DECEASED_WORDS, MARHOOM_STYLE_WORDS, PARENT_LABELS, relativeCategoryLabel, renderRelativeList } from "./grammar"
 import { formatDualDate, formatWeekdayName } from "./hijri"
-import { DEFAULT_PRINT_FOOTER_TEXT, MOURNING_OPENINGS } from "./defaults"
-import type { DeceasedInfo, ObituaryData } from "./types"
+import { DEFAULT_PRINT_FOOTER_TEXT, MOURNING_OPENINGS, SINGLE_HIDDEN_RELATIVE_CATEGORIES } from "./defaults"
+import type { DeceasedInfo, ObituaryData, RelativeGroup } from "./types"
 
 /** يُلحق لام الجر بكلمة تبدأ بـ"ال" التعريف: "الفقيد" → "للفقيد" */
 function attachLam(word: string): string {
@@ -14,17 +14,23 @@ export function defaultMourningSentence(): string {
   return MOURNING_OPENINGS[0]
 }
 
-/** جملة النعي الافتتاحية — قابلة للتخصيص عبر data.customTexts.mourningSentence. */
-export function mourningSentence(data: ObituaryData): string {
-  return data.customTexts?.mourningSentence ?? defaultMourningSentence()
-}
-
 export function defaultMaghfoorLine(gender: DeceasedInfo["gender"]): string {
   return `${DECEASED_WORDS[gender].maghfoor} بإذن الله`
 }
 
-export function maghfoorLine(data: ObituaryData): string {
-  return data.customTexts?.maghfoorLine ?? defaultMaghfoorLine(data.deceased.gender)
+/**
+ * جملة النعي + سطر الترحّم ("المغفور له بإذن الله") مدمجان في سطر واحد — كانا
+ * فقرتين منفصلتين (mourningSentence + maghfoorLine)، دُمجا بطلب صريح لتخفيف عدد
+ * أسطر الصفحة. قابل للتخصيص ككل عبر data.customTexts.mourningLine (لا مفتاحين
+ * منفصلين كما كان). **لا علاقة لهذا بـmarhoomWord** ("المرحوم" فوق اسم الفقيد
+ * مباشرة، بخط عريض) — ذاك يبقى سطراً مستقلاً تماماً، غير مشمول بهذا الدمج.
+ */
+export function defaultMourningLine(gender: DeceasedInfo["gender"]): string {
+  return `${defaultMourningSentence()} ${defaultMaghfoorLine(gender)}`
+}
+
+export function mourningLine(data: ObituaryData): string {
+  return data.customTexts?.mourningLine ?? defaultMourningLine(data.deceased.gender)
 }
 
 /**
@@ -71,16 +77,30 @@ export interface RenderedRelativeGroup {
   text: string
 }
 
+/**
+ * فئات القرابة الفعليّة الواجب عرضها/طباعتها — تستبعد الفئات المخفية بخيار "عازب/ة"
+ * (SINGLE_HIDDEN_RELATIVE_CATEGORIES) حين مفعّل، بلا حذف بياناتها من data.relatives
+ * نفسها (إلغاء الخيار يُعيدها فوراً). يستهلكها كل من relativesBlocks هنا (الطباعة)
+ * وStep3Relatives.tsx/MobileEditorView.tsx (عرض المحرر) — فلترة واحدة مصدرها هنا.
+ */
+export function visibleRelativeGroups(data: ObituaryData): RelativeGroup[] {
+  if (!data.deceased.isSingle) return data.relatives
+  return data.relatives.filter((g) => !SINGLE_HIDDEN_RELATIVE_CATEGORIES.includes(g.categoryKey))
+}
+
 export function relativesBlocks(data: ObituaryData): RenderedRelativeGroup[] {
   const blocks: RenderedRelativeGroup[] = []
-  for (const g of data.relatives) {
-    if (g.members.length === 0) continue
+  for (const g of visibleRelativeGroups(data)) {
+    // أعضاء بلا اسم (فئة أُضيفت للتو ولم تُملأ بعد — بما فيها الفئات الست الجاهزة
+    // افتراضياً في كل نعوة جديدة) لا يُطبعون كسطر فارغ.
+    const namedMembers = g.members.filter((m) => m.name.trim() !== "")
+    if (namedMembers.length === 0) continue
 
     if (g.categoryKey === "parents") {
       // فئة موحّدة في المحرر، لكنها تُطبع كسطرين منفصلين (كما في كل النعوات الحقيقية):
       // "والده: ..." ثم "والدته: ..." — الأب والأم يُميَّزان بجنس العضو نفسه.
-      const father = g.members.find((m) => m.gender === "male")
-      const mother = g.members.find((m) => m.gender === "female")
+      const father = namedMembers.find((m) => m.gender === "male")
+      const mother = namedMembers.find((m) => m.gender === "female")
       if (father) {
         blocks.push({
           id: `${g.id}-father`,
@@ -100,8 +120,8 @@ export function relativesBlocks(data: ObituaryData): RenderedRelativeGroup[] {
 
     blocks.push({
       id: g.id,
-      label: relativeCategoryLabel(g.categoryKey, data.deceased.gender, g.members, g.customLabel),
-      text: renderRelativeList(g.members),
+      label: relativeCategoryLabel(g.categoryKey, data.deceased.gender, namedMembers, g.customLabel),
+      text: renderRelativeList(namedMembers),
     })
   }
   return blocks
@@ -216,7 +236,7 @@ export function defaultFamiliesLine(data: ObituaryData): string {
     const surname = name ? lastNameOf(name) : ""
     if (surname && !surnames.includes(surname)) surnames.push(surname)
   }
-  for (const group of data.relatives) {
+  for (const group of visibleRelativeGroups(data)) {
     for (const member of group.members) {
       addSurname(member.name)
       addSurname(member.spouseName)

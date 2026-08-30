@@ -22,6 +22,7 @@ import { ObituaryCanvas } from "@/components/canvas/ObituaryCanvas"
 import { ResponsiveCanvasFrame } from "@/components/canvas/ResponsiveCanvasFrame"
 import { useEditorStore } from "@/store/editorStore"
 import { relativeCategoryLabel } from "@/lib/obituary/grammar"
+import { visibleRelativeGroups } from "@/lib/obituary/render"
 import { cn } from "@/lib/utils/cn"
 import { AddRelativeCategoryField, GroupCard } from "@/components/editor/steps/Step3Relatives"
 import { BottomSheet } from "@/components/editor/mobile/BottomSheet"
@@ -36,7 +37,9 @@ const FIRST_STEP_NAV_ID = "static:identity"
 
 export function MobileEditorView() {
   const data = useEditorStore((s) => s.data)
-  const relatives = data.relatives
+  // فئات مخفيّة بخيار "عازب/ة" (deceased.isSingle) تُستبعد من القائمة/التنقّل هنا
+  // أيضاً — بلا حذف بياناتها من data.relatives نفسها (راجع visibleRelativeGroups).
+  const relatives = visibleRelativeGroups(data)
   const deceasedGender = data.deceased.gender
 
   // اللائحة تُفتح تلقائياً فور دخول الصفحة على الجوال (بلا حاجة لضغط الزر العائم

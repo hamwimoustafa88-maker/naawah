@@ -1,23 +1,21 @@
 // الكتل الدلالية المشتركة بين كل القوالب — القالب يبدّل الطبقة البصرية فقط
 // (توكنات + إطار)، بينما يبقى ترتيب المحتوى ومصدره واحداً هنا.
 
+import type { CSSProperties } from "react"
 import { Calligraphy } from "@/components/canvas/Calligraphy"
 import {
   BASMALA_WIDTH_PX, CALLIGRAPHY_DEFAULT_WIDTH_PX, INNA_LILLAH_FOOTER_WIDTH_PX, QURAN_CORNER_WIDTH_PX, QURAN_VERSES,
 } from "@/lib/obituary/defaults"
 import { A4_HEIGHT_PX } from "@/lib/obituary/pageSize"
+import { DEFAULT_PHOTO_CROP, PHOTO_FRAME_HEIGHT_PX, PHOTO_FRAME_WIDTH_PX, photoCropTransform } from "@/lib/obituary/photoCrop"
 import {
   birthInfoLine, burialLine, closingDua, deceasedNameLine, familiesLine, funeralSentence, funeralSentenceCore,
-  identityLine, maghfoorLine, marhoomWord, mourningSentence,
+  identityLine, marhoomWord, mourningLine,
   prayerLocationLine, printFooterText, processionLine, relativesBlocks,
 } from "@/lib/obituary/render"
 import { useEditorStore } from "@/store/editorStore"
-import type { ObituaryData } from "@/lib/obituary/types"
+import type { ObituaryData, PhotoCrop } from "@/lib/obituary/types"
 import type { TemplateDefinition } from "@/lib/templates/types"
-
-/** أقصى مقاس صورة الفقيد: ٧×١٠سم عند 96dpi (١سم ≈ ٣٧.٨px) — طولية، بلا تمطيط. */
-const PHOTO_MAX_WIDTH_PX = 265
-const PHOTO_MAX_HEIGHT_PX = 378
 
 /** حرف التطويل العربي — يُدرج داخل تسمية الفئة (لا في النص المُخزَّن) لمحاكاة
  * تنضيد الصحف الورقية (طرابلس وشمال لبنان حصراً، عبر relativesLayout). */
@@ -45,8 +43,72 @@ function relativeLabelTargetLen(labels: string[]): number {
   return Math.max(RELATIVE_LABEL_MIN_TARGET_LEN, longest + RELATIVE_LABEL_EXTRA_PAD)
 }
 
+/**
+ * كثافة عرض كتلة الأقارب (قوالب "centered-wrap" فقط — لا تمسّ "justified-lines"
+ * الخاصة بطرابلس وشمال لبنان إطلاقاً) — ثلاث درجات تتبع مباشرة درجة تصغير
+ * auto-fit نفسها (useAutoFit.ts)، بطلب صريح: صفحة فارغة (scale=1، بلا أي تصغير)
+ * تعرض كل فئة قرابة بسطر مستقل مع فراغ واضح بينها؛ بمجرد أن يبدأ الخط بالتصغير
+ * فعلياً (دليل مباشر على أن الصفحة بدأت تمتلئ)، تُدمج الفئات اثنتين اثنتين في كل
+ * سطر؛ وعند تصغير أشدّ (الخط بلغ حدّه المفضّل ١٢px تقريباً أو تجاوزه) تتدفّق كل
+ * الفئات معاً بلا حدّ (سطر واحد يضمّ أكبر عدد ممكن) — هذا الأخير كان السلوك
+ * الوحيد سابقاً بصرف النظر عن الكثافة الفعلية، فيبدو النص "معجوقاً" على صفحة
+ * لم تكن ممتلئة أصلاً.
+ * ملاحظة: التدرّج يُشتقّ من scale النهائي بعد استقرار useAutoFit فقط (لا يُعاد
+ * قياسه من جديد بالتخطيط الأكثف الناتج) — كسبٌ عملي بسيط بدل بحث ثنائي إضافي
+ * يختبر كل تخطيط على حدة؛ النتيجة الأسوأ الممكنة "أكثر تحفّظاً مما يلزم بقليل"،
+ * لا صفحة فائضة أو مكسورة.
+ */
+function relativesDensityMode(scale: number): "stacked" | "paired" | "flowing" {
+  if (scale >= 0.95) return "stacked"
+  if (scale >= 0.85) return "paired"
+  return "flowing"
+}
+
+/** يقسّم مصفوفة إلى مجموعات متتالية بحجم size (المجموعة الأخيرة قد تكون أقصر). */
+function chunkPairs<T>(items: T[], size: number): T[][] {
+  const chunks: T[][] = []
+  for (let i = 0; i < items.length; i += size) chunks.push(items.slice(i, i + size))
+  return chunks
+}
+
 function Divider({ tokens, divider, size = "0.9em" }: { tokens: TemplateDefinition["tokens"]; divider: string; size?: string }) {
   return <div style={{ color: tokens.accent, fontSize: size }}>{divider}</div>
+}
+
+/**
+ * صورة الفقيد داخل إطار ثابت طولي — object-fit:cover كأساس (يملأ الإطار بصرف
+ * النظر عن اتجاه الصورة الأصلية)، ثم تحويل photoCropTransform فوقه لتطبيق
+ * تكبير/تحريك المستخدم المحفوظَين في deceased.photoCrop. نفس حساب PhotoUpload.tsx
+ * بالضبط (عبر lib/obituary/photoCrop.ts المشترك) فتطابق المعاينة النتيجة النهائية.
+ */
+function DeceasedPhoto({
+  photoDataUrl, crop, photoScale, style,
+}: {
+  photoDataUrl: string
+  crop: PhotoCrop
+  photoScale: number
+  style?: CSSProperties
+}) {
+  const frameWidthPx = PHOTO_FRAME_WIDTH_PX * photoScale
+  const frameHeightPx = PHOTO_FRAME_HEIGHT_PX * photoScale
+  return (
+    <div style={{ position: "relative", overflow: "hidden", width: frameWidthPx, height: frameHeightPx, ...style }}>
+      {/* eslint-disable-next-line @next/next/no-img-element -- صورة بيانات المستخدم (data URL) محلياً فقط */}
+      <img
+        src={photoDataUrl}
+        alt=""
+        style={{
+          position: "absolute",
+          top: "50%",
+          left: "50%",
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+          transform: photoCropTransform(crop, frameWidthPx, frameHeightPx),
+        }}
+      />
+    </div>
+  )
 }
 
 export function ObituaryContent({
@@ -62,7 +124,15 @@ export function ObituaryContent({
     tokens, divider, nameLayout, showPrintFooter, relativesLayout,
     nameSizeEm: templateNameSizeEm, quranPlacement, familiesLineScope, emphasizePrayerLocation,
   } = template
-  const verse = deceased.quranVerseId ? QURAN_VERSES.find((v) => v.id === deceased.quranVerseId) : undefined
+  // "نص مخصص" ليس آية فعلية في السجلّ — quranVerseId === "custom" يعني عرض
+  // deceased.customTopText كنص حيّ بخط فني بدل البحث في QURAN_VERSES. راجع
+  // Calligraphy.tsx (customText prop) وStep1Deceased.tsx (خيار "نص مخصص").
+  const isCustomTopText = deceased.quranVerseId === "custom"
+  const verse = deceased.quranVerseId && !isCustomTopText ? QURAN_VERSES.find((v) => v.id === deceased.quranVerseId) : undefined
+  const hasTopVerseContent = Boolean(verse) || (isCustomTopText && Boolean(deceased.customTopText?.trim()))
+  /** تكبير افتراضي للنص المخصّص — بلا هذا يبدو صغيراً جداً مقارنة بالمخطوطات
+   * المرسومة يدوياً (نفس سبب liveTextFontSizeEm الخاص بآية "نفس مطمئنة"). */
+  const CUSTOM_TOP_TEXT_FONT_SIZE_EM = 2
   const innaLillahVerse = QURAN_VERSES.find((v) => v.id === "inna-lillah")
   const identity = identityLine(deceased)
   const birthInfo = birthInfoLine(data)
@@ -83,6 +153,9 @@ export function ObituaryContent({
   const nameFontFamily = previewNameFontFamily || data.nameStyle?.fontFamily || tokens.nameFont
   const nameSizeEm = (templateNameSizeEm ?? 2.5) * (data.nameStyle?.sizeMultiplier ?? 1)
   const nameBold = data.nameStyle?.bold ?? true
+  // عبارة الترحّم ("المرحوم" مثلاً) — ١.١٥em ثابت افتراضياً، أو نفس حجم اسم الفقيد
+  // بالضبط عند تفعيل deceased.marhoomEnlarged (زر تبديل واحد في بيانات الفقيد).
+  const marhoomFontSizeEm = deceased.marhoomEnlarged ? nameSizeEm : 1.15
   // خط جميع النصوص (عدا اسم الفقيد الذي له تحكّمه الخاص أعلاه) — قابل للتخصيص من
   // "إعدادات النصوص"، وإلا يُستعمل bodyFont الخاص بالقالب المختار (كان مُعرَّفاً في
   // كل قالب لكن لم يُطبَّق فعلياً على أي عنصر — عطل حقيقي أُصلح هنا: كل الفقرات كانت
@@ -133,7 +206,7 @@ export function ObituaryContent({
           يُرسم يميناً مع dir="rtl")، والمخطوطة مصغّرة في الزاوية اليسرى بجانبها،
           بدل التتابع الرأسي المتوسِّط المعتاد في بقية القوالب. */}
       {quranPlacement === "corner" ? (
-        (verse || funeral.institutionHeader) && (
+        (hasTopVerseContent || funeral.institutionHeader) && (
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", gap: "0.75em" }}>
             <div style={{ flex: "1 1 auto", textAlign: "right" }}>
               {funeral.institutionHeader && (
@@ -142,16 +215,23 @@ export function ObituaryContent({
                 </p>
               )}
             </div>
-            {verse && (
+            {hasTopVerseContent && (
               <div style={{ flex: "0 0 auto" }}>
                 <Calligraphy
-                  id={verse.id}
-                  handmadeFile={verse.handmadeFile}
-                  fontFamily={tokens.calligraphyFont}
+                  id={verse?.id ?? "custom"}
+                  handmadeFile={verse?.handmadeFile}
+                  fontFamily={isCustomTopText ? (deceased.customTopTextFontFamily || tokens.calligraphyFont) : tokens.calligraphyFont}
                   widthPx={QURAN_CORNER_WIDTH_PX * (deceased.quranVerseScale ?? 1)}
                   style={{ color: tokens.ink }}
                   invert={template.calligraphyInvert}
-                  fontSizeEm={verse.liveTextFontSizeEm ? verse.liveTextFontSizeEm * (deceased.quranVerseScale ?? 1) * 0.5 : undefined}
+                  fontSizeEm={
+                    isCustomTopText
+                      ? CUSTOM_TOP_TEXT_FONT_SIZE_EM * (deceased.quranVerseScale ?? 1) * 0.5
+                      : verse?.liveTextFontSizeEm
+                        ? verse.liveTextFontSizeEm * (deceased.quranVerseScale ?? 1) * 0.5
+                        : undefined
+                  }
+                  customText={isCustomTopText ? deceased.customTopText : undefined}
                 />
               </div>
             )}
@@ -161,19 +241,26 @@ export function ObituaryContent({
         <>
           {/* حجمها قابل للتحكم اليدوي عبر quranVerseScale. الهامش الرأسي حولها من
               أكبر فراغات أعلى الصفحة، فيُضيَّق أيضاً مع --fit-tightness. */}
-          {verse && (
+          {hasTopVerseContent && (
             <div style={{ marginBlock: `calc(${nameLayout === "calligraphy-dominant" ? "0.4em" : "0.2em"} * var(--fit-tightness, 1))` }}>
               <Calligraphy
-                id={verse.id}
-                handmadeFile={verse.handmadeFile}
-                fontFamily={tokens.calligraphyFont}
-                widthPx={(verse.targetWidthPx ?? CALLIGRAPHY_DEFAULT_WIDTH_PX) * (deceased.quranVerseScale ?? 1)}
+                id={verse?.id ?? "custom"}
+                handmadeFile={verse?.handmadeFile}
+                fontFamily={isCustomTopText ? (deceased.customTopTextFontFamily || tokens.calligraphyFont) : tokens.calligraphyFont}
+                widthPx={(verse?.targetWidthPx ?? CALLIGRAPHY_DEFAULT_WIDTH_PX) * (deceased.quranVerseScale ?? 1)}
                 className="mx-auto"
                 style={{ color: tokens.ink }}
                 invert={template.calligraphyInvert}
-                fontSizeEm={verse.liveTextFontSizeEm ? verse.liveTextFontSizeEm * (deceased.quranVerseScale ?? 1) : undefined}
+                fontSizeEm={
+                  isCustomTopText
+                    ? CUSTOM_TOP_TEXT_FONT_SIZE_EM * (deceased.quranVerseScale ?? 1)
+                    : verse?.liveTextFontSizeEm
+                      ? verse.liveTextFontSizeEm * (deceased.quranVerseScale ?? 1)
+                      : undefined
+                }
+                customText={isCustomTopText ? deceased.customTopText : undefined}
               />
-              {verse.isQuran && (
+              {verse?.isQuran && (
                 <div style={{ fontSize: "0.7em", color: tokens.muted, marginTop: "0.2em" }}>(صدق الله العظيم)</div>
               )}
             </div>
@@ -209,9 +296,8 @@ export function ObituaryContent({
               gap: "calc(0.75em * var(--fit-tightness, 1))",
             }}
           >
-            <p style={{ margin: 0, fontSize: "1.05em", lineHeight: "calc(1.6 * var(--fit-tightness, 1))" }}>{mourningSentence(data)}</p>
-            <p style={{ margin: 0, fontSize: "1em", color: tokens.muted }}>{maghfoorLine(data)}</p>
-            <p style={{ margin: 0, fontSize: "1.15em", fontWeight: 700 }}>{marhoomWord(deceased)}</p>
+            <p style={{ margin: 0, fontSize: "1.05em", lineHeight: "calc(1.6 * var(--fit-tightness, 1))" }}>{mourningLine(data)}</p>
+            <p style={{ margin: 0, fontSize: `${marhoomFontSizeEm}em`, fontWeight: 700 }}>{marhoomWord(deceased)}</p>
             <h1
               style={{
                 fontFamily: nameFontFamily,
@@ -227,43 +313,29 @@ export function ObituaryContent({
               {divider && nameLayout === "plain" ? `${divider} ${deceasedNameLine(deceased)} ${divider}` : deceasedNameLine(deceased)}
             </h1>
           </div>
-          {/* eslint-disable-next-line @next/next/no-img-element -- صورة بيانات المستخدم (data URL) محلياً فقط */}
-          <img
-            src={deceased.photoDataUrl}
-            alt=""
-            style={{
-              flex: "0 0 auto",
-              maxWidth: PHOTO_MAX_WIDTH_PX * photoScale,
-              maxHeight: PHOTO_MAX_HEIGHT_PX * photoScale,
-              width: "auto",
-              height: "auto",
-              objectFit: "contain",
-            }}
+          <DeceasedPhoto
+            photoDataUrl={deceased.photoDataUrl}
+            crop={deceased.photoCrop ?? DEFAULT_PHOTO_CROP}
+            photoScale={photoScale}
+            style={{ flex: "0 0 auto" }}
           />
         </div>
       ) : (
         <>
-          {/* ٤. جملة النعي — قابلة للتخصيص عبر "نصوص مخصّصة" */}
-          <p style={{ fontSize: "1.05em", lineHeight: "calc(1.6 * var(--fit-tightness, 1))" }}>{mourningSentence(data)}</p>
+          {/* ٤. جملة النعي + سطر الترحّم — سطر واحد مدمج، قابل للتخصيص عبر "نصوص مخصّصة" */}
+          <p style={{ fontSize: "1.05em", lineHeight: "calc(1.6 * var(--fit-tightness, 1))" }}>{mourningLine(data)}</p>
 
-          {/* ٥. سطر الترحّم */}
-          <p style={{ fontSize: "1em", color: tokens.muted }}>{maghfoorLine(data)}</p>
-          <p style={{ fontSize: "1.15em", fontWeight: 700 }}>{marhoomWord(deceased)}</p>
+          {/* ٥. عبارة الترحّم — سطر مستقل تماماً، غير مشمول بالدمج أعلاه */}
+          <p style={{ fontSize: `${marhoomFontSizeEm}em`, fontWeight: 700 }}>{marhoomWord(deceased)}</p>
 
-          {/* صورة الفقيد — فوق الاسم، أقصى مقاس فيزيائي ٧×١٠سم، تتقلّص بحد أقصى ٣٠٪ فقط مع كثافة النص */}
+          {/* صورة الفقيد — فوق الاسم، إطار ثابت ٧×١٠سم (object-fit:cover + تحكّم المستخدم
+              بالتكبير/التحريك عبر photoCrop)، يتقلّص بحد أقصى ٣٠٪ فقط مع كثافة النص */}
           {deceased.photoDataUrl && (
-            // eslint-disable-next-line @next/next/no-img-element -- صورة بيانات المستخدم (data URL) محلياً فقط
-            <img
-              src={deceased.photoDataUrl}
-              alt=""
-              style={{
-                maxWidth: PHOTO_MAX_WIDTH_PX * photoScale,
-                maxHeight: PHOTO_MAX_HEIGHT_PX * photoScale,
-                width: "auto",
-                height: "auto",
-                objectFit: "contain",
-                marginInline: "auto",
-              }}
+            <DeceasedPhoto
+              photoDataUrl={deceased.photoDataUrl}
+              crop={deceased.photoCrop ?? DEFAULT_PHOTO_CROP}
+              photoScale={photoScale}
+              style={{ marginInline: "auto" }}
             />
           )}
 
@@ -291,12 +363,10 @@ export function ObituaryContent({
 
       {divider && <Divider tokens={tokens} divider={divider} />}
 
-      {/* ٨. كتلة الأقارب — كل فئة "label: نص" تتدفّق كوحدة داخل صفّ ملتفّ (flex-wrap)
-          بدل سطر مستقل إلزامي لكل فئة (كان يُهدر سطراً كاملاً حتى لأقصر فئة، كـ"زوجته: فلانة").
-          الفئات القصيرة تلتئم تلقائياً عدّة في السطر نفسه (والده/والدته/أخوه/أخته…)،
-          مفصولة بفاصلة عربية كبقية قوائم النعوة (راجع familiesLine)، وتلتف الفئات
-          الطويلة (كقائمة أبناء كبيرة) بنفسها بلا كسر إلزامي. هذا يقلّص عدد الأسطر
-          الفعلي فيمنح auto-fit مساحة أكبر فيبقي الخط أقرب لحجمه الطبيعي بدل تصغيره. */}
+      {/* ٨. كتلة الأقارب. طرابلس وشمال لبنان (justified-lines): سلوك ثابت بصرف
+          النظر عن الكثافة — كل فئة سطر مستقل (أسلوب تنضيد صحف تقليدي مقصود).
+          بقية القوالب (centered-wrap): كثافة العرض تتدرّج مع scale فعلياً — راجع
+          relativesDensityMode أعلاه. */}
       {relatives.length > 0 && relativesLayout === "justified-lines" ? (
         // طرابلس وشمال لبنان — كل فئة سطر مستقل بعرض الصفحة كاملاً، بلا توسيط،
         // بتسمية مطوَّلة بحرف التطويل قبل النقطتين (راجع stretchRelativeLabel أعلاه)
@@ -318,64 +388,146 @@ export function ObituaryContent({
           })()}
         </div>
       ) : (
-        relatives.length > 0 && (
-          <div
-            style={{
-              fontSize: "1em",
-              lineHeight: "calc(1.7 * var(--fit-tightness, 1))",
-              display: "flex",
-              flexWrap: "wrap",
-              justifyContent: "center",
-              columnGap: "0.6em",
-              rowGap: "calc(0.2em * var(--fit-tightness, 1))",
-            }}
-          >
-            {relatives.map((g, i) => (
-              <span key={g.id}>
-                <span style={{ fontWeight: 700 }}>{g.label}: </span>
-                {g.text}
-                {i < relatives.length - 1 ? "،" : ""}
-              </span>
-            ))}
-          </div>
-        )
+        relatives.length > 0 &&
+        (() => {
+          const mode = relativesDensityMode(scale)
+
+          // "stacked" — صفحة غير ممتلئة (scale=1، بلا أي تصغير): كل فئة سطر
+          // مستقل بفراغ واضح بينها، بدل تكديسها معاً بلا داعٍ فعلي للتوفير.
+          if (mode === "stacked") {
+            return (
+              <div
+                style={{
+                  fontSize: "1em",
+                  lineHeight: 1.7,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: "0.5em",
+                }}
+              >
+                {relatives.map((g) => (
+                  <p key={g.id} style={{ margin: 0, textAlign: "center" }}>
+                    <span style={{ fontWeight: 700 }}>{g.label}: </span>
+                    {g.text}
+                  </p>
+                ))}
+              </div>
+            )
+          }
+
+          // "paired" — الخط بدأ بالتصغير فعلياً (الصفحة بدأت تمتلئ): فئتان في
+          // كل سطر بدل فئة واحدة، مرحلة وسطى بين التباعد الكامل والتدفّق الحرّ.
+          if (mode === "paired") {
+            return (
+              <div
+                style={{
+                  fontSize: "1em",
+                  lineHeight: "calc(1.7 * var(--fit-tightness, 1))",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: "calc(0.3em * var(--fit-tightness, 1))",
+                }}
+              >
+                {chunkPairs(relatives, 2).map((pair, i) => (
+                  <p key={i} style={{ margin: 0, textAlign: "center" }}>
+                    {pair.map((g, j) => (
+                      <span key={g.id}>
+                        <span style={{ fontWeight: 700 }}>{g.label}: </span>
+                        {g.text}
+                        {j < pair.length - 1 ? "، " : ""}
+                      </span>
+                    ))}
+                  </p>
+                ))}
+              </div>
+            )
+          }
+
+          // "flowing" — الصفحة ممتلئة فعلياً (الخط بلغ حدّه المفضّل أو تجاوزه):
+          // كل الفئات تتدفّق معاً داخل صفّ ملتفّ (flex-wrap)، أكبر عدد ممكن في كل
+          // سطر، بدل سطر مستقل إلزامي لكل فئة (هذا كان السلوك الوحيد سابقاً بصرف
+          // النظر عن الكثافة الفعلية — يقلّص عدد الأسطر فيمنح auto-fit مساحة أكبر).
+          return (
+            <div
+              style={{
+                fontSize: "1em",
+                lineHeight: "calc(1.7 * var(--fit-tightness, 1))",
+                display: "flex",
+                flexWrap: "wrap",
+                justifyContent: "center",
+                columnGap: "0.6em",
+                rowGap: "calc(0.2em * var(--fit-tightness, 1))",
+              }}
+            >
+              {relatives.map((g, i) => (
+                <span key={g.id}>
+                  <span style={{ fontWeight: 700 }}>{g.label}: </span>
+                  {g.text}
+                  {i < relatives.length - 1 ? "،" : ""}
+                </span>
+              ))}
+            </div>
+          )
+        })()
       )}
 
       {divider && <Divider tokens={tokens} divider={divider} />}
 
-      {/* ٩. صلاة الجنازة — "ويوارى الثرى في…" ملحقة داخل funeralSentence نفسها
-          (بفاصلة، سطر مكمّل لا فقرة منفصلة)، وليست <p> مستقلة هنا. طرابلس وشمال
-          لبنان (emphasizePrayerLocation): اسم المسجد يُفصل كسطر عريض مستقل بعد
-          جملة الصلاة، بدل دمجه داخلها — راجع funeralSentenceCore/prayerLocationLine
-          في render.ts (funeralSentence نفسها بلا تغيير، تبقى لبقية القوالب). */}
-      <div style={{ fontSize: "1em", lineHeight: "calc(1.7 * var(--fit-tightness, 1))" }}>
-        {procession && <p>{procession}</p>}
-        {emphasizePrayerLocation ? (
+      {/*
+        ٩+١٠. التشييع والصلاة والدفن والتعزية معاً — إطار (stroke) مربع اختياري
+        حول القسمين معاً (emphasizeFuneralBox، مفعّل افتراضياً) لتركيز الانتباه
+        على المعلومات المهمة؛ لا يشمل "ملاحظات إضافية" بعده عمداً. راجع
+        Step2Funeral.tsx (CondolencesFields) للتحكّم.
+      */}
+      {(() => {
+        const funeralAndCondolences = (
           <>
-            <p>{funeralSentenceCore(data)}</p>
-            {prayerLocationLine(data) && (
-              <p style={{ fontSize: "1.3em", fontWeight: 700, margin: "0.2em 0" }}>{prayerLocationLine(data)}</p>
-            )}
-            {burialLine(data) && <p style={{ fontSize: "0.85em", color: tokens.muted }}>{burialLine(data)}</p>}
-          </>
-        ) : (
-          <p>{funeralSentence(data)}</p>
-        )}
-      </div>
+            {/* ٩. صلاة الجنازة — "ويوارى الثرى في…" ملحقة داخل funeralSentence نفسها
+                (بفاصلة، سطر مكمّل لا فقرة منفصلة)، وليست <p> مستقلة هنا. طرابلس وشمال
+                لبنان (emphasizePrayerLocation): اسم المسجد يُفصل كسطر عريض مستقل بعد
+                جملة الصلاة، بدل دمجه داخلها — راجع funeralSentenceCore/prayerLocationLine
+                في render.ts (funeralSentence نفسها بلا تغيير، تبقى لبقية القوالب). */}
+            <div style={{ fontSize: "1em", lineHeight: "calc(1.7 * var(--fit-tightness, 1))" }}>
+              {procession && <p>{procession}</p>}
+              {emphasizePrayerLocation ? (
+                <>
+                  <p>{funeralSentenceCore(data)}</p>
+                  {prayerLocationLine(data) && (
+                    <p style={{ fontSize: "1.3em", fontWeight: 700, margin: "0.2em 0" }}>{prayerLocationLine(data)}</p>
+                  )}
+                  {burialLine(data) && <p style={{ fontSize: "0.85em", color: tokens.muted }}>{burialLine(data)}</p>}
+                </>
+              ) : (
+                <p>{funeralSentence(data)}</p>
+              )}
+            </div>
 
-      {/* ١٠. التعزية */}
-      {(funeral.condolencesGeneral || hasSeparateCondolences || hasSharedCondolences) && (
-        <div style={{ fontSize: "0.95em", color: tokens.muted, lineHeight: "calc(1.7 * var(--fit-tightness, 1))" }}>
-          {funeral.condolencesGeneral && <p>{funeral.condolencesGeneral}</p>}
-          {hasSharedCondolences && <p>للرجال والنساء: {funeral.condolencesMen || funeral.condolencesWomen}</p>}
-          {hasSeparateCondolences && (
-            <>
-              {funeral.condolencesMen && <p>للرجال: {funeral.condolencesMen}</p>}
-              {funeral.condolencesWomen && <p>للنساء: {funeral.condolencesWomen}</p>}
-            </>
-          )}
-        </div>
-      )}
+            {/* ١٠. التعزية */}
+            {(funeral.condolencesGeneral || hasSeparateCondolences || hasSharedCondolences) && (
+              <div style={{ fontSize: "0.95em", color: tokens.muted, lineHeight: "calc(1.7 * var(--fit-tightness, 1))" }}>
+                {funeral.condolencesGeneral && <p>{funeral.condolencesGeneral}</p>}
+                {hasSharedCondolences && <p>للرجال والنساء: {funeral.condolencesMen || funeral.condolencesWomen}</p>}
+                {hasSeparateCondolences && (
+                  <>
+                    {funeral.condolencesMen && <p>للرجال: {funeral.condolencesMen}</p>}
+                    {funeral.condolencesWomen && <p>للنساء: {funeral.condolencesWomen}</p>}
+                  </>
+                )}
+              </div>
+            )}
+          </>
+        )
+
+        return (funeral.emphasizeFuneralBox ?? true) ? (
+          <div style={{ border: `1px solid ${tokens.ink}`, borderRadius: 0, padding: "0.6em 0.9em", display: "flex", flexDirection: "column", gap: "0.5em" }}>
+            {funeralAndCondolences}
+          </div>
+        ) : (
+          funeralAndCondolences
+        )
+      })()}
 
       {funeral.extraNotes && <p style={{ fontSize: "0.9em", color: tokens.muted }}>{funeral.extraNotes}</p>}
 

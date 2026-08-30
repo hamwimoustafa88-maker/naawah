@@ -217,28 +217,62 @@ export function todayISO(): string {
   return `${y}-${m}-${day}`
 }
 
-export function createEmptyPerson(gender: Gender = "male"): Person {
+// id بارامتر اختياري — افتراضياً crypto.randomUUID() (سلوك addRelativeGroup الحالي،
+// يعمل من جهة العميل فقط استجابة لنقرة مستخدم فعلية، فلا خطر SSR هناك). مرّر id
+// ثابتاً صراحةً عند الإنشاء ضمن الحالة الابتدائية للمتجر (createEmptyData في
+// editorStore.ts) — راجع تعليق createEmptyRelativeGroup أسفل لسبب ذلك تحديداً.
+export function createEmptyPerson(gender: Gender = "male", id: string = crypto.randomUUID()): Person {
   return {
-    id: crypto.randomUUID(),
+    id,
     name: "",
     isDeceased: false,
     gender,
   }
 }
 
-export function createEmptyRelativeGroup(categoryKey: RelativeCategoryKey): RelativeGroup {
+/**
+ * id بارامتر اختياري (افتراضياً crypto.randomUUID()) — **مرّره صراحةً بقيمة ثابتة
+ * عند استعمال هذه الدالة داخل الحالة الابتدائية لمتجر Zustand** (createEmptyData
+ * في editorStore.ts)، لا عند إضافة فئة قرابة فعلية بنقرة مستخدم (addRelativeGroup،
+ * يبقى عشوائياً بأمان — يعمل من جهة العميل فقط بعد التحميل).
+ *
+ * السبب: `data: createEmptyData()` في تعريف متجر Zustand يُنفَّذ عند تقييم الوحدة
+ * (module) — تقييم يحدث مرتين مستقلّتين تماماً: مرة على الخادم أثناء SSR لهذه
+ * الصفحة (Client Component تُرسَم على الخادم أيضاً لبناء الـHTML الأولي)، ومرة على
+ * المتصفح عند الـhydration. لو استعملت crypto.randomUUID() هنا، تنتج قيمتين
+ * مختلفتين للفئات الستّ المُفعَّلة سلفاً (وأعضائها) بين الخادم والعميل — عطل
+ * hydration mismatch حقيقي واجهناه فعلاً (aria-describedby عناصر dnd-kit تختلف
+ * بين ما رسمه الخادم وما يحسبه العميل، ولا يُصلَح تلقائياً: "This won't be patched
+ * up"). معرّف ثابت مشتقّ من categoryKey نفسه بلا عشوائية يحلّ هذا جذرياً (نفس
+ * القيمة حتماً في كل بيئة) بلا خطر تصادم — فئة واحدة فقط من كل نوع من هذه الستّ
+ * موجودة عند التهيئة الابتدائية.
+ */
+export function createEmptyRelativeGroup(categoryKey: RelativeCategoryKey, id: string = crypto.randomUUID()): RelativeGroup {
   return {
-    id: crypto.randomUUID(),
+    id,
     categoryKey,
-    // فئة "الوالدين" حالة خاصة: تُنشأ بعضوين جاهزين (أب/أم) دائماً — فئات القرابة
-    // ذات الجنس الثابت (بناته، أولاده...) تُملأ عبر addRelativeGroup في المتجر بدلاً
-    // من هنا، لأنها تحتاج قراءة FIXED_GENDER_BY_CATEGORY.
+    // فئة "الوالدين" حالة خاصة: تُنشأ بعضوين جاهزين (أب/أم) دائماً. بقية الفئات
+    // تبدأ بعضو واحد جاهز للتعديل مباشرة (لا زر "إضافة اسم" فارغ) — بجنس محسوم من
+    // FIXED_GENDER_BY_CATEGORY إن كانت الفئة ثابتة الجنس، وإلا "male" افتراضياً
+    // (فئة مختلطة كـgrandchildren، يختار المستخدم جنس كل عضو بنفسه).
+    // أعضاء هذه الفئة يرثون معرّفاً مشتقّاً من id الفئة نفسها (لا عشوائياً) عند
+    // تمرير id ثابت أعلاه — لنفس سبب ثبات id الفئة تماماً.
     members:
       categoryKey === "parents"
-        ? [createEmptyPerson("male"), createEmptyPerson("female")]
-        : [],
+        ? [createEmptyPerson("male", `${id}-father`), createEmptyPerson("female", `${id}-mother`)]
+        : [createEmptyPerson(FIXED_GENDER_BY_CATEGORY[categoryKey] ?? "male", `${id}-member`)],
   }
 }
+
+/**
+ * فئات قرابة لا معنى لها لفقيد/ة عازب/ة لم يتزوّج قط (بلا زوج/ة أو أبناء) — تُخفى
+ * حين deceased.isSingle مفعّل، من قائمة "إضافة فئة قرابة" ومن العرض/الطباعة معاً.
+ * "husband"/"wives" مُدرجتان معاً (لا واحدة فقط) لتغطية عزوبية كلا الجنسين — راجع
+ * CATEGORY_REQUIRES_DECEASED_GENDER أعلاه لفلترة الجنس المطلوب أصلاً لكل منهما.
+ */
+export const SINGLE_HIDDEN_RELATIVE_CATEGORIES: RelativeCategoryKey[] = [
+  "wives", "husband", "sons", "daughters", "grandchildren",
+]
 
 /** بيانات عرض أولية — إعادة بناء تقريبية لبنية المرفق الأول (الحاج محمود شهاب) لتغذية الكانفاس أثناء التطوير. */
 export const SAMPLE_OBITUARY_DATA: ObituaryData = {

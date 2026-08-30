@@ -6,7 +6,6 @@ import type { CustomTextKey, DeceasedInfo, FormatPrefs, FuneralInfo, NameStyleOv
 
 interface EditorState {
   data: ObituaryData
-  step: number
 
   /**
    * معاينة خط عابرة (hover) — منفصلة عمداً عن data.bodyFontFamily/nameStyle.fontFamily
@@ -21,7 +20,6 @@ interface EditorState {
   setPreviewBodyFontFamily: (fontFamily: string | undefined) => void
   setPreviewNameFontFamily: (fontFamily: string | undefined) => void
 
-  setStep: (step: number) => void
   updateDeceased: (patch: Partial<DeceasedInfo>) => void
   updateFuneral: (patch: Partial<FuneralInfo>) => void
   updateFormat: (patch: Partial<FormatPrefs>) => void
@@ -51,9 +49,12 @@ interface EditorState {
 
 /**
  * الحالة الافتراضية: بلا أي قيم مسبقة تُطبع في النعوة (كل نص في المحرر هو placeholder
- * فقط). **بلا أي فئة قرابة مُفعَّلة سلفاً** (بطلب صريح) — المستخدم يضيف كل فئة بنفسه
- * عبر "إضافة فئة قرابة"، فيبقى ترتيب `relatives[]` مطابقاً تماماً لترتيب إضافته
- * الفعلي (Append-only في addRelativeGroup) بلا أي فئة "خفية" تُخِلّ بهذا الترتيب.
+ * فقط). **ست فئات قرابة شائعة مُفعَّلة سلفاً بطلب صريح** (الوالدين، زوجته، ولده،
+ * ابنته، شقيقه، شقيقته) — عكس قرار سابق كان يبقيها فارغة تماماً؛ كل فئة تبدأ بعضو
+ * واحد فارغ (بلا اسم) فلا تُطبع كسطر في النعوة قبل تعبئتها فعلاً (راجع الفلترة على
+ * الاسم الفارغ في relativesBlocks بـrender.ts). ترتيبها هنا ثابت دائماً في مقدّمة
+ * `relatives[]`؛ أي فئة أخرى يضيفها المستخدم لاحقاً عبر "إضافة فئة قرابة" تُلحَق
+ * بعدها (Append-only في addRelativeGroup) بلا تعارض في الترتيب.
  * تاريخ الوفاة وتاريخ الصلاة والدفن كلاهما بلا قيمة افتراضية — يُملآن بتاريخ اليوم
  * عند أول تركيز على الحقل المعني فقط (راجع Step1Deceased.tsx وStep2Funeral.tsx)، لا تلقائياً هنا.
  */
@@ -74,7 +75,19 @@ function createEmptyData(): ObituaryData {
       // كما كان سابقاً (راجع printFooterText في render.ts: printFooterEnabled ?? templateSuggestsFooter).
       printFooterEnabled: true,
     },
-    relatives: [],
+    // id ثابت صريح (لا crypto.randomUUID() الافتراضي) لكل فئة من الست — إلزامي هنا
+    // تحديداً لأن createEmptyData() تُستدعى عند تقييم الوحدة (module) في تعريف متجر
+    // Zustand أسفل، والذي يُنفَّذ مرتين مستقلّتين (خادم SSR + عميل hydration)؛ معرّف
+    // عشوائي هنا يُنتج قيمتين مختلفتين بين البيئتين ويُسبّب عطل hydration mismatch
+    // حقيقياً واجهناه فعلاً. راجع تعليق createEmptyRelativeGroup في defaults.ts.
+    relatives: [
+      createEmptyRelativeGroup("parents", "default-parents"),
+      createEmptyRelativeGroup("wives", "default-wives"),
+      createEmptyRelativeGroup("sons", "default-sons"),
+      createEmptyRelativeGroup("daughters", "default-daughters"),
+      createEmptyRelativeGroup("brothers", "default-brothers"),
+      createEmptyRelativeGroup("sisters", "default-sisters"),
+    ],
     format: {
       numerals: "arabic-indic",
       months: "levantine",
@@ -86,14 +99,11 @@ function createEmptyData(): ObituaryData {
 
 export const useEditorStore = create<EditorState>((set) => ({
   data: createEmptyData(),
-  step: 1,
 
   previewBodyFontFamily: undefined,
   previewNameFontFamily: undefined,
   setPreviewBodyFontFamily: (fontFamily) => set({ previewBodyFontFamily: fontFamily }),
   setPreviewNameFontFamily: (fontFamily) => set({ previewNameFontFamily: fontFamily }),
-
-  setStep: (step) => set({ step }),
 
   updateDeceased: (patch) =>
     set((s) => ({ data: { ...s.data, deceased: { ...s.data.deceased, ...patch } } })),
@@ -120,12 +130,9 @@ export const useEditorStore = create<EditorState>((set) => ({
   setTemplate: (templateId) => set((s) => ({ data: { ...s.data, templateId } })),
 
   addRelativeGroup: (categoryKey) => {
+    // كل فئة تُضاف تبدأ بعضو واحد جاهز للتعديل مباشرة (لا زر "إضافة اسم" فارغ) —
+    // createEmptyRelativeGroup تتكفّل بهذا (بعضوين جاهزين لـ"الوالدين" تحديداً).
     const group = createEmptyRelativeGroup(categoryKey)
-    // كل فئة تُضاف تبدأ باسم واحد جاهز للتعديل مباشرة، لا بزر "إضافة اسم" فارغ.
-    // "الوالدين" حالة خاصة تصل بعضوين جاهزين سلفاً من createEmptyRelativeGroup.
-    if (group.members.length === 0) {
-      group.members.push(createEmptyPerson(FIXED_GENDER_BY_CATEGORY[categoryKey] ?? "male"))
-    }
     set((s) => ({ data: { ...s.data, relatives: [...s.data.relatives, group] } }))
     return group.id
   },
@@ -180,6 +187,6 @@ export const useEditorStore = create<EditorState>((set) => ({
     })),
 
   loadSample: () => set({ data: SAMPLE_OBITUARY_DATA }),
-  reset: () => set({ data: createEmptyData(), step: 1 }),
+  reset: () => set({ data: createEmptyData() }),
   loadData: (data) => set({ data }),
 }))
