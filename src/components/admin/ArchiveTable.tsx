@@ -54,9 +54,9 @@ export function ArchiveTable({ rows }: { rows: ArchiveRow[] }) {
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-black/10 bg-white">
-        <table className="w-full min-w-[640px] text-sm">
+        <table className="w-full min-w-215 text-sm">
           <thead>
-            <tr className="border-b border-black/10 bg-black/[0.03] text-right text-xs font-bold text-black/55">
+            <tr className="border-b border-black/10 bg-black/3 text-right text-xs font-bold text-black/55">
               <th className="px-4 py-3">اسم المتوفى</th>
               <th className="px-4 py-3">تاريخ الوفاة</th>
               <th className="px-4 py-3">مكان الوفاة</th>
@@ -68,9 +68,10 @@ export function ArchiveTable({ rows }: { rows: ArchiveRow[] }) {
           </thead>
           <tbody>
             {filtered.map((row) => (
-              <tr key={row.id} className="border-b border-black/5 last:border-0 hover:bg-black/[0.02]">
+              <tr key={row.id} className="border-b border-black/5 last:border-0 hover:bg-black/2">
                 <td className="px-4 py-3 font-medium text-black/80">{row.deceasedName}</td>
-                <td className="px-4 py-3 text-black/65">{row.deathDateAr || "—"}</td>
+                <td className="px-4 py-3 text-black/65">{row.deathDate || "—"}</td>
+                <td className="px-4 py-3 text-black/65">{row.deathPlaceNote || "—"}</td>
                 <td className="px-4 py-3">
                   <a
                     href={row.driveViewUrl}
@@ -82,14 +83,14 @@ export function ArchiveTable({ rows }: { rows: ArchiveRow[] }) {
                     <ExternalLink size={13} />
                   </a>
                 </td>
-                <td className="px-4 py-3 text-black/50">{row.templateId}</td>
+                <td className="px-4 py-3 text-black/65">{row.condolencesInfo || "—"}</td>
                 <td className="px-4 py-3 text-black/50">{row.exportCount}</td>
                 <td className="px-4 py-3 text-black/50">{row.createdAt}</td>
               </tr>
             ))}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-black/40">
+                <td colSpan={7} className="px-4 py-8 text-center text-black/40">
                   لا نتائج
                 </td>
               </tr>
