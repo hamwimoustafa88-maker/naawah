@@ -1,0 +1,144 @@
+// منطق التصدير المشترك — يُستهلَك من ExportBar.tsx (شريط التصدير الكامل أسفل
+// المعاينة) ومن CreateHeader.tsx (أزرار مختصرة أعلى الصفحة) معاً، حتى لا يتكرر
+// منطق التقاط الكانفاس وتوليد الملفات في مكانين.
+
+import { toBlob, toJpeg } from "html-to-image"
+import { jsPDF } from "jspdf"
+import { getTemplate } from "@/lib/templates/registry"
+import { shareMessage } from "@/lib/obituary/render"
+import { archiveExport } from "@/lib/export/archive"
+import type { ObituaryData } from "@/lib/obituary/types"
+
+export type ExportKind = "png" | "pdf" | "share"
+
+/**
+ * نسخة سطح المكتب (EditorShell.tsx) ونسخة الجوال (MobileEditorView.tsx) من
+ * ObituaryCanvas مُركَّبتان معاً دائماً في DOM — التبديل بينهما بصرياً بـCSS فقط
+ * (lg:hidden / hidden lg:grid) حسب عرض الشاشة، لا بعدم تركيب أحدهما. لذا نبحث
+ * عن أول عنصر مُطابق *ظاهر فعلياً* (أبعاد غير صفرية)، لا أول id مطابق مطلقاً —
+ * وإلا قد نلتقط النسخة المخفية (٠×٠px) فيفشل toBlob()/toJpeg() بصمت أو ينتج
+ * صورة فارغة (عطل حقيقي صادفناه: PNG "فشل تحويل الكانفاس إلى صورة"، PDF بصفحة فارغة).
+ */
+const CANVAS_IDS = ["obituary-canvas", "obituary-canvas-mobile"]
+
+async function getCanvasNode(): Promise<HTMLElement> {
+  const node = CANVAS_IDS
+    .map((id) => document.getElementById(id))
+    .find((el): el is HTMLElement => !!el && el.offsetWidth > 0 && el.offsetHeight > 0)
+  if (!node) throw new Error("لم يُعثر على الكانفاس")
+  if (typeof document.fonts?.ready?.then === "function") {
+    await document.fonts.ready
+  }
+  return node
+}
+
+/** PNG بلا فقدان — للتحميل المباشر وللمشاركة. */
+async function capturePngBlob(): Promise<Blob> {
+  const node = await getCanvasNode()
+  const blob = await toBlob(node, { pixelRatio: 3, cacheBust: true })
+  if (!blob) throw new Error("فشل تحويل الكانفاس إلى صورة")
+  return blob
+}
+
+/**
+ * JPEG بجودة عالية — للـPDF فقط. jsPDF يضمّن PNG خاماً بلا ضغط، فتنتج ملفات ٢٠+
+ * ميجابايت غير عملية للمشاركة عبر واتساب/إيميل. الضغط بجودة 0.92 غير ملحوظ بصرياً
+ * على النصوص والخطوط، ويقلّص الحجم بنسبة تفوق ٩٠٪.
+ *
+ * خلفية JPEG (بلا شفافية) يجب أن تطابق خلفية القالب الفعلية — لا أبيض ثابت، وإلا
+ * ظهرت هالة بيضاء على حواف القوالب الداكنة (مثال: "الليلي الفخم") عند التصدير.
+ */
+async function captureJpeg(templateId: string): Promise<string> {
+  const node = await getCanvasNode()
+  const backgroundColor = getTemplate(templateId).tokens.bg
+  return toJpeg(node, { pixelRatio: 3, cacheBust: true, quality: 0.92, backgroundColor })
+}
+
+/**
+ * اسم ملف التصدير: "النعوة الإلكترونية - {اسم الفقيد}"، أو "النعوة الإلكترونية"
+ * وحدها إن لم يُدخَل اسم بعد. يُزيل الرموز غير الصالحة في أسماء الملفات عبر أنظمة
+ * التشغيل المختلفة (Windows تحديداً أكثرها تقييداً: \/:*?"<>|).
+ */
+function buildFileName(deceasedName: string, extension: string): string {
+  const trimmed = deceasedName.trim()
+  const base = trimmed ? `النعوة الإلكترونية - ${trimmed}` : "النعوة الإلكترونية"
+  const safe = base.replace(/[\\/:*?"<>|]/g, "").trim()
+  return `${safe}.${extension}`
+}
+
+function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement("a")
+  a.href = url
+  a.download = filename
+  // يجب إلحاق العنصر بالمستند قبل click() — بعض المتصفحات تتجاهل تنزيل عنصر منفصل عن DOM.
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  URL.revokeObjectURL(url)
+}
+
+async function notifyStats(templateId: string) {
+  try {
+    await fetch("/api/stats/increment", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ templateId }),
+    })
+  } catch {
+    // إحصاءات صامتة — لا نعطّل التصدير إن فشل الطلب
+  }
+}
+
+/**
+ * يؤرشف نسخة عن النعوة المُصدَّرة في Google Drive عبر /api/archive — صامت تماماً
+ * (نفس نمط notifyStats أعلاه بالضبط): أي فشل هنا (شبكة، خادم غير مُهيَّأ لـDrive،
+ * قاعدة بيانات) لا يظهر للمستخدم إطلاقاً ولا يعطّل التصدير الذي استلمه فعلاً، لأنه
+ * يُستدعى دائماً بـvoid بعد اكتمال التنزيل/المشاركة. jpegDataUrl مُمرَّرة جاهزة من
+ * exportPdf (تلتقطها أصلاً لبناء الملف) لتفادي التقاط الكانفاس مرتين؛ exportPng
+ * وexportShare يلتقطانها هنا من الصفر — التكلفة تقع بعد نزول ملف المستخدم فلا يشعر بها.
+ */
+async function archiveAfterExport(data: ObituaryData, archiveKey: string, kind: ExportKind, jpegDataUrl?: string) {
+  try {
+    const dataUrl = jpegDataUrl ?? (await captureJpeg(data.templateId))
+    await archiveExport({ data, archiveKey, exportKind: kind, jpegDataUrl: dataUrl })
+  } catch {
+    // أرشفة صامتة — لا نعطّل التصدير إن فشلت
+  }
+}
+
+export async function exportPng(data: ObituaryData, archiveKey: string) {
+  const blob = await capturePngBlob()
+  downloadBlob(blob, buildFileName(data.deceased.name, "png"))
+  void notifyStats(data.templateId)
+  void archiveAfterExport(data, archiveKey, "png")
+}
+
+export async function exportPdf(data: ObituaryData, archiveKey: string) {
+  const dataUrl = await captureJpeg(data.templateId)
+  const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4", compress: true })
+  pdf.addImage(dataUrl, "JPEG", 0, 0, 210, 297)
+  pdf.save(buildFileName(data.deceased.name, "pdf"))
+  void notifyStats(data.templateId)
+  void archiveAfterExport(data, archiveKey, "pdf", dataUrl)
+}
+
+/**
+ * المشاركة (زر واتساب/مشاركة النظام) — تُرفق نص الرسالة (shareMessage) مع الصورة
+ * معاً في نفس استدعاء navigator.share() الواحد، فتُضيفهما تطبيقات مثل واتساب
+ * كصورة + تعليق نصي في رسالة واحدة (سلوك قياسي لـWeb Share API عند تمرير
+ * files وtext معاً). الاحتياط (متصفحات بلا دعم مشاركة ملفات، غالباً سطح المكتب)
+ * يبقى تنزيلاً صامتاً بلا نص — كما كان، خارج نطاق هذا التعديل.
+ */
+export async function exportShare(data: ObituaryData, archiveKey: string) {
+  const blob = await capturePngBlob()
+  const filename = buildFileName(data.deceased.name, "png")
+  const file = new File([blob], filename, { type: "image/png" })
+  if (navigator.canShare?.({ files: [file] })) {
+    await navigator.share({ files: [file], title: "نعوة", text: shareMessage(data) })
+  } else {
+    downloadBlob(blob, filename)
+  }
+  void notifyStats(data.templateId)
+  void archiveAfterExport(data, archiveKey, "share")
+}
