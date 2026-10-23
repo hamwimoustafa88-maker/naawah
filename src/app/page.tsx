@@ -58,15 +58,17 @@ export default async function HomePage() {
       <JsonLd data={jsonLd} />
       <TemplateShowcaseProvider>
         <LandingHeader />
-        <Hero count={count} />
-        <HowItWorks />
-        <FeatureBento />
-        <TemplateGallery />
+        <main>
+          <Hero count={count} />
+          <HowItWorks />
+          <FeatureBento />
+          <TemplateGallery />
+          <SadaqahSection />
+          <OpenSourceSection />
+          <FaqPreview />
+          <DeveloperSection />
+        </main>
       </TemplateShowcaseProvider>
-      <SadaqahSection />
-      <OpenSourceSection />
-      <FaqPreview />
-      <DeveloperSection />
       <LandingFooter />
     </div>
   )

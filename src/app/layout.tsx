@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next"
 import Script from "next/script"
-import { GoogleAnalytics } from "@next/third-parties/google"
+import { AnalyticsConsent } from "@/components/common/AnalyticsConsent"
 import {
   Amiri, Amiri_Quran, Aref_Ruqaa_Ink, Cairo, Reem_Kufi_Ink, Scheherazade_New, Tajawal,
 } from "next/font/google"
@@ -115,8 +115,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           {THEME_INIT_SCRIPT}
         </Script>
         {children}
+        {GA_MEASUREMENT_ID && <AnalyticsConsent gaId={GA_MEASUREMENT_ID} />}
       </body>
-      {GA_MEASUREMENT_ID && <GoogleAnalytics gaId={GA_MEASUREMENT_ID} />}
     </html>
   )
 }

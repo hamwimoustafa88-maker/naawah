@@ -10,11 +10,13 @@ export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://enaawah.sco
 export const SITE_NAME = "النعوة الإلكترونية"
 
 export const SITE_DESCRIPTION =
-  "أنشئ نعوة إلكترونية عربية إسلامية وقورة تليق بمقام الفقيد خلال دقائق — اختر من ٧ قوالب احترافية، ودع محرك الصياغة يكتب نص النعي والأقارب تلقائياً بالتصريف الصحيح، ثم صدّرها PNG أو PDF جاهزة للطباعة والمشاركة. مجاناً وبلا تسجيل."
+  "أنشئ نعوة إلكترونية عربية إسلامية وقورة خلال دقائق: ٧ قوالب احترافية، وصياغة تلقائية للأقارب، وتصدير PNG وPDF جاهز للطباعة. مجاناً وبلا تسجيل."
 
 export const SITE_TITLE_DEFAULT = `${SITE_NAME} | مولّد نعوات إسلامية احترافية مجاناً`
 
 export const GITHUB_URL = "https://github.com/hamwimoustafa88-maker/naawah"
+
+export const SCOUTHUB_URL = "https://scouthub.dev/"
 
 export const LICENSE_URL = "https://www.gnu.org/licenses/gpl-3.0.html"
 

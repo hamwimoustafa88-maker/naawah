@@ -17,6 +17,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${SITE_URL}/guides`, lastModified: STATIC_LAST_MODIFIED, changeFrequency: "monthly", priority: 0.7 },
     { url: `${SITE_URL}/faq`, lastModified: STATIC_LAST_MODIFIED, changeFrequency: "monthly", priority: 0.6 },
     { url: `${SITE_URL}/open-source`, lastModified: STATIC_LAST_MODIFIED, changeFrequency: "monthly", priority: 0.5 },
+    { url: `${SITE_URL}/about`, lastModified: "2026-10-23", changeFrequency: "yearly", priority: 0.4 },
+    { url: `${SITE_URL}/contact`, lastModified: "2026-10-23", changeFrequency: "yearly", priority: 0.4 },
+    { url: `${SITE_URL}/privacy`, lastModified: "2026-10-23", changeFrequency: "yearly", priority: 0.3 },
+    { url: `${SITE_URL}/terms`, lastModified: "2026-10-23", changeFrequency: "yearly", priority: 0.3 },
   ]
 
   const templatePages: MetadataRoute.Sitemap = VISIBLE_TEMPLATES.map((t) => ({

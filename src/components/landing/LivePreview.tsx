@@ -108,11 +108,15 @@ export function LivePreview() {
             onClick={() => goTo(i)}
             aria-label={t.name}
             title={t.name}
-            className={cn(
-              "h-2 w-2 rounded-full transition-colors",
-              templateId === t.id ? "bg-(--home-accent)" : "bg-(--home-border) hover:bg-(--home-accent)/50"
-            )}
-          />
+            className="group flex h-6 w-6 items-center justify-center"
+          >
+            <span
+              className={cn(
+                "h-2 w-2 rounded-full transition-colors",
+                templateId === t.id ? "bg-(--home-accent)" : "bg-(--home-border) group-hover:bg-(--home-accent)/50"
+              )}
+            />
+          </button>
         ))}
       </div>
     </div>

@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { GitHubIcon } from "@/components/landing/BrandIcons"
-import { GITHUB_URL, LICENSE_URL, SITE_NAME } from "@/lib/seo/site"
+import { GITHUB_URL, LICENSE_URL, SCOUTHUB_URL, SITE_NAME } from "@/lib/seo/site"
 import { VISIBLE_TEMPLATES } from "@/lib/templates/registry"
 import { GUIDES } from "@/lib/seo/guides"
 
@@ -25,6 +25,13 @@ const LINK_COLUMNS: { title: string; links: { href: string; label: string }[] }[
     title: "أدلّة مفيدة",
     links: GUIDES.slice(0, 4).map((g) => ({ href: `/guides/${g.slug}`, label: g.shortTitle })),
   },
+]
+
+const INFO_LINKS = [
+  { href: "/about", label: "من نحن" },
+  { href: "/contact", label: "اتصل بنا" },
+  { href: "/privacy", label: "سياسة الخصوصية" },
+  { href: "/terms", label: "الشروط والأحكام" },
 ]
 
 export function LandingFooter() {
@@ -58,7 +65,7 @@ export function LandingFooter() {
         </div>
 
         {LINK_COLUMNS.map((col) => (
-          <nav key={col.title} className="flex flex-col gap-2.5">
+          <nav key={col.title} aria-label={col.title} className="flex flex-col gap-2.5">
             <span className="text-xs font-bold text-(--home-fg)">{col.title}</span>
             {col.links.map((l) => (
               <Link
@@ -73,11 +80,33 @@ export function LandingFooter() {
         ))}
       </div>
 
-      <div className="mx-auto mt-10 flex w-full max-w-5xl flex-col gap-3 border-t border-(--home-border) pt-6 text-center sm:flex-row sm:items-center sm:justify-between sm:text-right">
-        <p className="text-xs text-(--home-muted)">
-          باستخدامك لهذا التطبيق فإنك تتعهد بصحة المعلومات والبيانات الواردة في تصميم النعوة.
-        </p>
-        <p className="text-xs text-(--home-muted)">© {new Date().getFullYear()} {SITE_NAME}</p>
+      <div className="mx-auto mt-10 flex w-full max-w-5xl flex-col gap-4 border-t border-(--home-border) pt-6 text-center text-xs text-(--home-muted)">
+        <nav aria-label="صفحات تعريفية" className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
+          {INFO_LINKS.map((l) => (
+            <Link key={l.href} href={l.href} className="transition-colors hover:text-(--home-fg)">
+              {l.label}
+            </Link>
+          ))}
+        </nav>
+        <p>باستخدامك لهذا التطبيق فإنك تتعهد بصحة المعلومات والبيانات الواردة في تصميم النعوة.</p>
+        <div className="flex flex-col items-center justify-between gap-3 sm:flex-row">
+          <p>
+            © {new Date().getFullYear()} {SITE_NAME}. جميع الحقوق محفوظة.
+          </p>
+          <p className="flex items-center gap-2">
+            <span>إحدى مبادرات منصة</span>
+            <a
+              href={SCOUTHUB_URL}
+              target="_blank"
+              rel="noopener"
+              className="inline-flex items-center gap-1.5 font-bold text-(--home-fg) transition-opacity hover:opacity-80"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element -- شعار SVG ثابت صغير، next/image لا يعالج SVG افتراضياً */}
+              <img src="/scouthub-logo.svg" alt="" width={20} height={20} className="h-5 w-5" />
+              ScoutHub
+            </a>
+          </p>
+        </div>
       </div>
     </footer>
   )
