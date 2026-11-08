@@ -153,76 +153,53 @@ export function relativeCategoryLabel(
   return RELATIVE_LABELS[key][deceasedGender]
 }
 
-/** يربط جملاً بحرف الواو الملتصق: ["أ","ب","ج"] → "أ وب وج" */
-export function joinWithWaw(parts: string[]): string {
-  return parts
-    .filter((p) => p && p.trim().length > 0)
-    .reduce((acc, cur, idx) => (idx === 0 ? cur : `${acc} و${cur}`), "")
+/** مقطع من سطر الأقارب — isName يميّز الأسماء لتنسيقها (عريض/تحته خط) دون الروابط والصفات. */
+export interface RelativeTextPart {
+  text: string
+  isName: boolean
 }
 
 /** يركّب اسم قريب واحد: [اللقب] [الاسم] [زوجته/زوجة اللقب الاسم] — بلا علامة "المرحوم" (تُضاف على مستوى المجموعة). */
-export function renderPersonCore(p: Person): string {
-  const namePart = p.honorific ? `${p.honorific} ${p.name}` : p.name
+function personParts(p: Person): RelativeTextPart[] {
+  const namePart: RelativeTextPart = { text: p.honorific ? `${p.honorific} ${p.name}` : p.name, isName: true }
 
-  if (!p.spouseName) return namePart
+  if (!p.spouseName) return [namePart]
 
-  // القاعدة: قريب ذكر ← "زوجته"، قريبة أنثى ← "زوجة" (الزوج يُذكر بعدها).
-  const connector = p.gender === "male" ? "زوجته" : "زوجة"
+  // القاعدة: قريب ذكر ← "زوجته"، قريبة أنثى ← "زوجة" (الزوج يُذكر بعدها)،
+  // أو "أرملة" إن اختيرت وكان الزوج متوفى فعلاً — لا تصح "أرملة" لزوج حيّ.
+  const femaleConnector = p.spouseIsDeceased && p.widowStyle === "أرملة" ? "أرملة" : "زوجة"
+  const connector = p.gender === "male" ? "زوجته" : femaleConnector
   const spouseMarker = p.spouseIsDeceased
     ? p.gender === "male"
       ? "المرحومة"
       : "المرحوم"
     : ""
-  const spouseHonorific = p.spouseHonorific ? p.spouseHonorific : ""
-  const spousePart = [connector, spouseMarker, spouseHonorific, p.spouseName]
-    .filter(Boolean)
-    .join(" ")
+  const spouseLead = [connector, spouseMarker].filter(Boolean).join(" ")
+  const spouseName = [p.spouseHonorific, p.spouseName].filter(Boolean).join(" ")
 
-  return `${namePart} ${spousePart}`
+  return [namePart, { text: ` ${spouseLead} `, isName: false }, { text: spouseName, isName: true }]
+}
+
+const partsToText = (parts: RelativeTextPart[]) => parts.map((part) => part.text).join("")
+
+export function renderPersonCore(p: Person): string {
+  return partsToText(personParts(p))
 }
 
 /**
- * يركّب قائمة أقارب فئة واحدة، مع تجميع سلاسل الوفاة المتتالية تحت
- * "المرحومين/المرحومات" مرة واحدة بدل تكرارها لكل اسم.
- * السلسلة تُجمَّع حسب (متوفى + الجنس) معاً — لا حسب الوفاة فقط — لأن فئات مثل
- * الأحفاد أو أبناء الإخوة تخلط الذكور والإناث فعلياً، وخلط جنسين تحت صيغة جمع
- * واحدة (المرحومين/المرحومات) خطأ نحوي.
+ * يركّب قائمة أقارب فئة واحدة، وكل اسم متوفى تسبقه "المرحوم/المرحومة" منفردة بجنسه.
+ * لا تُدمج الأسماء تحت "المرحومين/المرحومات" — بطلب صريح: الدمج لم يكن يوضح أي
+ * الأسماء متوفى وأيها حيّ حين تختلط الحالتان في الفئة نفسها.
  */
-export function renderRelativeList(members: Person[]): string {
-  // endsGroup: true فقط لتوكن "المرحومين/المرحومات" (سلسلة ٢+ أسماء) — يُستهلَك
-  // أدناه لإدراج فاصلة قبل "و" التالية له تحديداً (راجع التعليق قبل reduce).
-  const tokens: { text: string; endsGroup: boolean }[] = []
-  let i = 0
-  while (i < members.length) {
-    const p = members[i]
-    if (p.isDeceased) {
-      let j = i
-      while (j < members.length && members[j].isDeceased && members[j].gender === p.gender) j++
-      const run = members.slice(i, j)
-      if (run.length >= 2) {
-        const marker = p.gender === "male" ? "المرحومين" : "المرحومات"
-        const namesJoined = joinWithWaw(run.map(renderPersonCore))
-        tokens.push({ text: `${marker} ${namesJoined}`, endsGroup: true })
-      } else {
-        const marker = p.gender === "male" ? "المرحوم" : "المرحومة"
-        tokens.push({ text: `${marker} ${renderPersonCore(run[0])}`, endsGroup: false })
-      }
-      i = j
-    } else {
-      tokens.push({ text: renderPersonCore(p), endsGroup: false })
-      i++
-    }
-  }
+export function renderRelativeParts(members: Person[]): RelativeTextPart[] {
+  return members.flatMap((p, index) => {
+    const parts: RelativeTextPart[] = []
+    if (index > 0) parts.push({ text: " و", isName: false })
+    if (p.isDeceased) parts.push({ text: p.gender === "male" ? "المرحوم " : "المرحومة ", isName: false })
+    return [...parts, ...personParts(p)]
+  })
+}
 
-  // فاصلة قبل "و" مباشرة بعد مجموعة "المرحومين/المرحومات" (لا بعد "المرحوم/ة"
-  // المفرد) إن تبعتها أسماء أخرى — بلا هذه الفاصلة يلتبس نطاق المجموعة فيبدو
-  // الاسم التالي مشمولاً بها خطأً رغم كونه حيّاً فعلياً. عطل حقيقي واجهناه: ثلاث
-  // زوجات، اثنتان متوفّيتان فقط، لكن "المرحومات فلانة وفلانة وفلانة" يُقرأ وكأن
-  // الثلاث متوفّيات. الحالتان المُختبَرتان سابقاً (مفرد "المرحوم/ة"، أو مجموعة في
-  // آخر القائمة بلا توكن بعدها) لا تُفعِّلان هذا الشرط إطلاقاً، فتبقيان بلا تغيير.
-  return tokens.reduce((acc, cur, idx) => {
-    if (idx === 0) return cur.text
-    const connector = tokens[idx - 1].endsGroup ? "، و" : " و"
-    return `${acc}${connector}${cur.text}`
-  }, "")
+export function renderRelativeList(members: Person[]): string {
+  return partsToText(renderRelativeParts(members))
 }

@@ -29,7 +29,7 @@ export function OpenSourceSection() {
             href={GITHUB_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 rounded-xl border border-(--home-border) px-5 py-2.5 text-sm font-bold text-(--home-fg) transition-colors hover:bg-(--home-surface)"
+            className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-(--home-border) px-5 py-2.5 text-sm font-bold text-(--home-fg) transition-colors hover:bg-(--home-surface)"
           >
             <GitHubIcon className="h-4 w-4" />
             الكود على GitHub
@@ -38,13 +38,13 @@ export function OpenSourceSection() {
             href={LICENSE_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center rounded-xl border border-(--home-border) px-5 py-2.5 text-sm font-bold text-(--home-fg) transition-colors hover:bg-(--home-surface)"
+            className="inline-flex min-h-11 items-center rounded-xl border border-(--home-border) px-5 py-2.5 text-sm font-bold text-(--home-fg) transition-colors hover:bg-(--home-surface)"
           >
             الرخصة GPL-3.0
           </a>
           <Link
             href="/open-source"
-            className="inline-flex items-center rounded-xl bg-(--home-accent) px-5 py-2.5 text-sm font-bold text-white transition-transform hover:scale-[1.02]"
+            className="inline-flex min-h-11 items-center rounded-xl bg-(--home-accent) px-5 py-2.5 text-sm font-bold text-white transition-transform hover:scale-[1.02]"
           >
             تفاصيل أكثر
           </Link>

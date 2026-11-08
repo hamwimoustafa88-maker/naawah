@@ -13,7 +13,7 @@ export function DeveloperSection() {
   return (
     <section id="developer" className="w-full scroll-mt-20 bg-[#161311] py-16 text-[#f2e8d8]">
       <Reveal className="mx-auto flex max-w-2xl flex-col items-center gap-4 px-6 text-center">
-        <h2 className="text-xs tracking-widest text-[#c9a94a]">المطوّر</h2>
+        <h2 className="text-sm tracking-widest text-[#c9a94a]">المطوّر</h2>
 
         <div className="overflow-hidden rounded-full ring-2 ring-[#c9a94a]" style={{ width: 96, height: 96 }}>
           <Image
@@ -27,10 +27,10 @@ export function DeveloperSection() {
 
         <div>
           <h3 className="text-lg font-bold">مصطفى الحموي</h3>
-          <p className="text-xs text-[#a89676]">Moustafa Al-Hamwi</p>
+          <p className="text-sm text-[#a89676]">Moustafa Al-Hamwi</p>
         </div>
 
-        <span className="rounded-full border border-[#c9a94a]/40 bg-[#c9a94a]/10 px-3 py-1 text-xs text-[#c9a94a]">
+        <span className="rounded-full border border-[#c9a94a]/40 bg-[#c9a94a]/10 px-3 py-1 text-sm text-[#c9a94a]">
           قائد كشفي ومطوّر برامج
         </span>
 
@@ -46,7 +46,7 @@ export function DeveloperSection() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label={label}
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-[#c9a94a]/30 text-[#f2e8d8] transition-colors hover:bg-[#c9a94a]/15"
+              className="flex h-11 w-11 items-center justify-center rounded-full border border-[#c9a94a]/30 text-[#f2e8d8] transition-colors hover:bg-[#c9a94a]/15"
             >
               <Icon className="h-4 w-4" />
             </a>

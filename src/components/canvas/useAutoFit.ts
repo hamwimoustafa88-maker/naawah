@@ -3,6 +3,9 @@
 // يقلّص حجم الخط تلقائياً (بحث ثنائي) حتى يبقى المحتوى داخل صفحة A4 واحدة.
 // يعالج تفاوت كثافة البيانات بين النعوات (من ~١٢ اسماً إلى ~٣٠).
 //
+// النعوة القصيرة تسير بالعكس (grow): يُكبَّر الخط حتى MAX_GROW_SCALE، وما يتبقّى من
+// فراغ يُوزَّع على المسافات بين الأقسام عبر --fit-spread.
+//
 // ثلاث مراحل متتالية، كل واحدة أشد "ضرراً" بصرياً من سابقتها — لا تبدأ مرحلة
 // إلا بعد فشل ما قبلها في حل الفيض:
 // ١) تصغير حجم الخط فقط حتى SOFT_MIN_FONT_PX (١٢px) — الحد "المفضّل" المقروء.
@@ -27,6 +30,10 @@ const HARD_MIN_SCALE = HARD_MIN_FONT_PX / BASE_FONT_PX // 0.625 — أقصى ك�
 const MAX_TIGHTNESS = 1.0
 const MIN_TIGHTNESS = 0.7 // أقصى تضييق مقبول لتباعد الأسطر قبل اللجوء لكسر حد الخط
 
+const MAX_GROW_SCALE = 1.5 // ٢٤px — أكبر خط مقبول للنعوة القصيرة
+const BASE_SPREAD = 1
+const MAX_SPREAD = 3 // أقصى مضاعفة للمسافات بين الأقسام
+
 // ٨ تكرارات على أي من المديين تعطي دقة أدق من أي فرق مرئي، فلا حاجة لتكرارات
 // إضافية تُكلّف reflow دون أي أثر بصري.
 const ITERATIONS = 8
@@ -38,7 +45,7 @@ const ITERATIONS = 8
 // الأخيرة تُطبَّق دائماً على الـDOM مباشرة حتى لو لم تُبلَّغ لحالة React.
 const MAX_SETTLE_ROUNDS = 3
 
-export function useAutoFit(deps: unknown[]) {
+export function useAutoFit(deps: unknown[], grow: boolean) {
   const containerRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
   // يُستهلَك من عناصر لها حد أدنى خاص للتصغير يختلف عن حد النص (مثال: صورة الفقيد
@@ -65,17 +72,38 @@ export function useAutoFit(deps: unknown[]) {
     const content = contentRef.current
     if (!container || !content) return
 
-    const fits = (fontScale: number, spacingTightness: number) => {
+    const fits = (fontScale: number, spacingTightness: number, spread: number = BASE_SPREAD) => {
       content.style.fontSize = `${BASE_FONT_PX * fontScale}px`
       content.style.setProperty("--fit-tightness", String(spacingTightness))
+      content.style.setProperty("--fit-spread", String(spread))
       return content.scrollHeight <= container.clientHeight
+    }
+
+    /** أكبر قيمة في [low, high] يبقى عندها المحتوى داخل الصفحة، علماً أن low تناسب. */
+    const largestFitting = (low: number, high: number, fitsAt: (value: number) => boolean) => {
+      if (fitsAt(high)) return high
+      let lo = low
+      let hi = high
+      for (let i = 0; i < ITERATIONS; i++) {
+        const mid = (lo + hi) / 2
+        if (fitsAt(mid)) lo = mid
+        else hi = mid
+      }
+      return lo
     }
 
     // خوارزمية القياس (المراحل الثلاث) — تقيس بنية DOM *الحالية* كما هي، وتُعيد
     // النتيجة بدل تثبيتها في حالة React مباشرة (راجع التعليق أسفل الحلقة).
-    const measure = (): [fontScale: number, tightness: number] => {
+    const measure = (): [fontScale: number, tightness: number, spread: number] => {
+      // نسخة الكانفاس المخفية (سطح المكتب/الجوال) بلا أبعاد: كل قيمة "تناسب" فيها
+      // خطأً، فبلا هذا الشرط تقفز للحد الأقصى وتفيض عند ظهورها بتغيّر عرض الشاشة.
+      if (container.clientHeight === 0) return [MAX_SCALE, MAX_TIGHTNESS, BASE_SPREAD]
+
       if (fits(MAX_SCALE, MAX_TIGHTNESS)) {
-        return [MAX_SCALE, MAX_TIGHTNESS]
+        if (!grow) return [MAX_SCALE, MAX_TIGHTNESS, BASE_SPREAD]
+        const grownScale = largestFitting(MAX_SCALE, MAX_GROW_SCALE, (s) => fits(s, MAX_TIGHTNESS))
+        const spread = largestFitting(BASE_SPREAD, MAX_SPREAD, (s) => fits(grownScale, MAX_TIGHTNESS, s))
+        return [grownScale, MAX_TIGHTNESS, spread]
       }
 
       // المرحلة ١: تصغير حجم الخط فقط، بلا تضييق تباعد، حتى الحد المفضّل (١٢px)
@@ -91,7 +119,7 @@ export function useAutoFit(deps: unknown[]) {
       }
 
       if (fits(lo, MAX_TIGHTNESS)) {
-        return [lo, MAX_TIGHTNESS]
+        return [lo, MAX_TIGHTNESS, BASE_SPREAD]
       }
 
       // المرحلة ٢: الخط مثبَّت على الحد المفضّل (١٢px) وما زال المحتوى فائضاً —
@@ -108,7 +136,7 @@ export function useAutoFit(deps: unknown[]) {
       }
 
       if (fits(SOFT_MIN_SCALE, tlo)) {
-        return [SOFT_MIN_SCALE, tlo]
+        return [SOFT_MIN_SCALE, tlo, BASE_SPREAD]
       }
 
       // المرحلة ٣ (ملاذ أخير): التباعد مثبَّت على أضيق حالة، والخط يتابع التصغير
@@ -126,14 +154,14 @@ export function useAutoFit(deps: unknown[]) {
       }
       // إن لم يُفلح حتى الحد الأقصى للكسر (١٠px)، يبقى المحتوى فائضاً فعلياً —
       // أفضل من مخالفة كل الحدود الدنيا لمحاولة إخفاء الفيض بلا جدوى.
-      return [flo, MIN_TIGHTNESS]
+      return [flo, MIN_TIGHTNESS, BASE_SPREAD]
     }
 
-    const [fontScale, spacingTightness] = measure()
+    const [fontScale, spacingTightness, spread] = measure()
     // نُثبّت القيمة في الـDOM دائماً وفوراً (حتى لو بلغنا حدّ الجولات أسفل بلا
     // استقرار تام) — آخر تكرار بحث ثنائي قد يكون اختبر قيمة لا تناسب، وإلا يبقى
     // المحتوى بحجم فائض عند التصدير.
-    fits(fontScale, spacingTightness)
+    fits(fontScale, spacingTightness, spread)
 
     // العطل الجذري الذي يُصلحه ما يلي: بعض المستهلكين (كتلة الأقارب في
     // ObituaryBlocks.tsx عبر relativesDensityMode) يُعيدون تشكيل بنية DOM نفسها
@@ -171,8 +199,8 @@ export function useAutoFit(deps: unknown[]) {
       // كاملة (نفس منطق useLayoutEffect الأول أعلى)، لا مشاركة ما تبقّى من الجولة
       // الحالية إن كانت استُنفدت بالفعل.
       roundRef.current = 0
-      const [fs, tn] = measure()
-      fits(fs, tn)
+      const [fs, tn, sp] = measure()
+      fits(fs, tn, sp)
       if (fs !== scale || tn !== tightness) {
         roundRef.current += 1
         setScale(fs)

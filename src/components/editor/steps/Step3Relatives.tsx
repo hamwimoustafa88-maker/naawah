@@ -11,14 +11,16 @@ import { CSS } from "@dnd-kit/utilities"
 import { GripVertical, Plus, Trash2 } from "lucide-react"
 import {
   CATEGORY_REQUIRES_DECEASED_GENDER, FIXED_GENDER_BY_CATEGORY, RELATIVE_CATEGORY_OPTIONS, SINGLE_HIDDEN_RELATIVE_CATEGORIES,
+  honorificForGender,
 } from "@/lib/obituary/defaults"
 import { relativeCategoryLabel } from "@/lib/obituary/grammar"
-import { defaultFamiliesLine, visibleRelativeGroups } from "@/lib/obituary/render"
+import { defaultFamiliesLine, FAMILIES_LINE_PREFIX, visibleRelativeGroups } from "@/lib/obituary/render"
 import { useEditorStore } from "@/store/editorStore"
 import type { Person, RelativeCategoryKey } from "@/lib/obituary/types"
 import { CustomTextOverride } from "@/components/editor/CustomTextOverride"
+import { HonorificSelect } from "@/components/editor/HonorificSelect"
 import { Card, CardTitle } from "@/components/ui/Card"
-import { Input, Select, Toggle } from "@/components/ui/Field"
+import { Checkbox, Input, Select, Toggle } from "@/components/ui/Field"
 
 /**
  * تلميحا مكان (placeholder) — لا سطر منفصل — يظهران فقط في فئة "الوالدين"
@@ -44,10 +46,10 @@ function deceasedWordFor(gender: Person["gender"]): "متوفى" | "متوفاة
  * "زوجة"، والأم امرأة فزوجها رجل "زوج") — لا بجنس الشخص نفسه. بلا صيغة مدمَجة،
  * بطلب صريح: "أريد كل جنس أن يكون له زر خاص به بدون عبارة (مذكر/مؤنث)".
  */
-function spouseTerms(personGender: Person["gender"]): { noun: "زوجة" | "زوج"; deceasedWord: "متوفاة" | "متوفى" } {
+function spouseTerms(personGender: Person["gender"]): { gender: Person["gender"]; noun: "زوجة" | "زوج"; deceasedWord: "متوفاة" | "متوفى" } {
   return personGender === "male"
-    ? { noun: "زوجة", deceasedWord: "متوفاة" }
-    : { noun: "زوج", deceasedWord: "متوفى" }
+    ? { gender: "female", noun: "زوجة", deceasedWord: "متوفاة" }
+    : { gender: "male", noun: "زوج", deceasedWord: "متوفى" }
 }
 
 function PersonRow({
@@ -77,6 +79,13 @@ function PersonRow({
   // مستوردة أو مُدخَلة قبل هذا التعديل)؛ إلغاء التفعيل يطوي السطر فقط ولا يمسح قيمه.
   const [showSpouse, setShowSpouse] = useState(allowSpouse && Boolean(person.spouseName || person.spouseHonorific))
 
+  const setGender = (gender: Person["gender"]) =>
+    patch({
+      gender,
+      honorific: honorificForGender(person.honorific, gender),
+      spouseHonorific: honorificForGender(person.spouseHonorific, spouseTerms(gender).gender),
+    })
+
   return (
     <div
       ref={setNodeRef}
@@ -87,13 +96,20 @@ function PersonRow({
         <button type="button" {...attributes} {...listeners} className="cursor-grab text-black/30 hover:text-black/60">
           <GripVertical size={16} />
         </button>
-        <Input placeholder="اللقب" value={person.honorific ?? ""} onChange={(e) => patch({ honorific: e.target.value })} className="w-24 min-w-24" />
+        <HonorificSelect
+          value={person.honorific}
+          gender={person.gender}
+          onChange={(honorific) => patch({ honorific })}
+          emptyLabel="اللقب"
+          className="w-28 shrink-0"
+          customClassName="w-24 min-w-24"
+        />
         <Input placeholder={hints?.name ?? "الاسم"} value={person.name} onChange={(e) => patch({ name: e.target.value })} className="min-w-32 flex-1" />
         {/* محدِّد الجنس يظهر فقط في الفئات المختلطة — فئة ثابتة الجنس (بناته مثلاً) لا تحتاجه.
             "الوالدين" مستثناة أيضاً بطلب صريح رغم كونها فئة مختلطة تقنياً — عضواها الاثنان
             محسومان دائماً (أب ذكر/أم أنثى) عند الإنشاء، فلا داعي لمحدِّد جنس ظاهر. */}
         {!fixedGender && !isParentsCategory && (
-          <Select value={person.gender} onChange={(e) => patch({ gender: e.target.value as Person["gender"] })} className="w-20 shrink-0">
+          <Select value={person.gender} onChange={(e) => setGender(e.target.value as Person["gender"])} className="w-20 shrink-0">
             <option value="male">ذكر</option>
             <option value="female">أنثى</option>
           </Select>
@@ -108,7 +124,14 @@ function PersonRow({
       </div>
       {allowSpouse && showSpouse && (
         <div className="flex flex-wrap items-center gap-1.5 pr-6">
-          <Input placeholder={`لقب ${spouse.noun}`} value={person.spouseHonorific ?? ""} onChange={(e) => patch({ spouseHonorific: e.target.value })} className="w-24 min-w-24" />
+          <HonorificSelect
+            value={person.spouseHonorific}
+            gender={spouse.gender}
+            onChange={(spouseHonorific) => patch({ spouseHonorific })}
+            emptyLabel={`لقب ${spouse.noun}`}
+            className="w-28 shrink-0"
+            customClassName="w-24 min-w-24"
+          />
           <Input
             placeholder={hints?.spouse ?? `اسم ${spouse.noun} (اختياري)`}
             value={person.spouseName ?? ""}
@@ -116,6 +139,17 @@ function PersonRow({
             className="min-w-32 flex-1"
           />
           <Toggle label={`${spouse.noun} ${spouse.deceasedWord}`} checked={person.spouseIsDeceased ?? false} onChange={(checked) => patch({ spouseIsDeceased: checked })} className="shrink-0" />
+          {person.gender === "female" && person.spouseIsDeceased && (
+            <Select
+              value={person.widowStyle ?? "زوجة"}
+              onChange={(e) => patch({ widowStyle: e.target.value as NonNullable<Person["widowStyle"]> })}
+              className="w-36 shrink-0"
+              aria-label="صيغة ذكر الزوج المتوفى"
+            >
+              <option value="زوجة">زوجة المرحوم</option>
+              <option value="أرملة">أرملة المرحوم</option>
+            </Select>
+          )}
         </div>
       )}
     </div>
@@ -170,21 +204,38 @@ export function AddRelativeCategoryField({ onAdded }: { onAdded?: (groupId: stri
 /**
  * سطر "العائلات" — انتقل إلى هنا من (١. بيانات الفقيد) بطلب صريح ليظهر مباشرة بعد
  * (إضافة فئة قرابة)، وصار مُشتقّاً تلقائياً من أسماء عائلة كل الأقارب المُدخَلين
- * أعلاه (آخر كلمة من كل اسم، بلا تكرار) بدل الإدخال اليدوي البحت — راجع
- * defaultFamiliesLine في render.ts. يبقى قابلاً للتخصيص الحرّ عبر نفس آلية
- * "نصوص مخصّصة" المستعملة لبقية الجمل المحسوبة (CustomTextOverride).
+ * أعلاه (بلا تكرار) بدل الإدخال اليدوي البحت — راجع defaultFamiliesLine في
+ * render.ts. يبقى قابلاً للتخصيص الحرّ عبر نفس آلية "نصوص مخصّصة" المستعملة لبقية
+ * الجمل المحسوبة (CustomTextOverride).
  */
 export function FamiliesField() {
   const data = useEditorStore((s) => s.data)
   const updateCustomText = useEditorStore((s) => s.updateCustomText)
+  const updateFuneral = useEditorStore((s) => s.updateFuneral)
+  const { includeAreaResidents, areaResidentsName } = data.funeral
 
   return (
-    <CustomTextOverride
-      label="العائلات"
-      computedDefault={defaultFamiliesLine(data) || "الراضون بقضاء الله وقدره: —"}
-      value={data.customTexts?.familiesLine}
-      onChange={(v) => updateCustomText("familiesLine", v)}
-    />
+    <div className="flex flex-col gap-3">
+      <CustomTextOverride
+        label="العائلات"
+        computedDefault={defaultFamiliesLine(data) || FAMILIES_LINE_PREFIX}
+        value={data.customTexts?.familiesLine}
+        onChange={(v) => updateCustomText("familiesLine", v)}
+      />
+      <Checkbox
+        label="إضافة «وعموم أهالي…» في آخر الأسماء"
+        checked={includeAreaResidents ?? false}
+        onChange={(e) => updateFuneral({ includeAreaResidents: e.target.checked })}
+      />
+      {includeAreaResidents && (
+        <Input
+          aria-label="اسم المنطقة"
+          placeholder="اسم المنطقة، مثال: شحيم"
+          value={areaResidentsName ?? ""}
+          onChange={(e) => updateFuneral({ areaResidentsName: e.target.value })}
+        />
+      )}
+    </div>
   )
 }
 

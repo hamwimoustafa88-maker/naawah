@@ -13,19 +13,21 @@ import { VISIBLE_TEMPLATES } from "@/lib/templates/registry"
  * لا يُعاد تطبيقه بعد التركيب الأول (مثال: مستخدم يغيّر القالب يدوياً من
  * (٤. القالب) لاحقاً — لا يجب أن يُفرض قالب الرابط فوق اختياره).
  * مُغلَّف بـ<Suspense> في create/page.tsx لأن useSearchParams يتطلّب ذلك
- * صراحة في App Router.
+ * صراحة في App Router. ينتظر draftsReady حتى لا تُلغي استعادة آخر نعوة محفوظة قالب الرابط.
  */
 export function TemplateFromQuery() {
   const searchParams = useSearchParams()
   const setTemplate = useEditorStore((s) => s.setTemplate)
+  const draftsReady = useEditorStore((s) => s.draftsReady)
 
   useEffect(() => {
+    if (!draftsReady) return
     const templateId = searchParams.get("template")
     if (templateId && VISIBLE_TEMPLATES.some((t) => t.id === templateId)) {
       setTemplate(templateId)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- مرة واحدة عند التركيب فقط
-  }, [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- مرة واحدة بعد انتهاء الاستعادة فقط
+  }, [draftsReady])
 
   return null
 }

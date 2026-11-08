@@ -4,6 +4,7 @@
    (يُسقِط next dev بالكامل رغم أنه مجرد تحذير أثناء next build). */
 @source not "../../agent-skills";
 @source not "../../.agents";
+@source not "../../_to-delete";
 
 :root {
   --background: #f7f5f0; /* عاجي فاتح لصفحة الموقع (ليس الكانفاس نفسه) */

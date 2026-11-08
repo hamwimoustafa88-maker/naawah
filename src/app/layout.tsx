@@ -13,12 +13,15 @@ import "./globals.css"
 // src/app/create/layout.tsx (تخطيط متداخل مستقلّ) لأن الصفحة الرئيسية لا تستهلكها
 // إطلاقاً (LivePreview/TemplateGallery تعرضان VISIBLE_TEMPLATES السبعة فقط، وكلها
 // تستعمل هذه السبعة حصراً). ١٥ عائلة خط على كل مسار كانت عبئاً حقيقياً على LCP.
-const amiri = Amiri({ variable: "--font-amiri", subsets: ["arabic"], weight: ["400", "700"] })
-const amiriQuran = Amiri_Quran({ variable: "--font-amiri-quran", subsets: ["arabic"], weight: "400" })
-const arefRuqaa = Aref_Ruqaa_Ink({ variable: "--font-aref-ruqaa", subsets: ["arabic"], weight: "400" })
-const reemKufiInk = Reem_Kufi_Ink({ variable: "--font-reem-kufi", subsets: ["arabic"], weight: "400" })
-const scheherazade = Scheherazade_New({ variable: "--font-scheherazade", subsets: ["arabic"], weight: ["400", "700"] })
-const tajawal = Tajawal({ variable: "--font-tajawal", subsets: ["arabic"], weight: ["400", "500", "700"] })
+// preload: false لكل خط عدا Cairo (خط النص الأساسي الذي يرسم LCP): الخطوط الزخرفية
+// تخدم الكانفاس والأقسام السفلى فقط، وتُجلب حين تُستعمل فعلاً؛ ~١٠ ملفات woff2 مُحمَّلة
+// مسبقاً كانت تنافس CSS وخط النص على الشبكة في أول رسم.
+const amiri = Amiri({ variable: "--font-amiri", subsets: ["arabic"], weight: ["400", "700"], preload: false })
+const amiriQuran = Amiri_Quran({ variable: "--font-amiri-quran", subsets: ["arabic"], weight: "400", preload: false })
+const arefRuqaa = Aref_Ruqaa_Ink({ variable: "--font-aref-ruqaa", subsets: ["arabic"], weight: "400", preload: false })
+const reemKufiInk = Reem_Kufi_Ink({ variable: "--font-reem-kufi", subsets: ["arabic"], weight: "400", preload: false })
+const scheherazade = Scheherazade_New({ variable: "--font-scheherazade", subsets: ["arabic"], weight: ["400", "700"], preload: false })
+const tajawal = Tajawal({ variable: "--font-tajawal", subsets: ["arabic"], weight: ["400", "500", "700"], preload: false })
 const cairo = Cairo({ variable: "--font-cairo", subsets: ["arabic", "latin"] })
 
 export const metadata: Metadata = {

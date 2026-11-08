@@ -2,8 +2,8 @@
 // المعاينة) ومن CreateHeader.tsx (أزرار مختصرة أعلى الصفحة) معاً، حتى لا يتكرر
 // منطق التقاط الكانفاس وتوليد الملفات في مكانين.
 
-import { toBlob, toJpeg } from "html-to-image"
-import { jsPDF } from "jspdf"
+// html-to-image وjsPDF يُحمَّلان ديناميكياً عند أول تصدير فقط: jsPDF وحده من أكبر
+// مكوّنات حزمة /create، ولا يحتاجه من يفتح المحرر قبل ضغط زر التصدير.
 import { getTemplate } from "@/lib/templates/registry"
 import { shareMessage } from "@/lib/obituary/render"
 import { archiveExport } from "@/lib/export/archive"
@@ -35,6 +35,7 @@ async function getCanvasNode(): Promise<HTMLElement> {
 /** PNG بلا فقدان — للتحميل المباشر وللمشاركة. */
 async function capturePngBlob(): Promise<Blob> {
   const node = await getCanvasNode()
+  const { toBlob } = await import("html-to-image")
   const blob = await toBlob(node, { pixelRatio: 3, cacheBust: true })
   if (!blob) throw new Error("فشل تحويل الكانفاس إلى صورة")
   return blob
@@ -51,6 +52,7 @@ async function capturePngBlob(): Promise<Blob> {
 async function captureJpeg(templateId: string): Promise<string> {
   const node = await getCanvasNode()
   const backgroundColor = getTemplate(templateId).tokens.bg
+  const { toJpeg } = await import("html-to-image")
   return toJpeg(node, { pixelRatio: 3, cacheBust: true, quality: 0.92, backgroundColor })
 }
 
@@ -116,6 +118,7 @@ export async function exportPng(data: ObituaryData, archiveKey: string) {
 
 export async function exportPdf(data: ObituaryData, archiveKey: string) {
   const dataUrl = await captureJpeg(data.templateId)
+  const { jsPDF } = await import("jspdf")
   const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4", compress: true })
   pdf.addImage(dataUrl, "JPEG", 0, 0, 210, 297)
   pdf.save(buildFileName(data.deceased.name, "pdf"))

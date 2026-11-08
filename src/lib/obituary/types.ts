@@ -30,6 +30,8 @@ export interface Person {
   spouseHonorific?: string
   /** الزوج/ة متوفى/ة أيضاً (يُذكر كـ"المرحوم/ة") */
   spouseIsDeceased?: boolean
+  /** لقريبة توفي زوجها فقط: "زوجة المرحوم" (الافتراضي) أو "أرملة المرحوم". */
+  widowStyle?: "زوجة" | "أرملة"
 }
 
 /**
@@ -128,9 +130,10 @@ export interface DeceasedInfo {
   innaLillahScale?: number
   /**
    * عبارة الترحّم الظاهرة مباشرة فوق اسم الفقيد — "المرحوم/ة" (افتراضي) أو
-   * "الشهيد/ة" أو نص حر (`marhoomCustomText`) عند "custom". راجع marhoomWord في render.ts.
+   * "الشهيد/ة" أو نص حر (`marhoomCustomText`) عند "custom"، أو بلا عبارة إطلاقاً عند
+   * "none". راجع marhoomWord في render.ts.
    */
-  marhoomStyle?: "marhoom" | "shaheed" | "custom"
+  marhoomStyle?: "marhoom" | "shaheed" | "custom" | "none"
   marhoomCustomText?: string
   /**
    * تكبير عبارة الترحّم ("المرحوم" مثلاً) لتصبح بنفس حجم اسم الفقيد — افتراضياً
@@ -197,13 +200,18 @@ export interface FuneralInfo {
    * ObituaryBlocks.tsx للتطبيق الفعلي.
    */
   emphasizeFuneralBox?: boolean
+  /** خط عريض لكامل نص التشييع والصلاة والدفن والتعزية (محتوى المربع). */
+  funeralBoxBold?: boolean
   extraNotes?: string
   /** بلا هذا الحقل: يُستعمل اقتراح القالب الافتراضي (template.showPrintFooter). */
   printFooterEnabled?: boolean
-  /** مسافة إضافية أسفل النعوة (بوحدة em) لملء الفراغ في نعوة قصيرة النص. */
-  extraBottomSpacingEm?: number
+  /** تكبير النص وتوزيع المسافات تلقائياً لملء الصفحة في النعوة القصيرة (undefined يُعامل كـ true) — راجع useAutoFit.ts. */
+  autoFillPage?: boolean
   /** خط فاصل زخرفي إضافي فوق الفقرات الثلاث الأخيرة الثابتة أسفل الصفحة. */
   extraDividerLine?: boolean
+  /** إلحاق "وعموم أهالي {areaResidentsName}" بآخر سطر العائلات. */
+  includeAreaResidents?: boolean
+  areaResidentsName?: string
 }
 
 /**
@@ -227,6 +235,11 @@ export interface NameStyleOverride {
   bold?: boolean
 }
 
+export interface RelativeNameStyle {
+  bold?: boolean
+  underline?: boolean
+}
+
 export interface ObituaryData {
   deceased: DeceasedInfo
   funeral: FuneralInfo
@@ -239,4 +252,6 @@ export interface ObituaryData {
    * إن غاب يُستعمل tokens.bodyFont الخاص بالقالب المختار. */
   bodyFontFamily?: string
   nameStyle?: NameStyleOverride
+  /** تنسيق أسماء الأقارب وأزواجهم في النعوة — لا يشمل اسم الفقيد ولا الصفات والروابط. */
+  relativeNameStyle?: RelativeNameStyle
 }

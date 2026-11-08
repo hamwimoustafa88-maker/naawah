@@ -64,7 +64,7 @@ export function TemplateGallery() {
             <h2 id="gallery-title" className="text-lg font-bold">
               معرض القوالب
             </h2>
-            <p className="text-xs text-(--home-muted)">{TEMPLATES.length} تصاميم إسلامية وقورة — اختر ما يليق بمقام الفقيد</p>
+            <p className="text-sm text-(--home-muted)">{TEMPLATES.length} تصاميم إسلامية وقورة — اختر ما يليق بمقام الفقيد</p>
           </div>
           <button
             type="button"
@@ -92,11 +92,11 @@ export function TemplateGallery() {
               >
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-bold">{t.name}</span>
-                  <span className="rounded-full bg-(--home-accent)/10 px-2 py-0.5 text-[10px] text-(--home-accent)">
+                  <span className="rounded-full bg-(--home-accent)/10 px-2 py-0.5 text-xs text-(--home-accent)">
                     {t.category}
                   </span>
                 </div>
-                <p className="text-xs leading-relaxed text-(--home-muted)">{t.description}</p>
+                <p className="text-sm leading-relaxed text-(--home-muted)">{t.description}</p>
                 <div
                   className="flex h-14 items-center justify-center rounded-lg border text-sm"
                   style={{

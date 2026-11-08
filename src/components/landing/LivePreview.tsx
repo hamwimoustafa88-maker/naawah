@@ -17,6 +17,10 @@ import { useTemplateShowcase } from "@/components/landing/TemplateShowcaseProvid
 
 const AUTOPLAY_MS = 4500
 
+// الدائرة المرئية ٣٢px داخل زر هدفه اللمسي ٤٤px.
+const ARROW_FACE =
+  "flex h-8 w-8 items-center justify-center rounded-full border border-(--home-border) bg-(--home-bg) text-(--home-fg) shadow-sm transition-colors group-hover:border-(--home-accent) group-hover:text-(--home-accent)"
+
 export function LivePreview() {
   const { templateId, setTemplateId } = useTemplateShowcase()
   const [interacting, setInteracting] = useState(false)
@@ -82,17 +86,21 @@ export function LivePreview() {
           type="button"
           onClick={() => goTo(currentIndex - 1)}
           aria-label="القالب السابق"
-          className="absolute -inset-s-3 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-(--home-border) bg-(--home-bg) text-(--home-fg) shadow-sm transition-colors hover:border-(--home-accent) hover:text-(--home-accent)"
+          className="group absolute -inset-s-4.5 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center"
         >
-          <ChevronRight size={16} />
+          <span className={ARROW_FACE}>
+            <ChevronRight size={16} />
+          </span>
         </button>
         <button
           type="button"
           onClick={() => goTo(currentIndex + 1)}
           aria-label="القالب التالي"
-          className="absolute -inset-e-3 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-(--home-border) bg-(--home-bg) text-(--home-fg) shadow-sm transition-colors hover:border-(--home-accent) hover:text-(--home-accent)"
+          className="group absolute -inset-e-4.5 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center"
         >
-          <ChevronLeft size={16} />
+          <span className={ARROW_FACE}>
+            <ChevronLeft size={16} />
+          </span>
         </button>
       </div>
 
@@ -100,7 +108,7 @@ export function LivePreview() {
         {TEMPLATES[currentIndex].name}
       </span>
 
-      <div className="flex max-w-60 flex-wrap justify-center gap-1.5">
+      <div className="flex max-w-80 flex-wrap justify-center">
         {TEMPLATES.map((t, i) => (
           <button
             key={t.id}
@@ -108,7 +116,7 @@ export function LivePreview() {
             onClick={() => goTo(i)}
             aria-label={t.name}
             title={t.name}
-            className="group flex h-6 w-6 items-center justify-center"
+            className="group flex h-11 w-11 items-center justify-center"
           >
             <span
               className={cn(

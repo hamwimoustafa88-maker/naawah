@@ -2,25 +2,31 @@
 
 import { create } from "zustand"
 import { FIXED_GENDER_BY_CATEGORY, SAMPLE_OBITUARY_DATA, createEmptyPerson, createEmptyRelativeGroup } from "@/lib/obituary/defaults"
-import type { CustomTextKey, DeceasedInfo, FormatPrefs, FuneralInfo, NameStyleOverride, ObituaryData, Person, RelativeCategoryKey, RelativeGroup } from "@/lib/obituary/types"
+import type { CustomTextKey, DeceasedInfo, FormatPrefs, FuneralInfo, NameStyleOverride, ObituaryData, Person, RelativeCategoryKey, RelativeGroup, RelativeNameStyle } from "@/lib/obituary/types"
 
 interface EditorState {
   data: ObituaryData
 
   /**
-   * معرّف جلسة تحرير النعوة الحالية — أساس منع التكرار عند أرشفة التصدير في
-   * Google Drive (راجع src/lib/export/archive.ts وsrc/app/api/archive/route.ts):
-   * تصدير PNG ثم PDF ثم مشاركة لنفس النعوة يحمل نفس archiveKey فيُحدَّث ملف Drive
-   * نفسه بدل تكراره. **خارج ObituaryData عمداً** — ليس بياناً للنعوة، لا يُصدَّر
-   * ولا يُستورَد ولا يُحفَظ، تماماً كـpreviewBodyFontFamily أدناه.
+   * معرّف النعوة الحالية — هو نفسه معرّفها في التخزين المحلي (lib/drafts) وأساس منع
+   * التكرار عند أرشفة التصدير في Google Drive (راجع src/lib/export/archive.ts
+   * وsrc/app/api/archive/route.ts): تصدير نفس النعوة، ولو بعد إعادة فتحها لاحقاً،
+   * يُحدِّث ملف Drive نفسه بدل تكراره. **خارج ObituaryData عمداً** — ليس بياناً للنعوة.
    * قيمته الابتدائية هنا ثابتة (بلا crypto.randomUUID()) لنفس سبب معرّفات فئات
    * القرابة الثابتة في createEmptyData() أسفل — تقييم الوحدة يحدث في بيئتين
    * (SSR + hydration)، فمعرّف عشوائي هنا يُنتج قيمتين مختلفتين ويكسر hydration.
-   * القيمة الحقيقية تُولَّد فقط بعد التركيب عبر regenerateArchiveKey() (راجع
-   * useEffect في EditorShell.tsx) ثم تتجدّد مع كل نعوة جديدة (reset/loadData/loadSample).
+   * القيمة الحقيقية تُحسم بعد التركيب في useObituaryAutosave (معرّف آخر نعوة محفوظة،
+   * أو regenerateArchiveKey() إن لم توجد) ثم تتجدّد مع كل نعوة جديدة (reset/loadData/loadSample).
    */
   archiveKey: string
   regenerateArchiveKey: () => void
+
+  /** انتهت محاولة استعادة آخر نعوة محفوظة — TemplateFromQuery ينتظرها كي لا تُلغي الاستعادة قالب الرابط. */
+  draftsReady: boolean
+  /** فشل آخر حفظ في المتصفح (امتلاء المساحة أو تخزين معطّل) — يظهر تنبيه في CreateHeader. */
+  draftSaveFailed: boolean
+  /** يفتح نعوة محفوظة في المحرر — راجع useObituaryAutosave وSavedObituaries.tsx. */
+  openObituary: (id: string, data: ObituaryData) => void
 
   /**
    * معاينة خط عابرة (hover) — منفصلة عمداً عن data.bodyFontFamily/nameStyle.fontFamily
@@ -40,6 +46,7 @@ interface EditorState {
   updateFormat: (patch: Partial<FormatPrefs>) => void
   updateCustomText: (key: CustomTextKey, value: string | undefined) => void
   updateNameStyle: (patch: Partial<NameStyleOverride>) => void
+  updateRelativeNameStyle: (patch: Partial<RelativeNameStyle>) => void
   setBodyFontFamily: (fontFamily: string | undefined) => void
   setTemplate: (templateId: string) => void
 
@@ -73,7 +80,7 @@ interface EditorState {
  * تاريخ الوفاة وتاريخ الصلاة والدفن كلاهما بلا قيمة افتراضية — يُملآن بتاريخ اليوم
  * عند أول تركيز على الحقل المعني فقط (راجع Step1Deceased.tsx وStep2Funeral.tsx)، لا تلقائياً هنا.
  */
-function createEmptyData(): ObituaryData {
+export function createEmptyData(): ObituaryData {
   return {
     deceased: {
       gender: "male",
@@ -118,6 +125,10 @@ export const useEditorStore = create<EditorState>((set) => ({
   archiveKey: "",
   regenerateArchiveKey: () => set({ archiveKey: crypto.randomUUID() }),
 
+  draftsReady: false,
+  draftSaveFailed: false,
+  openObituary: (id, data) => set({ data, archiveKey: id }),
+
   previewBodyFontFamily: undefined,
   previewNameFontFamily: undefined,
   setPreviewBodyFontFamily: (fontFamily) => set({ previewBodyFontFamily: fontFamily }),
@@ -142,6 +153,9 @@ export const useEditorStore = create<EditorState>((set) => ({
 
   updateNameStyle: (patch) =>
     set((s) => ({ data: { ...s.data, nameStyle: { ...s.data.nameStyle, ...patch } } })),
+
+  updateRelativeNameStyle: (patch) =>
+    set((s) => ({ data: { ...s.data, relativeNameStyle: { ...s.data.relativeNameStyle, ...patch } } })),
 
   setBodyFontFamily: (fontFamily) => set((s) => ({ data: { ...s.data, bodyFontFamily: fontFamily } })),
 

@@ -20,6 +20,16 @@ export const SCOUTHUB_URL = "https://scouthub.dev/"
 
 export const LICENSE_URL = "https://www.gnu.org/licenses/gpl-3.0.html"
 
+/** حسابات ScoutHub الرسمية على الشبكات الاجتماعية. */
+export const SOCIAL_URLS = {
+  linkedin: "https://www.linkedin.com/company/scouthub-lab/",
+  youtube: "https://www.youtube.com/@ScoutHubLab",
+  facebook: "https://www.facebook.com/profile.php?id=61595883873134",
+  instagram: "https://www.instagram.com/scouthub.lab/",
+  telegram: "https://t.me/scouthublab",
+  threads: "https://www.threads.com/@scouthub.lab",
+}
+
 /** كلمات مفتاحية عامة للموقع ككل (تُستعمل في layout.tsx). لكل صفحة محتوى جديدة
  * (قالب/دليل/آية) كلماتها الخاصة الأضيق عبر `generateMetadata` الخاص بها. */
 export const SITE_KEYWORDS = [

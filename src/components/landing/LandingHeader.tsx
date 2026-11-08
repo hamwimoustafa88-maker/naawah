@@ -24,7 +24,7 @@ const NAV_LINKS = [
 ]
 
 const CTA_CLASS =
-  "inline-flex items-center justify-center rounded-lg bg-(--home-accent) px-3.5 py-2 text-xs font-bold text-white shadow-sm shadow-(--home-accent)/25 transition-transform hover:scale-[1.03] sm:px-5 sm:py-2.5 sm:text-sm"
+  "inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-lg bg-(--home-accent) px-3 py-2 text-sm font-bold text-white shadow-sm shadow-(--home-accent)/25 transition-transform hover:scale-[1.03] sm:min-h-0 sm:px-5 sm:py-2.5"
 
 export function LandingHeader() {
   return (
@@ -45,7 +45,8 @@ export function LandingHeader() {
         </nav>
 
         <div className="flex items-center gap-2">
-          <Link href="/create" className={CTA_CLASS}>
+          {/* prefetch={false}: محرر /create حزمة ثقيلة، وكان يُنزَّل مع كل زيارة للرئيسية. */}
+          <Link href="/create" prefetch={false} className={CTA_CLASS}>
             إنشاء نعوة الآن
           </Link>
 
@@ -76,7 +77,7 @@ export function LandingHeader() {
                 <a
                   key={l.href}
                   href={l.href}
-                  className="rounded-lg px-3 py-2 text-sm text-(--home-fg) transition-colors hover:bg-(--home-bg)"
+                  className="rounded-lg px-3 py-3 text-sm text-(--home-fg) transition-colors hover:bg-(--home-bg)"
                 >
                   {l.label}
                 </a>

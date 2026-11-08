@@ -25,7 +25,7 @@ export function HowItWorks() {
     <section id="how-it-works" className="w-full scroll-mt-20 bg-(--home-bg)">
       <div className="mx-auto w-full max-w-5xl px-6 py-16">
         <Reveal className="mb-10 flex flex-col gap-2">
-          <span className="text-xs font-bold tracking-widest text-(--home-accent)">ثلاث خطوات فقط</span>
+          <span className="text-sm font-bold tracking-widest text-(--home-accent)">ثلاث خطوات فقط</span>
           <h2 className="text-2xl font-bold sm:text-3xl">كيف يعمل التطبيق؟</h2>
         </Reveal>
 

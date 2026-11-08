@@ -14,8 +14,12 @@ import {
   prayerLocationLine, printFooterText, processionLine, relativesBlocks,
 } from "@/lib/obituary/render"
 import { useEditorStore } from "@/store/editorStore"
+import type { RelativeTextPart } from "@/lib/obituary/grammar"
 import type { ObituaryData, PhotoCrop } from "@/lib/obituary/types"
 import type { TemplateDefinition } from "@/lib/templates/types"
+
+/** هوامش الصفحة تتبع الخط عند التصغير، لكن لا تكبر معه — وإلا ضاعت مساحة التوسيع التلقائي. */
+const PAGE_PADDING = "min(3.5em, 56px)"
 
 /** حرف التطويل العربي — يُدرج داخل تسمية الفئة (لا في النص المُخزَّن) لمحاكاة
  * تنضيد الصحف الورقية (طرابلس وشمال لبنان حصراً، عبر relativesLayout). */
@@ -75,6 +79,10 @@ function Divider({ tokens, divider, size = "0.9em" }: { tokens: TemplateDefiniti
   return <div style={{ color: tokens.accent, fontSize: size }}>{divider}</div>
 }
 
+function RelativeNames({ parts, nameStyle }: { parts: RelativeTextPart[]; nameStyle: CSSProperties }) {
+  return <>{parts.map((part, i) => (part.isName ? <span key={i} style={nameStyle}>{part.text}</span> : part.text))}</>
+}
+
 /**
  * صورة الفقيد داخل إطار ثابت طولي — object-fit:cover كأساس (يملأ الإطار بصرف
  * النظر عن اتجاه الصورة الأصلية)، ثم تحويل photoCropTransform فوقه لتطبيق
@@ -116,7 +124,7 @@ export function ObituaryContent({
 }: {
   data: ObituaryData
   template: TemplateDefinition
-  /** حجم auto-fit الحالي (0.625-1.0 — الخط يفضّل عدم النزول تحت ١٢px، ولا ينزل تحت ١٠px إطلاقاً حتى كملاذ أخير) — تستهلكه صورة الفقيد لتتقلّص بحد أدنى ٦٠٪. */
+  /** حجم auto-fit الحالي (0.625-1.5 — الخط يفضّل عدم النزول تحت ١٢px، ولا ينزل تحت ١٠px إطلاقاً حتى كملاذ أخير، ويكبر حتى ٢٤px في النعوة القصيرة) — تستهلكه صورة الفقيد لتتقلّص بحد أدنى ٦٠٪. */
   scale: number
   /**
    * وسم اسم الفقيد الدلالي — "h1" افتراضياً (صحيح داخل /create حيث اسم الفقيد
@@ -153,7 +161,15 @@ export function ObituaryContent({
   // الصورة تتقلّص مع النص عند كثافة الأقارب، لكن بحد أدنى ٦٠٪ (لا حتى أدنى مقياس
   // auto-fit الكامل) — طُلب صراحةً أن تبقى الصورة قريبة من حجمها الطبيعي، مع سماح
   // بتقليص إضافي بسيط (كان ٧٠٪) كأحد أدوات التكثيف عند البيانات الكثيفة جداً.
-  const photoScale = Math.max(scale, 0.6)
+  // لا تكبر مع التوسيع التلقائي (حدّ أعلى ١): حجمها يتحكّم به المستخدم، وربطه بالتوسيع
+  // يجعل ارتفاع الصفحة دالة في المقياس نفسه الذي نحسبه منه.
+  const photoScale = Math.min(Math.max(scale, 0.6), 1)
+
+  const relativeNameStyle: CSSProperties = data.relativeNameStyle?.underline
+    ? { textDecoration: "underline", textUnderlineOffset: "0.25em" }
+    : {}
+  if (data.relativeNameStyle?.bold) relativeNameStyle.fontWeight = 700
+  const funeralBoxWeight = funeral.funeralBoxBold ? 700 : undefined
 
   // معاينة عابرة (hover) من FontPicker.tsx — أولوية أعلى من القيمة الفعلية المحفوظة،
   // بلا أي تعديل على data نفسها. undefined دائماً ما لم يكن المؤشر فوق اسم خط فعلياً.
@@ -166,6 +182,7 @@ export function ObituaryContent({
   // عبارة الترحّم ("المرحوم" مثلاً) — ١.١٥em ثابت افتراضياً، أو نفس حجم اسم الفقيد
   // بالضبط عند تفعيل deceased.marhoomEnlarged (زر تبديل واحد في بيانات الفقيد).
   const marhoomFontSizeEm = deceased.marhoomEnlarged ? nameSizeEm : 1.15
+  const marhoomText = marhoomWord(deceased)
   // خط جميع النصوص (عدا اسم الفقيد الذي له تحكّمه الخاص أعلاه) — قابل للتخصيص من
   // "إعدادات النصوص"، وإلا يُستعمل bodyFont الخاص بالقالب المختار (كان مُعرَّفاً في
   // كل قالب لكن لم يُطبَّق فعلياً على أي عنصر — عطل حقيقي أُصلح هنا: كل الفقرات كانت
@@ -194,10 +211,10 @@ export function ObituaryContent({
         // الهامش العلوي تحديداً (paddingTop) يُضيَّق أكثر من السفلي — طُلب صراحةً
         // تقليص فراغات الأعلى تحديداً؛ السفلي أقل حساسية لأن الفقرات الأخيرة مثبَّتة
         // أسفل الصفحة بـmarginTop:auto فلا تستفيد من ضغطه بقدر ما يخسر شكل الصفحة.
-        paddingInline: "3.5em",
-        paddingTop: "calc(3.5em * var(--fit-tightness, 1))",
-        paddingBottom: "3.5em",
-        gap: "calc(0.75em * var(--fit-tightness, 1))",
+        paddingInline: PAGE_PADDING,
+        paddingTop: `calc(${PAGE_PADDING} * var(--fit-tightness, 1))`,
+        paddingBottom: PAGE_PADDING,
+        gap: "calc(0.75em * var(--fit-tightness, 1) * var(--fit-spread, 1))",
       }}
     >
       {/* ١. البسملة — حجمها قابل للتحكم اليدوي من (بيانات الفقيد) عبر basmalaScale */}
@@ -308,11 +325,11 @@ export function ObituaryContent({
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
-              gap: "calc(0.75em * var(--fit-tightness, 1))",
+              gap: "calc(0.75em * var(--fit-tightness, 1) * var(--fit-spread, 1))",
             }}
           >
             <p style={{ margin: 0, fontSize: "1.05em", lineHeight: "calc(1.6 * var(--fit-tightness, 1))" }}>{mourningLine(data)}</p>
-            <p style={{ margin: 0, fontSize: `${marhoomFontSizeEm}em`, fontWeight: 700 }}>{marhoomWord(deceased)}</p>
+            {marhoomText && <p style={{ margin: 0, fontSize: `${marhoomFontSizeEm}em`, fontWeight: 700 }}>{marhoomText}</p>}
             <NameTag
               style={{
                 fontFamily: nameFontFamily,
@@ -341,7 +358,7 @@ export function ObituaryContent({
           <p style={{ fontSize: "1.05em", lineHeight: "calc(1.6 * var(--fit-tightness, 1))" }}>{mourningLine(data)}</p>
 
           {/* ٥. عبارة الترحّم — سطر مستقل تماماً، غير مشمول بالدمج أعلاه */}
-          <p style={{ fontSize: `${marhoomFontSizeEm}em`, fontWeight: 700 }}>{marhoomWord(deceased)}</p>
+          {marhoomText && <p style={{ fontSize: `${marhoomFontSizeEm}em`, fontWeight: 700 }}>{marhoomText}</p>}
 
           {/* صورة الفقيد — فوق الاسم، إطار ثابت ٧×١٠سم (object-fit:cover + تحكّم المستخدم
               بالتكبير/التحريك عبر photoCrop)، يتقلّص بحد أقصى ٣٠٪ فقط مع كثافة النص */}
@@ -397,7 +414,7 @@ export function ObituaryContent({
               >
                 <span style={{ fontWeight: 700 }}>{stretchRelativeLabel(g.label, targetLen)}</span>
                 {": "}
-                {g.text}
+                <RelativeNames parts={g.parts} nameStyle={relativeNameStyle} />
               </p>
             ))
           })()}
@@ -418,13 +435,13 @@ export function ObituaryContent({
                   display: "flex",
                   flexDirection: "column",
                   alignItems: "center",
-                  gap: "0.5em",
+                  gap: "calc(0.5em * var(--fit-spread, 1))",
                 }}
               >
                 {relatives.map((g) => (
                   <p key={g.id} style={{ margin: 0, textAlign: "center" }}>
                     <span style={{ fontWeight: 700 }}>{g.label}: </span>
-                    {g.text}
+                    <RelativeNames parts={g.parts} nameStyle={relativeNameStyle} />
                   </p>
                 ))}
               </div>
@@ -450,7 +467,7 @@ export function ObituaryContent({
                     {pair.map((g, j) => (
                       <span key={g.id}>
                         <span style={{ fontWeight: 700 }}>{g.label}: </span>
-                        {g.text}
+                        <RelativeNames parts={g.parts} nameStyle={relativeNameStyle} />
                         {j < pair.length - 1 ? "، " : ""}
                       </span>
                     ))}
@@ -479,7 +496,7 @@ export function ObituaryContent({
               {relatives.map((g, i) => (
                 <span key={g.id}>
                   <span style={{ fontWeight: 700 }}>{g.label}: </span>
-                  {g.text}
+                  <RelativeNames parts={g.parts} nameStyle={relativeNameStyle} />
                   {i < relatives.length - 1 ? "،" : ""}
                 </span>
               ))}
@@ -504,7 +521,7 @@ export function ObituaryContent({
                 لبنان (emphasizePrayerLocation): اسم المسجد يُفصل كسطر عريض مستقل بعد
                 جملة الصلاة، بدل دمجه داخلها — راجع funeralSentenceCore/prayerLocationLine
                 في render.ts (funeralSentence نفسها بلا تغيير، تبقى لبقية القوالب). */}
-            <div style={{ fontSize: "1em", lineHeight: "calc(1.7 * var(--fit-tightness, 1))" }}>
+            <div style={{ fontSize: "1em", fontWeight: funeralBoxWeight, lineHeight: "calc(1.7 * var(--fit-tightness, 1))" }}>
               {procession && <p>{procession}</p>}
               {emphasizePrayerLocation ? (
                 <>
@@ -521,7 +538,7 @@ export function ObituaryContent({
 
             {/* ١٠. التعزية */}
             {(funeral.condolencesGeneral || hasSeparateCondolences || hasSharedCondolences) && (
-              <div style={{ fontSize: "0.95em", color: tokens.muted, lineHeight: "calc(1.7 * var(--fit-tightness, 1))" }}>
+              <div style={{ fontSize: "0.95em", fontWeight: funeralBoxWeight, color: tokens.muted, lineHeight: "calc(1.7 * var(--fit-tightness, 1))" }}>
                 {funeral.condolencesGeneral && <p>{funeral.condolencesGeneral}</p>}
                 {hasSharedCondolences && <p>للرجال والنساء: {funeral.condolencesMen || funeral.condolencesWomen}</p>}
                 {hasSeparateCondolences && (
@@ -552,8 +569,7 @@ export function ObituaryContent({
         (نعوة قصيرة النص)، بفضل minHeight الثابت على الجذر أعلاه. لا تُغيَّر إلى flex-grow
         على عنصر آخر — هذا يكسر حساب auto-fit (راجع useAutoFit.ts).
       */}
-      <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: "0.75em" }}>
-        {funeral.extraBottomSpacingEm ? <div style={{ height: `${funeral.extraBottomSpacingEm}em` }} /> : null}
+      <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: "calc(0.75em * var(--fit-spread, 1))" }}>
         {funeral.extraDividerLine && (
           <div style={{ borderTop: `1px solid ${tokens.muted}`, opacity: 0.5, marginBlock: "0.3em" }} />
         )}
@@ -585,7 +601,7 @@ export function ObituaryContent({
         {/* ١٤. فوتر المطبعة — قابل للتفعيل والتحرير من المحرر. الحجم ٠.٧٨em (كان
             ٠.٦٥em) — مكبَّر ٢٠٪ بطلب صريح. */}
         {footerText && (
-          <div style={{ paddingTop: "0.6em", borderTop: `1px solid ${tokens.ink}`, fontSize: "0.78em", color: tokens.muted }}>
+          <div style={{ paddingTop: "0.6em", borderTop: `1px solid ${tokens.ink}`, fontSize: "min(0.78em, 12.5px)", color: tokens.muted }}>
             {footerText}
           </div>
         )}

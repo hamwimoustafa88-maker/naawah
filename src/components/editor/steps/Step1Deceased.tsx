@@ -7,7 +7,8 @@
 import { useState } from "react"
 import { Minus, Plus } from "lucide-react"
 import { cn } from "@/lib/utils/cn"
-import { honorificsFor, QURAN_VERSES, todayISO } from "@/lib/obituary/defaults"
+import { honorificForGender, QURAN_VERSES, todayISO } from "@/lib/obituary/defaults"
+import type { Gender } from "@/lib/obituary/types"
 import { formatDualDate } from "@/lib/obituary/hijri"
 import { detectWriterPlaceAr } from "@/lib/location/detectPlace"
 import { useEditorStore } from "@/store/editorStore"
@@ -16,10 +17,13 @@ import { Card, CardTitle } from "@/components/ui/Card"
 import { PhotoUpload } from "@/components/editor/PhotoUpload"
 import { FontPicker } from "@/components/editor/FontPicker"
 import { CountryPicker } from "@/components/editor/CountryPicker"
+import { HonorificSelect } from "@/components/editor/HonorificSelect"
 
 export function IdentityFields() {
   const deceased = useEditorStore((s) => s.data.deceased)
   const update = useEditorStore((s) => s.updateDeceased)
+  const setGender = (gender: Gender) =>
+    update({ gender, honorific: honorificForGender(deceased.honorific, gender) })
 
   return (
     <div className="grid grid-cols-2 gap-4">
@@ -27,7 +31,7 @@ export function IdentityFields() {
         <div className="grid grid-cols-2 gap-2">
           <button
             type="button"
-            onClick={() => update({ gender: "male" })}
+            onClick={() => setGender("male")}
             aria-pressed={deceased.gender === "male"}
             className={cn(
               "rounded-lg border px-3 py-2 text-sm font-medium transition-colors",
@@ -40,7 +44,7 @@ export function IdentityFields() {
           </button>
           <button
             type="button"
-            onClick={() => update({ gender: "female" })}
+            onClick={() => setGender("female")}
             aria-pressed={deceased.gender === "female"}
             className={cn(
               "rounded-lg border px-3 py-2 text-sm font-medium transition-colors",
@@ -55,18 +59,13 @@ export function IdentityFields() {
       </FieldGroup>
 
       <FieldGroup label="اللقب / الصفة">
-        <Input
-          list="honorifics"
-          value={deceased.honorific ?? ""}
-          onChange={(e) => update({ honorific: e.target.value })}
-          placeholder={deceased.gender === "male" ? "الحاج، الدكتور…" : "الحاجة، الدكتورة…"}
+        <HonorificSelect
+          value={deceased.honorific}
+          gender={deceased.gender}
+          onChange={(honorific) => update({ honorific })}
+          emptyLabel="بدون لقب"
+          customClassName="mt-2"
         />
-        {/* قائمة الألقاب تتغيّر مع الجنس — لا يظهر لقب مؤنّث لذكر أو العكس */}
-        <datalist id="honorifics">
-          {honorificsFor(deceased.gender).map((h) => (
-            <option key={h} value={h} />
-          ))}
-        </datalist>
       </FieldGroup>
 
       <div className="col-span-2">
@@ -106,19 +105,22 @@ export function MarhoomFields() {
               <option value="marhoom">{deceased.gender === "male" ? "المرحوم" : "المرحومة"}</option>
               <option value="shaheed">{deceased.gender === "male" ? "الشهيد" : "الشهيدة"}</option>
               <option value="custom">أخرى (نص مخصّص)</option>
+              <option value="none">بدون عبارة (إخفاء)</option>
             </Select>
             {/* تبديل واحد: تكبير العبارة لحجم اسم الفقيد، أو إعادتها لحجمها الصغير
                 المعتاد — بلا نص/خانة اختيار، فقط أيقونة تتبدّل مع الحالة. */}
-            <button
-              type="button"
-              onClick={() => update({ marhoomEnlarged: !(deceased.marhoomEnlarged ?? false) })}
-              aria-pressed={deceased.marhoomEnlarged ?? false}
-              title={deceased.marhoomEnlarged ? "تصغير إلى الحجم المعتاد" : "تكبير لحجم اسم الفقيد"}
-              aria-label={deceased.marhoomEnlarged ? "تصغير عبارة الترحّم إلى الحجم المعتاد" : "تكبير عبارة الترحّم لحجم اسم الفقيد"}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-black/15 hover:bg-black/5"
-            >
-              {deceased.marhoomEnlarged ? <Minus size={16} /> : <Plus size={16} />}
-            </button>
+            {deceased.marhoomStyle !== "none" && (
+              <button
+                type="button"
+                onClick={() => update({ marhoomEnlarged: !(deceased.marhoomEnlarged ?? false) })}
+                aria-pressed={deceased.marhoomEnlarged ?? false}
+                title={deceased.marhoomEnlarged ? "تصغير إلى الحجم المعتاد" : "تكبير لحجم اسم الفقيد"}
+                aria-label={deceased.marhoomEnlarged ? "تصغير عبارة الترحّم إلى الحجم المعتاد" : "تكبير عبارة الترحّم لحجم اسم الفقيد"}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-black/15 hover:bg-black/5"
+              >
+                {deceased.marhoomEnlarged ? <Minus size={16} /> : <Plus size={16} />}
+              </button>
+            )}
           </div>
         </FieldGroup>
       </div>
@@ -286,21 +288,14 @@ export function SpouseFields() {
   return (
     <div className="grid grid-cols-2 gap-4">
       <FieldGroup label="لقب الزوج">
-        <Input
-          list="honorifics-male"
-          value={deceased.spouseHonorific ?? ""}
-          onChange={(e) => update({ spouseHonorific: e.target.value })}
-          placeholder="الحاج، الدكتور…"
+        {/* الزوج ذكر دائماً بصرف النظر عن جنس الفقيدة — لذا gender ثابت هنا. */}
+        <HonorificSelect
+          value={deceased.spouseHonorific}
+          gender="male"
+          onChange={(spouseHonorific) => update({ spouseHonorific })}
+          emptyLabel="بدون لقب"
+          customClassName="mt-2"
         />
-        {/* الزوج ذكر دائماً بصرف النظر عن جنس الفقيدة — datalist مستقلة عن "honorifics"
-            في IdentityFields (تلك تتبع جنس الفقيد/ة نفسه/ها) حتى لا تظهر ألقاب مؤنّثة
-            هنا (عطل حقيقي: كان يتشارك الحقلان نفس القائمة، فتظهر "الحاجة"/"الدكتورة"
-            لِلَقب زوج ذكر). */}
-        <datalist id="honorifics-male">
-          {honorificsFor("male").map((h) => (
-            <option key={h} value={h} />
-          ))}
-        </datalist>
       </FieldGroup>
       <FieldGroup label="اسم الزوج">
         <Input

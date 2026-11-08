@@ -30,6 +30,13 @@ export function honorificsFor(gender: Gender): string[] {
   return HONORIFIC_OPTIONS.map((h) => (gender === "male" ? h.male : h.female))
 }
 
+/** يحوّل لقباً من القائمة لصيغة الجنس المطلوب عند تبديل الجنس؛ اللقب المكتوب يدوياً يبقى كما هو. */
+export function honorificForGender(honorific: string | undefined, gender: Gender): string | undefined {
+  const match = HONORIFIC_OPTIONS.find((h) => h.male === honorific || h.female === honorific)
+  if (!match) return honorific
+  return gender === "male" ? match.male : match.female
+}
+
 export const RELATIVE_CATEGORY_OPTIONS: {
   key: RelativeCategoryKey
   labelMale: string

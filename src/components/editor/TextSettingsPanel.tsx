@@ -11,7 +11,7 @@
 // بدل الزر المنبثق الصغير.
 
 import { useEffect, useRef, useState } from "react"
-import { Settings, X } from "lucide-react"
+import { X } from "lucide-react"
 import { useEditorStore } from "@/store/editorStore"
 import { cn } from "@/lib/utils/cn"
 import { Checkbox, Label } from "@/components/ui/Field"
@@ -25,6 +25,8 @@ export function TextSettingsFields() {
   const nameStyle = useEditorStore((s) => s.data.nameStyle)
   const updateNameStyle = useEditorStore((s) => s.updateNameStyle)
   const setPreviewNameFontFamily = useEditorStore((s) => s.setPreviewNameFontFamily)
+  const relativeNameStyle = useEditorStore((s) => s.data.relativeNameStyle)
+  const updateRelativeNameStyle = useEditorStore((s) => s.updateRelativeNameStyle)
 
   return (
     <div className="flex flex-col gap-3">
@@ -69,6 +71,20 @@ export function TextSettingsFields() {
           onChange={(e) => updateNameStyle({ bold: e.target.checked })}
         />
       </div>
+
+      <div className="mt-1 flex flex-col gap-3 border-t border-black/10 pt-4">
+        <p className="text-xs font-bold text-black/60">أسماء الأقارب</p>
+        <Checkbox
+          label="خط عريض (Bold)"
+          checked={relativeNameStyle?.bold ?? false}
+          onChange={(e) => updateRelativeNameStyle({ bold: e.target.checked })}
+        />
+        <Checkbox
+          label="خط تحت الأسماء (Underline)"
+          checked={relativeNameStyle?.underline ?? false}
+          onChange={(e) => updateRelativeNameStyle({ underline: e.target.checked })}
+        />
+      </div>
     </div>
   )
 }
@@ -108,12 +124,12 @@ export function TextSettingsPanel({
   return (
     <div className="relative" ref={panelRef}>
       {triggerClassName ? (
-        <button type="button" onClick={() => setOpen((v) => !v)} aria-label="إعدادات النصوص" className={triggerClassName}>
-          <Settings size={16} />
+        <button type="button" onClick={() => setOpen((v) => !v)} className={triggerClassName}>
+          إعدادات النصوص
         </button>
       ) : (
-        <Button variant="outline" size={triggerSize} onClick={() => setOpen((v) => !v)} aria-label="إعدادات النصوص">
-          <Settings size={16} />
+        <Button variant="outline" size={triggerSize} onClick={() => setOpen((v) => !v)}>
+          إعدادات النصوص
         </Button>
       )}
 

@@ -40,6 +40,9 @@ yarn-error.log*
 /.agents
 /agent-skills
 
+# مجلد تجميع الملفات المرشّحة للحذف (يُراجَع ثم يُحذف يدوياً) — لا يُرفع أبداً
+/_to-delete
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

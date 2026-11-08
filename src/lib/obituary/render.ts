@@ -1,9 +1,13 @@
 // طبقة التركيب — تبني جمل الصفحة الكاملة من البيانات + محرك القواعد + محرك التاريخ.
 
-import { DECEASED_WORDS, MARHOOM_STYLE_WORDS, PARENT_LABELS, relativeCategoryLabel, renderRelativeList } from "./grammar"
+import {
+  DECEASED_WORDS, MARHOOM_STYLE_WORDS, PARENT_LABELS, relativeCategoryLabel, renderRelativeList, renderRelativeParts,
+  type RelativeTextPart,
+} from "./grammar"
+import { surnameFromWords } from "./familyNames"
 import { formatDualDate, formatWeekdayName } from "./hijri"
 import { DEFAULT_PRINT_FOOTER_TEXT, MOURNING_OPENINGS, SINGLE_HIDDEN_RELATIVE_CATEGORIES } from "./defaults"
-import type { DeceasedInfo, FormatPrefs, ObituaryData, RelativeGroup } from "./types"
+import type { DeceasedInfo, FormatPrefs, FuneralInfo, ObituaryData, Person, RelativeGroup } from "./types"
 
 // تُستعمل فقط حين يُستدعى identityLine بلا format صريح (توافقاً مع استدعاءات
 // قديمة/اختبارات لا تمرّره — راجع تعليق identityLine أسفل). مطابقة لافتراضيات
@@ -41,8 +45,10 @@ export function mourningLine(data: ObituaryData): string {
 /**
  * عبارة الترحّم فوق اسم الفقيد مباشرة — "المرحوم/ة" افتراضياً، أو "الشهيد/ة"،
  * أو نص حر (marhoomCustomText) عند اختيار "custom". قابلة للتحكم من (بيانات الفقيد).
+ * "none" تُعيد نصاً فارغاً، فلا يُرسم السطر أصلاً في ObituaryBlocks.tsx.
  */
 export function marhoomWord(deceased: DeceasedInfo): string {
+  if (deceased.marhoomStyle === "none") return ""
   if (deceased.marhoomStyle === "custom") {
     return deceased.marhoomCustomText?.trim() || MARHOOM_STYLE_WORDS.marhoom[deceased.gender]
   }
@@ -100,6 +106,11 @@ export interface RenderedRelativeGroup {
   id: string
   label: string
   text: string
+  parts: RelativeTextPart[]
+}
+
+function renderedMembers(members: Person[]): Pick<RenderedRelativeGroup, "text" | "parts"> {
+  return { text: renderRelativeList(members), parts: renderRelativeParts(members) }
 }
 
 /**
@@ -130,14 +141,14 @@ export function relativesBlocks(data: ObituaryData): RenderedRelativeGroup[] {
         blocks.push({
           id: `${g.id}-father`,
           label: PARENT_LABELS.father[data.deceased.gender],
-          text: renderRelativeList([father]),
+          ...renderedMembers([father]),
         })
       }
       if (mother) {
         blocks.push({
           id: `${g.id}-mother`,
           label: PARENT_LABELS.mother[data.deceased.gender],
-          text: renderRelativeList([mother]),
+          ...renderedMembers([mother]),
         })
       }
       continue
@@ -146,7 +157,7 @@ export function relativesBlocks(data: ObituaryData): RenderedRelativeGroup[] {
     blocks.push({
       id: g.id,
       label: relativeCategoryLabel(g.categoryKey, data.deceased.gender, namedMembers, g.customLabel),
-      text: renderRelativeList(namedMembers),
+      ...renderedMembers(namedMembers),
     })
   }
   return blocks
@@ -232,7 +243,8 @@ export function closingDua(data: ObituaryData): string {
 }
 
 /**
- * آخر كلمة في اسم كامل — تُعامَل كاسم العائلة (اللقب العائلي). أسماء من كلمة واحدة
+ * اسم العائلة في اسم كامل: آخر كلمة، أو آخر كلمتين للعائلات المركّبة (راجع
+ * familyNames.ts). أسماء من كلمة واحدة
  * (غالباً أبناء/إخوة يُذكرون بالاسم الأول فقط، يُفترض مشاركتهم لقب الفقيد نفسه)
  * تُستبعد عمداً — لا يوجد فيها ما يُميَّز كلقب عائلة فعلي، فتحويلها إلى "عائلة"
  * كان يُلوِّث القائمة بأسماء أولى ليست عائلات إطلاقاً.
@@ -245,15 +257,16 @@ export function closingDua(data: ObituaryData): string {
  */
 function lastNameOf(fullName: string): string {
   const withoutParens = fullName.replace(/\([^)]*\)/g, " ")
-  const parts = withoutParens.trim().split(/\s+/).filter(Boolean)
-  return parts.length >= 2 ? parts[parts.length - 1] : ""
+  return surnameFromWords(withoutParens.trim().split(/\s+/).filter(Boolean))
 }
 
+export const FAMILIES_LINE_PREFIX = "الراضون بقضاء الله وقدره: "
+
 /**
- * تُشتق تلقائياً من أسماء عائلة كل الأقارب المُدخَلين في (٣. الأقارب) — آخر كلمة من
- * اسم كل قريب **وزوج/ة كل قريب أيضاً** (الأصهار جزء تقليدي أصيل من هذه العبارة —
- * تحقّقتُ هذا من نص SAMPLE_OBITUARY_DATA المحفوظ يدوياً أصلاً، يتضمّن عائلات أزواج
- * البنات صراحة)، بلا تكرار لنفس اسم العائلة، مسبوقة بـ"آل" مرة واحدة ومفصولة بفاصلة.
+ * تُشتق تلقائياً: عائلة الفقيد أولاً، ثم عائلات كل الأقارب المُدخَلين في (٣. الأقارب)
+ * **وزوج/ة كل قريب أيضاً** (الأصهار جزء تقليدي أصيل من هذه العبارة — تحقّقتُ هذا من
+ * نص SAMPLE_OBITUARY_DATA المحفوظ يدوياً أصلاً، يتضمّن عائلات أزواج البنات صراحة)،
+ * بلا تكرار لنفس اسم العائلة، مسبوقة بـ"آل" مرة واحدة ومفصولة بفاصلة.
  */
 export function defaultFamiliesLine(data: ObituaryData): string {
   const surnames: string[] = []
@@ -261,6 +274,7 @@ export function defaultFamiliesLine(data: ObituaryData): string {
     const surname = name ? lastNameOf(name) : ""
     if (surname && !surnames.includes(surname)) surnames.push(surname)
   }
+  addSurname(data.deceased.name)
   for (const group of visibleRelativeGroups(data)) {
     for (const member of group.members) {
       addSurname(member.name)
@@ -268,7 +282,7 @@ export function defaultFamiliesLine(data: ObituaryData): string {
     }
   }
   if (surnames.length === 0) return ""
-  return `الراضون بقضاء الله وقدره: آل ${surnames.join("، ")}`
+  return `${FAMILIES_LINE_PREFIX}آل ${surnames.join("، ")}`
 }
 
 /**
@@ -285,14 +299,22 @@ export function parentFamiliesLine(data: ObituaryData): string {
   const motherSurname = mother ? lastNameOf(mother.name) : ""
   const surnames = [...new Set([fatherSurname, motherSurname].filter(Boolean))]
   if (surnames.length === 0) return ""
-  return `الراضون بقضاء الله وقدره: آل ${surnames.join("، ")}`
+  return `${FAMILIES_LINE_PREFIX}آل ${surnames.join("، ")}`
+}
+
+/** يُلحق "وعموم أهالي {المنطقة}" بآخر السطر إن فعّلها المستخدم. */
+function withAreaResidents(line: string, funeral: FuneralInfo): string {
+  const area = funeral.includeAreaResidents ? funeral.areaResidentsName?.trim() : ""
+  if (!area) return line
+  return line ? `${line}، وعموم أهالي ${area}` : `${FAMILIES_LINE_PREFIX}عموم أهالي ${area}`
 }
 
 /** سطر العائلات — مُشتق تلقائياً من الأقارب افتراضياً، قابل للتخصيص الحرّ عبر
  * customTexts.familiesLine. scope="parents-only" يستعمل parentFamiliesLine بدل
  * defaultFamiliesLine (طرابلس وشمال لبنان حصراً، عبر template.familiesLineScope). */
 export function familiesLine(data: ObituaryData, scope: "all" | "parents-only" = "all"): string {
-  return data.customTexts?.familiesLine ?? (scope === "parents-only" ? parentFamiliesLine(data) : defaultFamiliesLine(data))
+  const line = data.customTexts?.familiesLine ?? (scope === "parents-only" ? parentFamiliesLine(data) : defaultFamiliesLine(data))
+  return withAreaResidents(line, data.funeral)
 }
 
 export function processionLine(data: ObituaryData): string | null {

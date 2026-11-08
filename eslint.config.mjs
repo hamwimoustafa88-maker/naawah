@@ -18,6 +18,8 @@ const eslintConfig = defineConfig([
     // Same reason tsconfig.json and vitest.config.ts exclude these.
     "agent-skills/**",
     ".agents/**",
+    // Files staged for deletion (see .gitignore) — never lint them.
+    "_to-delete/**",
   ]),
 ]);
 

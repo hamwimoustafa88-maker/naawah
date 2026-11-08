@@ -199,6 +199,12 @@ export function CondolencesFields() {
         />
       </FieldGroup>
 
+      <Checkbox
+        label="خط عريض (Bold) لكامل النص داخل المربع"
+        checked={funeral.funeralBoxBold ?? false}
+        onChange={(e) => updateFuneral({ funeralBoxBold: e.target.checked })}
+      />
+
       <Checkbox label="تفاصيل إضافية (أماكن التعزية، الإطار المربع، ملاحظات)" checked={showMore} onChange={(e) => setShowMore(e.target.checked)} />
 
       {showMore && (
@@ -248,21 +254,11 @@ export function FillGapFields() {
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="-mt-1 text-xs text-black/45">
-        الفقرات الثلاث الأخيرة (الراضون بقضاء الله وقدره، إنّا لله وإنّا إليه راجعون، للفقيد الرحمة ولكم الأجر والثواب)
-        تبقى ثابتة أسفل الصفحة دائماً. إن كانت النعوة قصيرة، أضف مسافة أو خطاً فاصلاً فوقها لملء الفراغ.
-      </p>
-      <FieldGroup label="مسافة إضافية قبل الفقرات الأخيرة (اختياري)">
-        <Input
-          type="number"
-          min={0}
-          max={20}
-          step={0.5}
-          value={funeral.extraBottomSpacingEm ?? ""}
-          onChange={(e) => updateFuneral({ extraBottomSpacingEm: e.target.value ? Number(e.target.value) : undefined })}
-          placeholder="0"
-        />
-      </FieldGroup>
+      <Checkbox
+        label="ملء الصفحة تلقائياً (تكبير النص وتوزيع المسافات)"
+        checked={funeral.autoFillPage ?? true}
+        onChange={(e) => updateFuneral({ autoFillPage: e.target.checked })}
+      />
       <Checkbox
         label="إضافة خط فاصل فوق الفقرات الأخيرة"
         checked={funeral.extraDividerLine ?? false}

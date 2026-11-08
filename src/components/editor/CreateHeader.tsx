@@ -25,6 +25,7 @@ import { useEditorStore } from "@/store/editorStore"
 import { exportPdf, exportPng, exportShare, type ExportKind } from "@/lib/export/actions"
 import { exportObituaryJson, importObituaryJson } from "@/lib/export/tempDataIO"
 import { TextSettingsPanel } from "@/components/editor/TextSettingsPanel"
+import { SavedObituaries } from "@/components/editor/SavedObituaries"
 import { BrandLogo } from "@/components/common/BrandLogo"
 
 /** ⚠️ مؤقت للاختبار — راجع lib/export/tempDataIO.ts. زرا استيراد/تصدير JSON
@@ -36,6 +37,7 @@ export function CreateHeader() {
   const data = useEditorStore((s) => s.data)
   const loadData = useEditorStore((s) => s.loadData)
   const archiveKey = useEditorStore((s) => s.archiveKey)
+  const draftSaveFailed = useEditorStore((s) => s.draftSaveFailed)
   const [busy, setBusy] = useState<ExportKind | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -95,6 +97,7 @@ export function CreateHeader() {
 
         <div className="flex items-center gap-2">
           {error && <span className="text-xs font-medium text-red-600">{error}</span>}
+          {draftSaveFailed && <span className="text-xs font-medium text-red-600">تعذّر الحفظ</span>}
           {SHOW_JSON_IO_TOOLS && dataError && <span className="text-xs font-medium text-red-600">{dataError}</span>}
 
           {/* ⚠️ مؤقت للاختبار فقط — تصدير/استيراد بيانات النعوة كـJSON (راجع
@@ -123,6 +126,8 @@ export function CreateHeader() {
             </div>
           )}
 
+          <SavedObituaries />
+
           <button type="button" onClick={handlePng} disabled={busy !== null} aria-label="تحميل صورة PNG" className={iconButtonClass}>
             {busy === "png" ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
           </button>
@@ -138,7 +143,10 @@ export function CreateHeader() {
               مموضع بالإحداثيات المطلقة هش أصلاً على شاشة ضيقة، والبوتوم-شيت المتّسق
               مع بقية أقسام التعديل هو المسار الوحيد على الجوال الآن. */}
           <div className="hidden lg:block">
-            <TextSettingsPanel placement="down" triggerClassName={iconButtonClass} />
+            <TextSettingsPanel
+              placement="down"
+              triggerClassName="inline-flex h-9 items-center whitespace-nowrap rounded-full border border-(--home-border) px-3 text-sm font-medium text-(--home-fg) transition-colors hover:bg-(--home-bg)"
+            />
           </div>
         </div>
       </div>

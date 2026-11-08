@@ -14,7 +14,7 @@ export function SadaqahSection() {
         <p className="max-w-xl text-sm leading-relaxed text-(--home-muted)">
           «إذا ماتَ ابنُ آدمَ انقطعَ عملُه إلا من ثلاثٍ: صدقةٍ جاريةٍ، أو علمٍ يُنتفَعُ به، أو ولدٍ صالحٍ يدعو له»
           <br />
-          <span className="text-xs">رواه مسلم</span>
+          <span>رواه مسلم</span>
         </p>
         <p className="text-sm text-(--home-muted)">
           نسأل الله أن يتقبّلها خالصةً لوجهه، وأن يرحم موتى المسلمين أجمعين.

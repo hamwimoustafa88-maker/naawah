@@ -1,7 +1,8 @@
 "use client"
 
-import { Fragment, useEffect } from "react"
+import { Fragment } from "react"
 import { ObituaryCanvas } from "@/components/canvas/ObituaryCanvas"
+import { useObituaryAutosave } from "@/lib/drafts/useObituaryAutosave"
 import { ResponsiveCanvasFrame } from "@/components/canvas/ResponsiveCanvasFrame"
 import { useEditorStore } from "@/store/editorStore"
 import { ExportBar } from "@/components/editor/ExportBar"
@@ -46,19 +47,14 @@ function SectionDivider({ number, title }: { number: string; title: string }) {
 
 export function EditorShell() {
   const data = useEditorStore((s) => s.data)
-  const regenerateArchiveKey = useEditorStore((s) => s.regenerateArchiveKey)
+  const archiveKey = useEditorStore((s) => s.archiveKey)
 
-  // توليد archiveKey الفعلي بعد التركيب فقط — راجع تعليق الحقل في editorStore.ts
-  // (قيمته الابتدائية ثابتة تفادياً لعطل hydration mismatch). EditorShell هو نقطة
-  // تركيب وحيدة لصفحة /create (مع CreateHeader)، فتشغيله هنا مرة واحدة يكفي
-  // لكلا نسختي الكانفاس (سطح مكتب/جوال) المُركَّبتين معاً دائماً.
-  useEffect(() => {
-    regenerateArchiveKey()
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- مرة واحدة عند التركيب فقط
-  }, [])
+  useObituaryAutosave()
 
+  // key إلزامي: مكوّنات كثيرة تشتق حالتها المحلية من البيانات عند التركيب فقط (سطر
+  // الزوج المطوي، الحقول المخصّصة…)، فبلا إعادة تركيب تظهر النعوة المستعادة بحقول مطوية.
   return (
-    <>
+    <Fragment key={archiveKey}>
       {/* الجوال: معاينة حية دائمة الظهور + بوب-أب أقسام صغيرة سريعة (راجع mobile/MobileEditorView.tsx) */}
       <div className="lg:hidden">
         <MobileEditorView />
@@ -95,6 +91,6 @@ export function EditorShell() {
           <ExportBar />
         </div>
       </div>
-    </>
+    </Fragment>
   )
 }

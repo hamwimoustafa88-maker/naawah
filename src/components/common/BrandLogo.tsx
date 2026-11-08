@@ -32,9 +32,10 @@ export function BrandLogo({ wordmarkClassName }: { wordmarkClassName?: string })
       href="/"
       onClick={handleClick}
       aria-label={isHome ? "العودة إلى أعلى الصفحة" : "الذهاب إلى الصفحة الرئيسية"}
-      className="flex items-center gap-2"
+      className="flex min-h-11 min-w-11 items-center gap-2 sm:min-h-0 sm:min-w-0"
     >
-      <Image src="/icon.png" alt="" width={28} height={28} className="h-7 w-7 shrink-0" priority />
+      {/* icon.png أبعاده ٨٠٦×٩٨٢ (غير مربّع) — ٢٣×٢٨ تحفظ نسبته بدل مطّه. */}
+      <Image src="/icon.png" alt="" width={23} height={28} className="h-7 w-auto shrink-0" priority />
       <span className={cn("text-sm font-bold text-(--home-accent)", wordmarkClassName)}>
         النعوة الإلكترونية
       </span>

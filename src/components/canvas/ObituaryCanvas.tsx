@@ -20,7 +20,7 @@ export function ObituaryCanvas({
 }) {
   const template = getTemplate(data.templateId)
   const { tokens, Frame } = template
-  const { containerRef, contentRef, scale } = useAutoFit([data])
+  const { containerRef, contentRef, scale } = useAutoFit([data], data.funeral.autoFillPage ?? true)
 
   return (
     <div

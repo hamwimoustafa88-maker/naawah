@@ -1,20 +1,24 @@
 // اختبارات تحقّق ضد نصوص حقيقية من المرفقات الخمسة — لا يجوز كسرها بلا مراجعة الصورة الأصلية.
 
 import { describe, expect, it } from "vitest"
-import { joinWithWaw, relativeCategoryLabel, renderPersonCore, renderRelativeList } from "./grammar"
+import { relativeCategoryLabel, renderPersonCore, renderRelativeList, renderRelativeParts } from "./grammar"
 import { calculateAge, formatDualDate, formatWeekdayName, toNumerals } from "./hijri"
 import {
-  closingDua, deceasedNameLine, defaultFamiliesLine, familiesLine, funeralSentence, identityLine, mourningLine, relativesBlocks,
+  closingDua, deceasedNameLine, defaultFamiliesLine, familiesLine, funeralSentence, identityLine, marhoomWord, mourningLine, relativesBlocks,
 } from "./render"
 import { SAMPLE_OBITUARY_DATA } from "./defaults"
 import type { ObituaryData, Person } from "./types"
 
-describe("joinWithWaw", () => {
-  it("يربط بحرف الواو الملتصق بلا فواصل", () => {
-    expect(joinWithWaw(["ابراهيم", "أحمد", "عبدالله"])).toBe("ابراهيم وأحمد وعبدالله")
-  })
-  it("يتجاهل العناصر الفارغة", () => {
-    expect(joinWithWaw(["أ", "", "ب"])).toBe("أ وب")
+describe("renderRelativeParts — تمييز الأسماء عن الصفات والروابط", () => {
+  it("الأسماء فقط isName، ولا تدخل فيها (المرحوم) و(زوجته) وحرف الواو", () => {
+    const members: Person[] = [
+      { id: "1", name: "كمال", isDeceased: false, gender: "male" },
+      { id: "2", name: "أحمد", honorific: "الحاج", isDeceased: true, gender: "male", spouseName: "رلى دوغان", spouseHonorific: "الحاجة" },
+    ]
+    expect(renderRelativeParts(members).filter((p) => p.isName).map((p) => p.text)).toEqual([
+      "كمال", "الحاج أحمد", "الحاجة رلى دوغان",
+    ])
+    expect(renderRelativeList(members)).toBe("كمال والمرحوم الحاج أحمد زوجته الحاجة رلى دوغان")
   })
 })
 
@@ -35,30 +39,51 @@ describe("renderPersonCore — القاعدة ٦: صيغة الزوج تتصرّ
     expect(renderPersonCore(p)).toBe("هنا زوجة الحاج توفيق شهاب")
   })
 
+  const hana: Person = {
+    id: "2", name: "هنا", isDeceased: false, gender: "female",
+    spouseName: "توفيق شهاب", spouseHonorific: "الحاج",
+  }
+
+  it("قريبة توفي زوجها بلا اختيار ← زوجة المرحوم (الافتراضي)", () => {
+    expect(renderPersonCore({ ...hana, spouseIsDeceased: true })).toBe("هنا زوجة المرحوم الحاج توفيق شهاب")
+  })
+
+  it("قريبة توفي زوجها واختيرت (أرملة) ← أرملة المرحوم", () => {
+    expect(renderPersonCore({ ...hana, spouseIsDeceased: true, widowStyle: "أرملة" })).toBe(
+      "هنا أرملة المرحوم الحاج توفيق شهاب"
+    )
+  })
+
+  it("(أرملة) محفوظة لكن الزوج غير متوفى ← تبقى زوجة", () => {
+    expect(renderPersonCore({ ...hana, spouseIsDeceased: false, widowStyle: "أرملة" })).toBe(
+      "هنا زوجة الحاج توفيق شهاب"
+    )
+  })
+
   it("بلا زوج/ة: الاسم فقط مع اللقب", () => {
     const p: Person = { id: "3", name: "ابراهيم", honorific: "الحاج", isDeceased: false, gender: "male" }
     expect(renderPersonCore(p)).toBe("الحاج ابراهيم")
   })
 })
 
-describe("renderRelativeList — القاعدة ٥: تجميع الوفاة المتتالية", () => {
-  it("يجمع سلسلة متتالية تحت (المرحومين) مرة واحدة (المرفق ١: الأشقاء)", () => {
+describe("renderRelativeList — كل متوفى تسبقه (المرحوم/المرحومة) منفردة", () => {
+  it("سلسلة ذكور متوفين ← (المرحوم) قبل كل اسم، بلا (المرحومين)", () => {
     const members: Person[] = [
       { id: "b1", name: "ابراهيم", honorific: "الحاج", isDeceased: false, gender: "male" },
       { id: "b2", name: "أحمد", honorific: "الحاج", isDeceased: true, gender: "male" },
       { id: "b3", name: "عبدالله", honorific: "الحاج", isDeceased: true, gender: "male" },
     ]
     expect(renderRelativeList(members)).toBe(
-      "الحاج ابراهيم والمرحومين الحاج أحمد والحاج عبدالله"
+      "الحاج ابراهيم والمرحوم الحاج أحمد والمرحوم الحاج عبدالله"
     )
   })
 
-  it("يستعمل صيغة المؤنث (المرحومات) لسلسلة إناث متتالية", () => {
+  it("سلسلة إناث متوفيات ← (المرحومة) قبل كل اسم، بلا (المرحومات)", () => {
     const members: Person[] = [
       { id: "s1", name: "سعاد", honorific: "الحاجة", isDeceased: true, gender: "female" },
       { id: "s2", name: "خانم", honorific: "الحاجة", isDeceased: true, gender: "female" },
     ]
-    expect(renderRelativeList(members)).toBe("المرحومات الحاجة سعاد والحاجة خانم")
+    expect(renderRelativeList(members)).toBe("المرحومة الحاجة سعاد والمرحومة الحاجة خانم")
   })
 
   it("مفرد متوفى واحد ← (المرحوم) قبل الاسم مباشرة، بلا صيغة جمع", () => {
@@ -71,17 +96,35 @@ describe("renderRelativeList — القاعدة ٥: تجميع الوفاة ال
     )
   })
 
-  it("عطل حقيقي: مجموعة (المرحومات) تتبعها حيّة ← فاصلة تفصل نطاق المجموعة، لا 'و' وحدها", () => {
-    // بلا الفاصلة: "المرحومات سارة وجنى وكاملة" تُقرأ وكأن الثلاث متوفّيات رغم
-    // أن كاملة حيّة فعلياً — التبس نطاق "المرحومات" بلا فاصل واضح بعد المجموعة.
+  it("متوفيات تتبعهن حيّة ← الحيّة بلا (المرحومة) وبلا فاصلة", () => {
     const members: Person[] = [
       { id: "w1", name: "سارة غسان سنجر", isDeceased: true, gender: "female" },
       { id: "w2", name: "جنى سعيدون", isDeceased: true, gender: "female" },
       { id: "w3", name: "كاملة البزري", isDeceased: false, gender: "female" },
     ]
     expect(renderRelativeList(members)).toBe(
-      "المرحومات سارة غسان سنجر وجنى سعيدون، وكاملة البزري"
+      "المرحومة سارة غسان سنجر والمرحومة جنى سعيدون وكاملة البزري"
     )
+  })
+
+  it("فئة مختلطة الجنس ← كل متوفى بصيغة جنسه هو", () => {
+    const members: Person[] = [
+      { id: "g1", name: "علي", isDeceased: true, gender: "male" },
+      { id: "g2", name: "ليلى", isDeceased: true, gender: "female" },
+    ]
+    expect(renderRelativeList(members)).toBe("المرحوم علي والمرحومة ليلى")
+  })
+})
+
+describe("marhoomWord — عبارة الترحّم فوق اسم الفقيد", () => {
+  const deceased = SAMPLE_OBITUARY_DATA.deceased
+
+  it("الافتراضي ← المرحوم/ة بجنس الفقيد", () => {
+    expect(marhoomWord({ ...deceased, gender: "female", marhoomStyle: undefined })).toBe("المرحومة")
+  })
+
+  it("(none) ← نص فارغ، حتى مع نص مخصّص محفوظ", () => {
+    expect(marhoomWord({ ...deceased, marhoomStyle: "none", marhoomCustomText: "الفقيد الغالي" })).toBe("")
   })
 })
 
@@ -222,16 +265,53 @@ describe("familiesLine", () => {
   })
 })
 
-describe("defaultFamiliesLine — يُشتق تلقائياً من آخر كلمة في اسم كل قريب", () => {
+describe("defaultFamiliesLine — يُشتق تلقائياً: عائلة الفقيد أولاً ثم عائلات الأقارب", () => {
   const baseData: Omit<ObituaryData, "relatives"> = {
     deceased: {
-      gender: "male", name: "فلان الفلاني", deathDateISO: "2026-01-01", hijriOffsetDays: 0,
+      gender: "male", name: "فلان الحموي", deathDateISO: "2026-01-01", hijriOffsetDays: 0,
       country: "لبنان", hasBasmala: false, hasInnaLillah: false,
     },
     funeral: { prayerLocation: "" },
     format: { numerals: "arabic-indic", months: "levantine", dateOrder: "hijri-first" },
     templateId: "modern-minimal",
   }
+  const withDeceasedName = (name: string): Omit<ObituaryData, "relatives"> => ({
+    ...baseData,
+    deceased: { ...baseData.deceased, name },
+  })
+
+  it("عائلة الفقيد تتصدّر السطر حتى لو خالفت عائلات الأقارب", () => {
+    const data: ObituaryData = {
+      ...withDeceasedName("محمد شهاب"),
+      relatives: [{
+        id: "g1", categoryKey: "wives",
+        members: [{ id: "w", name: "ناهد ضومط", isDeceased: false, gender: "female" }],
+      }],
+    }
+    expect(defaultFamiliesLine(data)).toBe("الراضون بقضاء الله وقدره: آل شهاب، ضومط")
+  })
+
+  it.each([
+    ["أحمد علاء الدين", "علاء الدين"],
+    ["أحمد ابو علي", "ابو علي"],
+    ["أحمد أبي خليل", "أبي خليل"],
+    ["أحمد بو صعب", "بو صعب"],
+    ["أحمد عبد النور", "عبد النور"],
+    ["أحمد نصر الله", "نصر الله"],
+    ["أحمد الحاج حسن", "الحاج حسن"],
+    ["أحمد قره علي", "قره علي"],
+    ["أحمد بني طعمة", "بني طعمة"],
+  ])("عائلة مركّبة: %s ← آل %s", (name, family) => {
+    expect(defaultFamiliesLine({ ...withDeceasedName(name), relatives: [] })).toBe(`الراضون بقضاء الله وقدره: آل ${family}`)
+  })
+
+  it.each([["نور الدين"], ["عبد الله"], ["أبو علي"]])("%s وحده اسم أول، لا عائلة", (name) => {
+    expect(defaultFamiliesLine({ ...withDeceasedName(name), relatives: [] })).toBe("")
+  })
+
+  it("اسم من كلمتين يطابق عائلة معروفة يبقى اسماً ولقباً (حسين علي ← علي)", () => {
+    expect(defaultFamiliesLine({ ...withDeceasedName("حسين علي"), relatives: [] })).toBe("الراضون بقضاء الله وقدره: آل علي")
+  })
 
   it("مثال المستخدم: والده أحمد الحموي ووالدته نازك قباني ← آل الحموي، قباني", () => {
     const data: ObituaryData = {
@@ -290,7 +370,7 @@ describe("defaultFamiliesLine — يُشتق تلقائياً من آخر كلم
       ...baseData,
       relatives: [{ id: "g1", categoryKey: "sons", members: [{ id: "s1", name: "كمال", isDeceased: false, gender: "male" }] }],
     }
-    expect(defaultFamiliesLine(data)).toBe("")
+    expect(defaultFamiliesLine(data)).toBe("الراضون بقضاء الله وقدره: آل الحموي")
   })
 
   it("يشمل اسم عائلة زوج/ة القريب أيضاً (الأصهار)", () => {
@@ -303,11 +383,37 @@ describe("defaultFamiliesLine — يُشتق تلقائياً من آخر كلم
         },
       ],
     }
-    expect(defaultFamiliesLine(data)).toBe("الراضون بقضاء الله وقدره: آل شهاب")
+    expect(defaultFamiliesLine(data)).toBe("الراضون بقضاء الله وقدره: آل الحموي، شهاب")
   })
 
-  it("بلا أي قريب مُدخَل ← نص فارغ", () => {
-    expect(defaultFamiliesLine({ ...baseData, relatives: [] })).toBe("")
+  it("بلا أي اسم عائلة ← نص فارغ", () => {
+    expect(defaultFamiliesLine({ ...withDeceasedName("فلان"), relatives: [] })).toBe("")
+  })
+
+  describe("وعموم أهالي", () => {
+    const withArea = (funeral: Partial<ObituaryData["funeral"]>, customTexts?: ObituaryData["customTexts"]): ObituaryData => ({
+      ...baseData,
+      relatives: [],
+      customTexts,
+      funeral: { ...baseData.funeral, ...funeral },
+    })
+
+    it("تُلحق بآخر السطر عند التفعيل", () => {
+      expect(familiesLine(withArea({ includeAreaResidents: true, areaResidentsName: "شحيم" }))).toBe(
+        "الراضون بقضاء الله وقدره: آل الحموي، وعموم أهالي شحيم"
+      )
+    })
+
+    it("تُلحق بالنص المخصّص أيضاً", () => {
+      expect(familiesLine(withArea({ includeAreaResidents: true, areaResidentsName: "شحيم" }, { familiesLine: "نص حر" }))).toBe(
+        "نص حر، وعموم أهالي شحيم"
+      )
+    })
+
+    it("لا تُطبع بلا تفعيل أو بلا اسم منطقة", () => {
+      expect(familiesLine(withArea({ includeAreaResidents: false, areaResidentsName: "شحيم" }))).not.toContain("عموم")
+      expect(familiesLine(withArea({ includeAreaResidents: true, areaResidentsName: "  " }))).not.toContain("عموم")
+    })
   })
 })
 
