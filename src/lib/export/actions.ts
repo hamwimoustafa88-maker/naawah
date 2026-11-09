@@ -9,7 +9,7 @@ import { shareMessage } from "@/lib/obituary/render"
 import { archiveExport } from "@/lib/export/archive"
 import type { ObituaryData } from "@/lib/obituary/types"
 
-export type ExportKind = "png" | "pdf" | "share"
+export type ExportKind = "png" | "pdf" | "share" | "print"
 
 /**
  * نسخة سطح المكتب (EditorShell.tsx) ونسخة الجوال (MobileEditorView.tsx) من
@@ -49,11 +49,11 @@ async function capturePngBlob(): Promise<Blob> {
  * خلفية JPEG (بلا شفافية) يجب أن تطابق خلفية القالب الفعلية — لا أبيض ثابت، وإلا
  * ظهرت هالة بيضاء على حواف القوالب الداكنة (مثال: "الليلي الفخم") عند التصدير.
  */
-async function captureJpeg(templateId: string): Promise<string> {
+async function captureJpeg(templateId: string, pixelRatio = 3): Promise<string> {
   const node = await getCanvasNode()
   const backgroundColor = getTemplate(templateId).tokens.bg
   const { toJpeg } = await import("html-to-image")
-  return toJpeg(node, { pixelRatio: 3, cacheBust: true, quality: 0.92, backgroundColor })
+  return toJpeg(node, { pixelRatio, cacheBust: true, quality: 0.92, backgroundColor })
 }
 
 /**
@@ -61,9 +61,9 @@ async function captureJpeg(templateId: string): Promise<string> {
  * وحدها إن لم يُدخَل اسم بعد. يُزيل الرموز غير الصالحة في أسماء الملفات عبر أنظمة
  * التشغيل المختلفة (Windows تحديداً أكثرها تقييداً: \/:*?"<>|).
  */
-function buildFileName(deceasedName: string, extension: string): string {
+function buildFileName(deceasedName: string, extension: string, suffix = ""): string {
   const trimmed = deceasedName.trim()
-  const base = trimmed ? `النعوة الإلكترونية - ${trimmed}` : "النعوة الإلكترونية"
+  const base = (trimmed ? `النعوة الإلكترونية - ${trimmed}` : "النعوة الإلكترونية") + suffix
   const safe = base.replace(/[\\/:*?"<>|]/g, "").trim()
   return `${safe}.${extension}`
 }
@@ -80,12 +80,14 @@ function downloadBlob(blob: Blob, filename: string) {
   URL.revokeObjectURL(url)
 }
 
-async function notifyStats(templateId: string) {
+async function notifyStats(data: ObituaryData) {
+  // نعوة بلا اسم مجرّد تجربة، فلا تُحتسب في عدّاد الصفحة الرئيسية.
+  if (!data.deceased.name.trim()) return
   try {
     await fetch("/api/stats/increment", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ templateId }),
+      body: JSON.stringify({ templateId: data.templateId }),
     })
   } catch {
     // إحصاءات صامتة — لا نعطّل التصدير إن فشل الطلب
@@ -112,7 +114,7 @@ async function archiveAfterExport(data: ObituaryData, archiveKey: string, kind: 
 export async function exportPng(data: ObituaryData, archiveKey: string) {
   const blob = await capturePngBlob()
   downloadBlob(blob, buildFileName(data.deceased.name, "png"))
-  void notifyStats(data.templateId)
+  void notifyStats(data)
   void archiveAfterExport(data, archiveKey, "png")
 }
 
@@ -122,8 +124,56 @@ export async function exportPdf(data: ObituaryData, archiveKey: string) {
   const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4", compress: true })
   pdf.addImage(dataUrl, "JPEG", 0, 0, 210, 297)
   pdf.save(buildFileName(data.deceased.name, "pdf"))
-  void notifyStats(data.templateId)
+  void notifyStats(data)
   void archiveAfterExport(data, archiveKey, "pdf", dataUrl)
+}
+
+const A4_TRIM_MM = { width: 210, height: 297 }
+const BLEED_MM = 3
+/** شريط أبيض حول منطقة النزف تُرسم فيه علامات القص. */
+const MARK_ZONE_MM = 7
+const CROP_MARK_INSET_MM = 1.5
+
+/**
+ * نسخة المطبعة: صفحة A4 نفسها بدقة أعلى (٣٨٤ نقطة/بوصة تقريباً)، يحيط بها نزف ٣مم بلون
+ * خلفية القالب وعلامات قص خارجه. الألوان RGB لأن jsPDF لا يضمّن صوراً بنظام CMYK.
+ */
+export async function exportPrintPdf(data: ObituaryData, archiveKey: string) {
+  const dataUrl = await captureJpeg(data.templateId, 4)
+  const { jsPDF } = await import("jspdf")
+  const margin = MARK_ZONE_MM + BLEED_MM
+  const sheetWidth = A4_TRIM_MM.width + margin * 2
+  const sheetHeight = A4_TRIM_MM.height + margin * 2
+  const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: [sheetWidth, sheetHeight], compress: true })
+
+  pdf.setFillColor(getTemplate(data.templateId).tokens.bg)
+  pdf.rect(MARK_ZONE_MM, MARK_ZONE_MM, sheetWidth - MARK_ZONE_MM * 2, sheetHeight - MARK_ZONE_MM * 2, "F")
+  pdf.addImage(dataUrl, "JPEG", margin, margin, A4_TRIM_MM.width, A4_TRIM_MM.height)
+
+  pdf.setDrawColor(0)
+  pdf.setLineWidth(0.1)
+  const markStart = CROP_MARK_INSET_MM
+  const markEnd = MARK_ZONE_MM - CROP_MARK_INSET_MM
+  for (const x of [margin, sheetWidth - margin]) {
+    pdf.line(x, markStart, x, markEnd)
+    pdf.line(x, sheetHeight - markEnd, x, sheetHeight - markStart)
+  }
+  for (const y of [margin, sheetHeight - margin]) {
+    pdf.line(markStart, y, markEnd, y)
+    pdf.line(sheetWidth - markEnd, y, sheetWidth - markStart, y)
+  }
+
+  pdf.save(buildFileName(data.deceased.name, "pdf", " - للمطبعة"))
+  void notifyStats(data)
+  void archiveAfterExport(data, archiveKey, "print")
+}
+
+/** يؤرشف النعوة وينتظر النتيجة، ثم يعيد رابطها العام. يرمي إن تعذّر إنشاؤه. */
+export async function createPublicLink(data: ObituaryData, archiveKey: string): Promise<string> {
+  const jpegDataUrl = await captureJpeg(data.templateId)
+  const { publicId } = await archiveExport({ data, archiveKey, exportKind: "link", jpegDataUrl })
+  if (!publicId) throw new Error("تعذّر إنشاء رابط النعوة")
+  return `${window.location.origin}/n/${publicId}`
 }
 
 /**
@@ -138,10 +188,16 @@ export async function exportShare(data: ObituaryData, archiveKey: string) {
   const filename = buildFileName(data.deceased.name, "png")
   const file = new File([blob], filename, { type: "image/png" })
   if (navigator.canShare?.({ files: [file] })) {
-    await navigator.share({ files: [file], title: "نعوة", text: shareMessage(data) })
+    try {
+      await navigator.share({ files: [file], title: "نعوة", text: shareMessage(data) })
+    } catch (err) {
+      // إغلاق نافذة المشاركة بلا اختيار تطبيق قرار من المستخدم لا عطل.
+      if (err instanceof DOMException && err.name === "AbortError") return
+      throw err
+    }
   } else {
     downloadBlob(blob, filename)
   }
-  void notifyStats(data.templateId)
+  void notifyStats(data)
   void archiveAfterExport(data, archiveKey, "share")
 }

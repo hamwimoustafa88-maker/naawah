@@ -120,7 +120,7 @@ function DeceasedPhoto({
 }
 
 export function ObituaryContent({
-  data, template, scale, nameHeadingLevel = "h1",
+  data, template, scale, nameHeadingLevel = "h1", ignoreFontPreview = false,
 }: {
   data: ObituaryData
   template: TemplateDefinition
@@ -135,6 +135,7 @@ export function ObituaryContent({
    * التنسيق البصري مطابق تماماً بين الحالتين، الفرق دلالي (semantic) بحت.
    */
   nameHeadingLevel?: "h1" | "div"
+  ignoreFontPreview?: boolean
 }) {
   const NameTag = nameHeadingLevel
   const { deceased, funeral } = data
@@ -173,8 +174,8 @@ export function ObituaryContent({
 
   // معاينة عابرة (hover) من FontPicker.tsx — أولوية أعلى من القيمة الفعلية المحفوظة،
   // بلا أي تعديل على data نفسها. undefined دائماً ما لم يكن المؤشر فوق اسم خط فعلياً.
-  const previewBodyFontFamily = useEditorStore((s) => s.previewBodyFontFamily)
-  const previewNameFontFamily = useEditorStore((s) => s.previewNameFontFamily)
+  const previewBodyFontFamily = useEditorStore((s) => (ignoreFontPreview ? undefined : s.previewBodyFontFamily))
+  const previewNameFontFamily = useEditorStore((s) => (ignoreFontPreview ? undefined : s.previewNameFontFamily))
 
   const nameFontFamily = previewNameFontFamily || data.nameStyle?.fontFamily || tokens.nameFont
   const nameSizeEm = (templateNameSizeEm ?? 2.5) * (data.nameStyle?.sizeMultiplier ?? 1)

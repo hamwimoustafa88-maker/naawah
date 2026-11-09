@@ -20,12 +20,13 @@
 // رفع الترويسة لموضع positioned بز-إندكس أعلى من الشيت (٦٠ > ٥٠) يبقيها فوقه دائماً.
 
 import { useState } from "react"
-import { Download, FileJson, FileText, Loader2, Share2, Upload } from "lucide-react"
+import { Download, FileJson, FileText, Loader2, Redo2, Share2, Undo2, Upload } from "lucide-react"
 import { useEditorStore } from "@/store/editorStore"
-import { exportPdf, exportPng, exportShare, type ExportKind } from "@/lib/export/actions"
+import { cn } from "@/lib/utils/cn"
 import { exportObituaryJson, importObituaryJson } from "@/lib/export/tempDataIO"
 import { TextSettingsPanel } from "@/components/editor/TextSettingsPanel"
 import { SavedObituaries } from "@/components/editor/SavedObituaries"
+import { useGuardedExport } from "@/components/editor/useGuardedExport"
 import { BrandLogo } from "@/components/common/BrandLogo"
 
 /** ⚠️ مؤقت للاختبار — راجع lib/export/tempDataIO.ts. زرا استيراد/تصدير JSON
@@ -36,10 +37,12 @@ const SHOW_JSON_IO_TOOLS = false
 export function CreateHeader() {
   const data = useEditorStore((s) => s.data)
   const loadData = useEditorStore((s) => s.loadData)
-  const archiveKey = useEditorStore((s) => s.archiveKey)
   const draftSaveFailed = useEditorStore((s) => s.draftSaveFailed)
-  const [busy, setBusy] = useState<ExportKind | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const canUndo = useEditorStore((s) => s.past.length > 0)
+  const canRedo = useEditorStore((s) => s.future.length > 0)
+  const undo = useEditorStore((s) => s.undo)
+  const redo = useEditorStore((s) => s.redo)
+  const { busy, error, run, dialog } = useGuardedExport()
 
   // ⚠️ مؤقت للاختبار — راجع lib/export/tempDataIO.ts. احذف هذا البلوك بالكامل
   // (وزرّيه أدناه) عند الانتهاء من تجربة الشكل النهائي.
@@ -70,33 +73,19 @@ export function CreateHeader() {
     }
   }
 
-  const runExport = async (kind: ExportKind, errorMessage: string, action: () => Promise<void>) => {
-    setBusy(kind)
-    setError(null)
-    try {
-      await action()
-    } catch (err) {
-      setError(errorMessage)
-      console.error(err)
-    } finally {
-      setBusy(null)
-    }
-  }
-
-  const handlePng = () => runExport("png", "تعذّر التصدير", () => exportPng(data, archiveKey))
-  const handlePdf = () => runExport("pdf", "تعذّر التصدير", () => exportPdf(data, archiveKey))
-  const handleShare = () => runExport("share", "تعذّرت المشاركة", () => exportShare(data, archiveKey))
-
   const iconButtonClass =
     "inline-flex h-9 w-9 items-center justify-center rounded-full border border-(--home-border) text-(--home-fg) transition-colors hover:bg-(--home-bg) disabled:opacity-40 disabled:pointer-events-none"
+  // على الجوال تظهر هذه الأزرار بنصوصها تحت المعاينة (ExportActions في MobileEditorView).
+  const exportButtonClass = cn(iconButtonClass, "hidden lg:inline-flex")
 
   return (
     <div className="home-scope relative z-60 border-b border-(--home-border) bg-(--home-surface)">
       <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-3 px-4 py-3">
-        <BrandLogo />
+        <BrandLogo wordmarkClassName="hidden sm:inline" />
 
-        <div className="flex items-center gap-2">
-          {error && <span className="text-xs font-medium text-red-600">{error}</span>}
+        <div className="flex items-center gap-1 sm:gap-2">
+          {dialog}
+          {error && <span className="hidden text-xs font-medium text-red-600 sm:inline">{error}</span>}
           {draftSaveFailed && <span className="text-xs font-medium text-red-600">تعذّر الحفظ</span>}
           {SHOW_JSON_IO_TOOLS && dataError && <span className="text-xs font-medium text-red-600">{dataError}</span>}
 
@@ -126,15 +115,22 @@ export function CreateHeader() {
             </div>
           )}
 
+          <button type="button" onClick={undo} disabled={!canUndo} aria-label="تراجع" title="تراجع" className={iconButtonClass}>
+            <Undo2 size={16} />
+          </button>
+          <button type="button" onClick={redo} disabled={!canRedo} aria-label="إعادة" title="إعادة" className={iconButtonClass}>
+            <Redo2 size={16} />
+          </button>
+
           <SavedObituaries />
 
-          <button type="button" onClick={handlePng} disabled={busy !== null} aria-label="تحميل صورة PNG" className={iconButtonClass}>
+          <button type="button" onClick={() => run("png")} disabled={busy !== null} aria-label="تحميل صورة PNG" className={exportButtonClass}>
             {busy === "png" ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
           </button>
-          <button type="button" onClick={handlePdf} disabled={busy !== null} aria-label="تحميل PDF (A4)" className={iconButtonClass}>
+          <button type="button" onClick={() => run("pdf")} disabled={busy !== null} aria-label="تحميل PDF (A4)" className={exportButtonClass}>
             {busy === "pdf" ? <Loader2 size={16} className="animate-spin" /> : <FileText size={16} />}
           </button>
-          <button type="button" onClick={handleShare} disabled={busy !== null} aria-label="مشاركة" className={iconButtonClass}>
+          <button type="button" onClick={() => run("share")} disabled={busy !== null} aria-label="مشاركة" className={exportButtonClass}>
             {busy === "share" ? <Loader2 size={16} className="animate-spin" /> : <Share2 size={16} />}
           </button>
 

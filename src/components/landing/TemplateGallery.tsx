@@ -2,13 +2,13 @@
 
 // معرض القوالب السبعة — بوب أب (لم يعد قسماً مضمّناً في تدفّق الصفحة، أُلغي زر
 // "القوالب" من الترويسة العلوية تبعاً لذلك). يُفتح عبر GalleryTriggerButton في
-// الهيرو، ويُغلق بالنقر خارج اللوحة، بمفتاح Escape، أو بزر الإغلاق. بطاقات زجاجية
-// بعيّنة ألوان مبنية من t.tokens (على نمط Step4Template.tsx في المحرر)، بلا كانفاس
-// مستقل لكل بطاقة. اختيار قالب يُغلق البوب أب ويُمرّر إلى المعاينة الحيّة المشتركة
-// في الهيرو ليرى الزائر أثر اختياره فوراً.
+// الهيرو، ويُغلق بالنقر خارج اللوحة، بمفتاح Escape، أو بزر الإغلاق. كل بطاقة تعرض
+// القالب كنعوة كاملة (TemplatePreviewCard). اختيار قالب يُغلق البوب أب ويُمرّر إلى
+// المعاينة الحيّة المشتركة في الهيرو ليرى الزائر أثر اختياره فوراً.
 
 import { useEffect } from "react"
 import { X } from "lucide-react"
+import { TemplatePreviewCard } from "@/components/templates/TemplatePreviewCard"
 import { VISIBLE_TEMPLATES as TEMPLATES } from "@/lib/templates/registry"
 import { cn } from "@/lib/utils/cn"
 import { useTemplateShowcase } from "@/components/landing/TemplateShowcaseProvider"
@@ -84,12 +84,13 @@ export function TemplateGallery() {
                 type="button"
                 onClick={() => select(t.id)}
                 className={cn(
-                  "flex w-full flex-col gap-3 rounded-2xl border-2 p-5 text-right transition-all",
+                  "flex w-full flex-col gap-3 rounded-2xl border-2 p-3 text-right transition-all",
                   templateId === t.id
                     ? "border-(--home-accent) bg-(--home-accent)/5 shadow-lg"
                     : "border-(--home-border) bg-(--home-surface) hover:-translate-y-0.5 hover:border-(--home-accent)/50"
                 )}
               >
+                <TemplatePreviewCard templateId={t.id} />
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-bold">{t.name}</span>
                   <span className="rounded-full bg-(--home-accent)/10 px-2 py-0.5 text-xs text-(--home-accent)">
@@ -97,17 +98,6 @@ export function TemplateGallery() {
                   </span>
                 </div>
                 <p className="text-sm leading-relaxed text-(--home-muted)">{t.description}</p>
-                <div
-                  className="flex h-14 items-center justify-center rounded-lg border text-sm"
-                  style={{
-                    background: t.tokens.bg,
-                    borderColor: t.tokens.accent,
-                    color: t.tokens.ink,
-                    fontFamily: t.tokens.nameFont,
-                  }}
-                >
-                  {t.divider} فلان الفلاني {t.divider}
-                </div>
               </button>
             ))}
           </div>

@@ -3,9 +3,12 @@
 import { Fragment } from "react"
 import { ObituaryCanvas } from "@/components/canvas/ObituaryCanvas"
 import { useObituaryAutosave } from "@/lib/drafts/useObituaryAutosave"
+import { useObituaryHistory } from "@/lib/drafts/useObituaryHistory"
 import { ResponsiveCanvasFrame } from "@/components/canvas/ResponsiveCanvasFrame"
 import { useEditorStore } from "@/store/editorStore"
+import { A4_HEIGHT_PX, A4_WIDTH_PX } from "@/lib/obituary/pageSize"
 import { ExportBar } from "@/components/editor/ExportBar"
+import { FitWarning } from "@/components/editor/FitWarning"
 import { MobileEditorView } from "@/components/editor/mobile/MobileEditorView"
 import { SECTION_GROUPS } from "@/components/editor/mobile/sectionRegistry"
 import { Step1Deceased } from "@/components/editor/steps/Step1Deceased"
@@ -27,6 +30,10 @@ const STEPS = [Step1Deceased, Step2Funeral, Step3Relatives, Step4Template]
 // بخيار "نظام الأرقام" الخاص بمحتوى النعوة (data.format.numerals)، فلا داعٍ لأي
 // أداة تنسيق مشتركة هنا.
 const SECTION_NUMERALS = ["١", "٢", "٣", "٤"]
+
+// العرض مشتق من ارتفاع الشاشة بنسبة A4، فتظهر الصفحة كاملة بلا تمرير داخلي على أي شاشة.
+// ٢٣٠px هو ارتفاع الهوامش وأزرار التصدير تحت المعاينة.
+const PREVIEW_MAX_WIDTH = `calc((100vh - 230px) * ${A4_WIDTH_PX} / ${A4_HEIGHT_PX})`
 
 /**
  * عنوان القسم مدمَج داخل الخط الفاصل نفسه (لا سطر مستقل فوقه) — بطلب صريح: رقم
@@ -50,6 +57,7 @@ export function EditorShell() {
   const archiveKey = useEditorStore((s) => s.archiveKey)
 
   useObituaryAutosave()
+  useObituaryHistory()
 
   // key إلزامي: مكوّنات كثيرة تشتق حالتها المحلية من البيانات عند التركيب فقط (سطر
   // الزوج المطوي، الحقول المخصّصة…)، فبلا إعادة تركيب تظهر النعوة المستعادة بحقول مطوية.
@@ -73,9 +81,7 @@ export function EditorShell() {
 
         {/* لوحة المعاينة — تتقلّص لتملأ عرض حاويتها بالضبط، بلا أي scroll أفقي */}
         <div className="flex w-full min-w-0 flex-col gap-4 lg:sticky lg:top-6 lg:self-start">
-          {/* overflow-x-hidden صريح إلزامي: تحديد overflow-y وحده يجعل المتصفح يحوّل
-              overflow-x تلقائياً إلى auto (قاعدة CSS قياسية)، فيقصّ الكانفاس المصغَّر أفقياً. */}
-          <div className="w-full overflow-x-hidden overflow-y-auto rounded-lg" style={{ maxHeight: "calc(100vh - 220px)" }}>
+          <div className="mx-auto w-full overflow-hidden rounded-lg" style={{ maxWidth: PREVIEW_MAX_WIDTH }}>
             <ResponsiveCanvasFrame>
               {/* nameHeadingLevel="div": هذا القسم "سطح المكتب حصراً" (راجع تعليق
                   الملف أعلاه)، والكانفاس المكافئ في MobileEditorView.tsx (id
@@ -85,9 +91,10 @@ export function EditorShell() {
                   الحقيقي على نسخة الجوال (الافتراضي في ObituaryCanvas) تحديداً لأن
                   Google يفهرس بمحرّك زحف الجوال أولاً (mobile-first indexing) منذ
                   سنوات — عطل سيو حقيقي رصدناه أثناء التحقّق. */}
-              <ObituaryCanvas data={data} nameHeadingLevel="div" />
+              <ObituaryCanvas data={data} nameHeadingLevel="div" reportFit />
             </ResponsiveCanvasFrame>
           </div>
+          <FitWarning />
           <ExportBar />
         </div>
       </div>

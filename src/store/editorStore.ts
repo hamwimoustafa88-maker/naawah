@@ -2,10 +2,22 @@
 
 import { create } from "zustand"
 import { FIXED_GENDER_BY_CATEGORY, SAMPLE_OBITUARY_DATA, createEmptyPerson, createEmptyRelativeGroup } from "@/lib/obituary/defaults"
+import type { BulkNameEntry } from "@/lib/obituary/bulkNames"
+import type { FitStatus } from "@/lib/obituary/exportChecks"
 import type { CustomTextKey, DeceasedInfo, FormatPrefs, FuneralInfo, NameStyleOverride, ObituaryData, Person, RelativeCategoryKey, RelativeGroup, RelativeNameStyle } from "@/lib/obituary/types"
 
 interface EditorState {
   data: ObituaryData
+
+  /** سجل التراجع — لقطات من data تُدار بالتجميع الزمني في useObituaryHistory. */
+  past: ObituaryData[]
+  future: ObituaryData[]
+  undo: () => void
+  redo: () => void
+
+  /** ملاءمة المحتوى لصفحة A4 — حالة واجهة يحدّثها ObituaryCanvas. */
+  fitStatus: FitStatus
+  setFitStatus: (status: FitStatus) => void
 
   /**
    * معرّف النعوة الحالية — هو نفسه معرّفها في التخزين المحلي (lib/drafts) وأساس منع
@@ -58,6 +70,8 @@ interface EditorState {
   reorderRelativeGroups: (groups: RelativeGroup[]) => void
 
   addPerson: (groupId: string) => void
+  /** يملأ الصفوف الفارغة أولاً، ثم يضيف الباقي — لصق عدة أسماء دفعة واحدة. */
+  addPersons: (groupId: string, entries: BulkNameEntry[]) => void
   updatePerson: (groupId: string, personId: string, patch: Partial<Person>) => void
   removePerson: (groupId: string, personId: string) => void
   reorderPersons: (groupId: string, members: Person[]) => void
@@ -121,6 +135,22 @@ export function createEmptyData(): ObituaryData {
 
 export const useEditorStore = create<EditorState>((set) => ({
   data: createEmptyData(),
+
+  past: [],
+  future: [],
+  undo: () =>
+    set((s) => {
+      const previous = s.past.at(-1)
+      return previous ? { data: previous, past: s.past.slice(0, -1), future: [...s.future, s.data] } : s
+    }),
+  redo: () =>
+    set((s) => {
+      const next = s.future.at(-1)
+      return next ? { data: next, future: s.future.slice(0, -1), past: [...s.past, s.data] } : s
+    }),
+
+  fitStatus: "ok",
+  setFitStatus: (fitStatus) => set((s) => (s.fitStatus === fitStatus ? s : { fitStatus })),
 
   archiveKey: "",
   regenerateArchiveKey: () => set({ archiveKey: crypto.randomUUID() }),
@@ -188,6 +218,20 @@ export const useEditorStore = create<EditorState>((set) => ({
             ? { ...g, members: [...g.members, createEmptyPerson(FIXED_GENDER_BY_CATEGORY[g.categoryKey] ?? "male")] }
             : g
         ),
+      },
+    })),
+
+  addPersons: (groupId, entries) =>
+    set((s) => ({
+      data: {
+        ...s.data,
+        relatives: s.data.relatives.map((g) => {
+          if (g.id !== groupId) return g
+          const queue = [...entries]
+          const members = g.members.map((m) => (m.name.trim() === "" && queue.length > 0 ? { ...m, ...queue.shift() } : m))
+          const gender = FIXED_GENDER_BY_CATEGORY[g.categoryKey] ?? "male"
+          return { ...g, members: [...members, ...queue.map((entry) => ({ ...createEmptyPerson(gender), ...entry }))] }
+        }),
       },
     })),
 

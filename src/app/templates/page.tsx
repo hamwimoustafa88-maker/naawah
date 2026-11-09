@@ -48,7 +48,8 @@ export default function TemplatesIndexPage() {
         <p className="mt-3 max-w-2xl text-(--home-muted)">
           {VISIBLE_TEMPLATES.length} تصاميم إسلامية وقورة، من الكلاسيكي الذهبي إلى
           الحديث بلا إطار — اختر ما يناسب مقام الفقيد وابدأ التصميم مباشرة، ويمكنك
-          تبديل القالب في أي وقت دون فقدان ما كتبته.
+          تبديل القالب في أي وقت دون فقدان ما كتبته. الأسماء والصور في المعاينات
+          تجريبية.
         </p>
 
         <div className="mt-10 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
@@ -58,7 +59,7 @@ export default function TemplatesIndexPage() {
               href={`/templates/${t.id}`}
               className="group flex flex-col gap-3 rounded-xl border border-(--home-border) p-4 transition-colors hover:bg-(--home-surface)"
             >
-              <TemplatePreviewCard template={t} />
+              <TemplatePreviewCard templateId={t.id} />
               <div>
                 <h2 className="text-base font-bold group-hover:text-(--home-accent)">{t.name}</h2>
                 <p className="mt-1 text-xs text-(--home-muted)">{t.description}</p>

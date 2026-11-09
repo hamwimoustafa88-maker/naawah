@@ -4,7 +4,8 @@ import { prisma } from "@/lib/prisma"
 import { ADMIN_COOKIE_NAME, verifySessionToken } from "@/lib/admin/session"
 import { parseISODateUTC } from "@/lib/obituary/hijri"
 import { AdminLogin } from "@/components/admin/AdminLogin"
-import { ArchiveTable, type ArchiveRow } from "@/components/admin/ArchiveTable"
+import { AdminDashboard } from "@/components/admin/AdminDashboard"
+import type { ArchiveRow } from "@/components/admin/ArchiveTable"
 
 // صفحة إدارة داخلية غير مرتبطة من أي مكان في الموقع — مستثناة من الفهرسة صراحة
 // (وأيضاً من robots.ts) رغم أنها بلا فائدة SEO أصلاً بمحتواها الديناميكي المحمي.
@@ -42,5 +43,23 @@ export default async function AdminPage() {
     createdAt: a.createdAt.toLocaleDateString("ar", { year: "numeric", month: "long", day: "numeric" }),
   }))
 
-  return <ArchiveTable rows={rows} />
+  // فشل الرسائل (جدول لم يُنشأ بعد مثلاً) يجب ألا يُسقط أرشيف النعوات معه.
+  const messages = await prisma.contactMessage.findMany({ orderBy: { createdAt: "desc" }, take: 200 }).catch((error) => {
+    console.error("تعذّر جلب رسائل التواصل:", error)
+    return []
+  })
+
+  return (
+    <AdminDashboard
+      archiveRows={rows}
+      messages={messages.map((m) => ({
+        id: m.id,
+        name: m.name,
+        contact: m.contact ?? "",
+        message: m.message,
+        createdAt: m.createdAt.toLocaleDateString("ar", { year: "numeric", month: "long", day: "numeric" }),
+        read: m.readAt !== null,
+      }))}
+    />
+  )
 }

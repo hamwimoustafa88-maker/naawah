@@ -5,6 +5,7 @@ import { LandingFooter } from "@/components/landing/LandingFooter"
 import { TemplateShowcaseProvider } from "@/components/landing/TemplateShowcaseProvider"
 import { JsonLd } from "@/components/common/JsonLd"
 import { Calligraphy } from "@/components/canvas/Calligraphy"
+import { AYAT } from "@/lib/obituary/ayat"
 import { CALLIGRAPHY_DEFAULT_WIDTH_PX } from "@/lib/obituary/defaults"
 import { breadcrumbNode, itemListNode } from "@/lib/seo/schema"
 
@@ -14,57 +15,6 @@ export const metadata: Metadata = {
     "مجموعة آيات قرآنية شائعة في نعوات الوفاة والتعزية — إنّا لله وإنّا إليه راجعون، يا أيتها النفس المطمئنة، وبشّر الصابرين — بخط عربي حقيقي مع بيان مصدر كل آية ومناسبتها.",
   alternates: { canonical: "/ayat" },
 }
-
-interface AyahEntry {
-  id: string
-  handmadeFile?: string
-  title: string
-  reference: string
-  note: string
-  isQuran: boolean
-}
-
-// نفس القيم الدلالية الموجودة في src/lib/obituary/defaults.ts (QURAN_VERSES) —
-// معروضة هنا كمحتوى مرجعي مستقل مع مصدر كل آية ومناسبتها، بدل تكرارها داخل
-// المحرر فقط. "وبشّر الصابرين" لها رسمتان مختلفتان بنفس النص في المحرر
-// (handmadeFile: "2" و"6") — تُعرَض هنا مرّة واحدة تفادياً لتكرار نفس الفقرة.
-const AYAT: AyahEntry[] = [
-  {
-    id: "inna-lillah",
-    title: "إنّا لله وإنّا إليه راجعون",
-    reference: "سورة البقرة، الآية ١٥٦",
-    note: "الآية الأكثر ورداً في النعوات كافة — تُذكر عادة بعد اسم الفقيد مباشرة أو في ختام النعوة، وتُستعمل أيضاً شفهياً كأول ما يُقال عند سماع خبر الوفاة.",
-    isQuran: true,
-  },
-  {
-    id: "wa-bashir-sabireen-1",
-    title: "وبشّر الصابرين",
-    reference: "سورة البقرة، الآيتان ١٥٥-١٥٦",
-    note: "تأتي في سياق آيات الابتلاء والصبر، وتُستعمل غالباً في مقدّمة النعوة أو كعنوان لها. متوفّرة بخط عربي حقيقي وبرسمتين مختلفتين للاختيار من بينهما داخل المحرر.",
-    isQuran: true,
-  },
-  {
-    id: "fajr-27-30",
-    title: "يا أيتها النفس المطمئنة",
-    reference: "سورة الفجر، الآيات ٢٧-٣٠",
-    note: "من أكثر الآيات مناسبةً للختام — تخاطب النفس المؤمنة الراضية بقضاء الله، وتُستعمل عادة في نهاية النعوة قبل الدعاء للفقيد.",
-    isQuran: true,
-  },
-  {
-    id: "kullu-nafs",
-    title: "كل نفس ذائقة الموت",
-    reference: "سورة آل عمران، الآية ١٨٥",
-    note: "تذكير عام بحتمية الموت لكل نفس، تُستعمل كافتتاحية للنعوة أو كعبارة مستقلة أعلى الصفحة.",
-    isQuran: true,
-  },
-  {
-    id: "nafs-mutmainna",
-    title: "نفس مطمئنة انتقلت إلى دار البقاء",
-    reference: "عبارة مأثورة مستوحاة من سورة الفجر (وليست نصاً قرآنياً حرفياً)",
-    note: "صياغة شائعة في النعوات العربية تحمل نفس معنى الرضا والطمأنينة الواردة في آيات الفجر، دون أن تكون اقتباساً حرفياً — تُستعمل حين يُفضَّل عبارة مألوفة على الاقتباس المباشر.",
-    isQuran: false,
-  },
-]
 
 const jsonLd = {
   "@context": "https://schema.org",
@@ -107,7 +57,6 @@ export default function AyatPage() {
             <article key={a.id} className="flex flex-col items-center gap-4 border-b border-(--home-border) pb-10 text-center last:border-0">
               <Calligraphy
                 id={a.id}
-                handmadeFile={a.handmadeFile}
                 widthPx={CALLIGRAPHY_DEFAULT_WIDTH_PX}
                 fontFamily="var(--font-amiri-quran)"
               />

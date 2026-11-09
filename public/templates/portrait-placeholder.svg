@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 265 378">
+  <title>صورة شخصية توضيحية</title>
+  <defs>
+    <!-- خلفية استوديو: هالة ضوء ناعمة خلف الرأس تتلاشى نحو الحواف -->
+    <radialGradient id="backdrop" gradientUnits="userSpaceOnUse" cx="118" cy="128" r="290">
+      <stop offset="0" stop-color="#dcd9d2"/>
+      <stop offset="0.42" stop-color="#b7b4ad"/>
+      <stop offset="0.8" stop-color="#85827b"/>
+      <stop offset="1" stop-color="#65625c"/>
+    </radialGradient>
+
+    <!-- إضاءة رئيسية من أعلى اليسار، موحّدة على كل الجسم -->
+    <linearGradient id="skin" gradientUnits="userSpaceOnUse" x1="84" y1="96" x2="186" y2="212">
+      <stop offset="0" stop-color="#716e67"/>
+      <stop offset="0.55" stop-color="#57544e"/>
+      <stop offset="1" stop-color="#3b3934"/>
+    </linearGradient>
+    <linearGradient id="hair" gradientUnits="userSpaceOnUse" x1="86" y1="72" x2="186" y2="140">
+      <stop offset="0" stop-color="#3a3834"/>
+      <stop offset="1" stop-color="#1f1e1b"/>
+    </linearGradient>
+    <linearGradient id="neck" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#262420"/>
+      <stop offset="0.72" stop-color="#34322d"/>
+      <stop offset="1" stop-color="#46443f"/>
+    </linearGradient>
+    <linearGradient id="jacket" gradientUnits="userSpaceOnUse" x1="20" y1="262" x2="245" y2="378">
+      <stop offset="0" stop-color="#46443f"/>
+      <stop offset="0.5" stop-color="#2f2e2a"/>
+      <stop offset="1" stop-color="#1e1d1a"/>
+    </linearGradient>
+    <linearGradient id="lapel" gradientUnits="userSpaceOnUse" x1="60" y1="260" x2="205" y2="378">
+      <stop offset="0" stop-color="#57544e"/>
+      <stop offset="1" stop-color="#2a2925"/>
+    </linearGradient>
+    <linearGradient id="shirt" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#b4b1aa"/>
+      <stop offset="1" stop-color="#d9d6cf"/>
+    </linearGradient>
+    <linearGradient id="collar" gradientUnits="userSpaceOnUse" x1="100" y1="240" x2="165" y2="294">
+      <stop offset="0" stop-color="#f1eee8"/>
+      <stop offset="1" stop-color="#c4c1ba"/>
+    </linearGradient>
+    <linearGradient id="tie" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#4c4a45"/>
+      <stop offset="1" stop-color="#2a2925"/>
+    </linearGradient>
+
+    <!-- حواف ضوء رفيعة تفصل الكتلة الداكنة عن الخلفية في الجهة المضاءة فقط -->
+    <linearGradient id="rim" gradientUnits="userSpaceOnUse" x1="80" y1="120" x2="125" y2="205">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.34"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="hairRim" gradientUnits="userSpaceOnUse" x1="80" y1="130" x2="140" y2="70">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="0.5" stop-color="#ffffff" stop-opacity="0.26"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="shoulderRim" gradientUnits="userSpaceOnUse" x1="0" y1="280" x2="110" y2="280">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.2"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+
+    <!-- تعتيم الحواف والأسفل لتركيز النظر على الوجه -->
+    <radialGradient id="vignette" gradientUnits="userSpaceOnUse" cx="132.5" cy="170" r="255">
+      <stop offset="0.6" stop-color="#14130f" stop-opacity="0"/>
+      <stop offset="1" stop-color="#14130f" stop-opacity="0.38"/>
+    </radialGradient>
+
+    <path id="face" d="M132.5 78 C164 78 183 102 183 137 C183 151 181 163 176 175 C169 193 151 213 132.5 213 C114 213 96 193 89 175 C84 163 82 151 82 137 C82 102 101 78 132.5 78 Z"/>
+    <path id="lapelShape" d="M96 253 L79 267 L84 285 L65 289 L83 320 C97 343 112 362 130 382 Z"/>
+    <path id="collarShape" d="M100 236 L132.5 271 L116 294 L92 256 Z"/>
+  </defs>
+
+  <rect width="265" height="378" fill="url(#backdrop)"/>
+
+  <!-- العنق -->
+  <path d="M100 196 H165 V276 H100 Z" fill="url(#neck)"/>
+
+  <!-- القميص وربطة العنق -->
+  <path d="M97 272 H168 L150 382 H115 Z" fill="url(#shirt)"/>
+  <path d="M124 266 H141 L138 287 H127 Z" fill="#26251f"/>
+  <path d="M127 287 H138 L148 352 V400 H117 V352 Z" fill="url(#tie)"/>
+
+  <!-- ياقة القميص -->
+  <use xlink:href="#collarShape" href="#collarShape" fill="url(#collar)"/>
+  <use xlink:href="#collarShape" href="#collarShape" fill="url(#collar)" transform="matrix(-1 0 0 1 265 0)"/>
+
+  <!-- الجاكيت -->
+  <path d="M0 378 V332 C3 302 22 286 56 273 L96 253 L130 382 H135 L169 253 L209 273 C243 286 262 302 265 332 V378 Z" fill="url(#jacket)"/>
+  <path d="M0 332 C3 302 22 286 56 273 L96 253" fill="none" stroke="url(#shoulderRim)" stroke-width="1.2"/>
+
+  <!-- طيّة الجاكيت -->
+  <use xlink:href="#lapelShape" href="#lapelShape" fill="url(#lapel)"/>
+  <use xlink:href="#lapelShape" href="#lapelShape" fill="url(#lapel)" transform="matrix(-1 0 0 1 265 0)"/>
+
+  <!-- الرأس: مُكبَّر حول الذقن ليتناسب مع الكتفين ويقصر العنق -->
+  <g transform="translate(132.5 232) scale(1.18) translate(-132.5 -213)">
+    <ellipse cx="81" cy="148" rx="6.5" ry="15" fill="#5a5751"/>
+    <ellipse cx="184" cy="148" rx="6.5" ry="15" fill="#34322d"/>
+    <use xlink:href="#face" href="#face" fill="url(#skin)"/>
+    <use xlink:href="#face" href="#face" fill="none" stroke="url(#rim)" stroke-width="1.1"/>
+    <!-- شعر بمفرق جانبي، يغطّي خط الضوء أعلى الجبهة -->
+    <path d="M83 140 C76 94 103 69 134 69 C169 69 190 98 182 140 C180 127 176 118 169 112 C150 112 124 108 106 100 C101 110 89 120 83 140 Z" fill="url(#hair)"/>
+    <path d="M83 140 C76 94 103 69 134 69" fill="none" stroke="url(#hairRim)" stroke-width="1"/>
+  </g>
+
+  <rect width="265" height="378" fill="url(#vignette)"/>
+</svg>

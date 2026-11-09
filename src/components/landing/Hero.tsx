@@ -38,7 +38,10 @@ export function Hero({ count }: { count: number }) {
 
           <div className="flex items-center gap-2 text-sm text-(--home-muted)">
             <Lock size={16} className="text-(--home-accent)" />
-            <span>بيانات النعوة لا تغادر متصفحك</span>
+            <span>
+              بلا حساب أو تسجيل — عند التصدير تُحفظ نسخة من النعوة في أرشيفنا (
+              <Link href="/privacy" prefetch={false} className="underline underline-offset-2">التفاصيل</Link>)
+            </span>
           </div>
         </div>
 

@@ -30,8 +30,8 @@ export function DeveloperSection() {
           <p className="text-sm text-[#a89676]">Moustafa Al-Hamwi</p>
         </div>
 
-        <span className="rounded-full border border-[#c9a94a]/40 bg-[#c9a94a]/10 px-3 py-1 text-sm text-[#c9a94a]">
-          قائد كشفي ومطوّر برامج
+        <span className="rounded-2xl border border-[#c9a94a]/40 bg-[#c9a94a]/10 px-4 py-1.5 text-sm leading-relaxed text-[#c9a94a] sm:rounded-full">
+          متخصص في الذكاء الاصطناعي والأتمتة | قائد استراتيجي للمشاريع التنموية والشبابية
         </span>
 
         <p className="max-w-md text-sm leading-relaxed text-[#a89676]">

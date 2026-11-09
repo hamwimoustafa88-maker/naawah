@@ -1,8 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { ExternalLink, LogOut, Search } from "lucide-react"
-import { Button } from "@/components/ui/Button"
+import { ExternalLink, Search } from "lucide-react"
 import { Input } from "@/components/ui/Field"
 
 export interface ArchiveRow {
@@ -18,7 +17,7 @@ export interface ArchiveRow {
 }
 
 /** جدول بحث فوري بالاسم — بلا اعتماد على الخادم لكل ضغطة (٣٠٠ صفّ كحدّ أقصى
- * أصلاً، راجع src/app/admin/page.tsx). تسجيل الخروج يمسح الكوكي ثم يعيد التحميل. */
+ * أصلاً، راجع src/app/admin/page.tsx). */
 export function ArchiveTable({ rows }: { rows: ArchiveRow[] }) {
   const [query, setQuery] = useState("")
 
@@ -28,20 +27,9 @@ export function ArchiveTable({ rows }: { rows: ArchiveRow[] }) {
     return rows.filter((r) => r.deceasedName.includes(q))
   }, [rows, query])
 
-  const handleLogout = async () => {
-    await fetch("/api/admin/logout", { method: "POST" })
-    window.location.reload()
-  }
-
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-lg font-bold text-black/80">أرشيف النعوات ({rows.length})</h1>
-        <Button variant="outline" size="sm" onClick={handleLogout}>
-          <LogOut size={14} />
-          تسجيل الخروج
-        </Button>
-      </div>
+      <h1 className="mb-6 text-lg font-bold text-black/80">أرشيف النعوات ({rows.length})</h1>
 
       <div className="relative mb-4 max-w-xs">
         <Search size={15} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-black/35" />

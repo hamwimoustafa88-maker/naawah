@@ -29,6 +29,22 @@ model Template {
   createdAt DateTime @default(now())
 }
 
+/// رسائل نموذج /contact — تُعرض في /admin.
+model ContactMessage {
+  id        String    @id @default(cuid())
+  name      String
+  /// بريد أو هاتف للرد — اختياري.
+  contact   String?
+  message   String
+  ipHash    String?
+  /// وقت تحديدها كمقروءة في /admin — null تعني غير مقروءة.
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([createdAt])
+  @@index([ipHash, createdAt])
+}
+
 /// أرشيف النعوات المُصدَّرة فعلياً (PNG/PDF/مشاركة) — صورة JPEG واحدة لكل نعوة
 /// في Google Drive (راجع src/lib/drive/client.ts)، مُحدَّثة مكانياً عند إعادة
 /// تصدير نفس النعوة بدل تكرارها (archiveKey يمنع التكرار — راجع src/app/api/archive/route.ts).

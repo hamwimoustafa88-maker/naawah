@@ -15,8 +15,9 @@
 // يُفكِّك (unmount) الشجرة الفرعية ويعيد تركيبها من الصفر في كل ضغطة مفتاح، فيفقد
 // حقل الإدخال تركيزه (focus) فوراً بعد أول حرف — عطل تجربة مستخدم خطير وصامت.
 
+import Link from "next/link"
 import { useState, type ComponentType, type ReactNode } from "react"
-import { Check, Pencil, UserPlus } from "lucide-react"
+import { Check, Pencil, SlidersHorizontal, UserPlus } from "lucide-react"
 import type { LucideProps } from "lucide-react"
 import { ObituaryCanvas } from "@/components/canvas/ObituaryCanvas"
 import { ResponsiveCanvasFrame } from "@/components/canvas/ResponsiveCanvasFrame"
@@ -24,6 +25,10 @@ import { useEditorStore } from "@/store/editorStore"
 import { relativeCategoryLabel } from "@/lib/obituary/grammar"
 import { visibleRelativeGroups } from "@/lib/obituary/render"
 import { cn } from "@/lib/utils/cn"
+import { Button } from "@/components/ui/Button"
+import { ExportActions, STACKED_BUTTON_CLASS } from "@/components/editor/ExportBar"
+import { ExtraExportActions } from "@/components/editor/ExtraExportActions"
+import { FitWarning } from "@/components/editor/FitWarning"
 import { AddRelativeCategoryField, GroupCard } from "@/components/editor/steps/Step3Relatives"
 import { BottomSheet } from "@/components/editor/mobile/BottomSheet"
 import { SECTION_GROUPS, STATIC_SECTIONS, type SectionGroupId } from "@/components/editor/mobile/sectionRegistry"
@@ -237,13 +242,32 @@ export function MobileEditorView() {
               الجوال المخفية (٠×٠px) أولاً على شاشات سطح المكتب — عطل حقيقي صادفناه:
               تصدير PNG يفشل بـ"فشل تحويل الكانفاس إلى صورة" وتصدير PDF ينتج صفحة
               فارغة فعلياً (صورة JPEG مُضمَّنة بأبعاد 0×0). راجع getCanvasNode(). */}
-          <ObituaryCanvas data={data} id="obituary-canvas-mobile" />
+          <ObituaryCanvas data={data} id="obituary-canvas-mobile" reportFit />
         </ResponsiveCanvasFrame>
       </div>
 
-      {/* شريط التصدير (PNG/PDF/مشاركة/إعدادات) محذوف عمداً هنا على الجوال — كله
-          مكرَّر فعلياً كأيقونات في CreateHeader.tsx أعلى الصفحة (دائماً ظاهرة، بما
-          فيها الجوال). زر "تعديل البيانات" العائم هو الزر الوحيد المطلوب هنا. */}
+      <FitWarning />
+      <ExportActions
+        stacked
+        settingsButton={
+          <Button
+            variant="outline"
+            size="sm"
+            className={STACKED_BUTTON_CLASS}
+            onClick={() => {
+              goTo("static:text-settings")
+              setSheetOpen(true)
+            }}
+          >
+            <SlidersHorizontal size={18} />
+            إعدادات النصوص
+          </Button>
+        }
+      />
+      <ExtraExportActions />
+      <p className="text-xs leading-relaxed text-black/45">
+        عند التصدير تُحفظ نسخة من النعوة في أرشيف الموقع (<Link href="/privacy" prefetch={false} className="underline">التفاصيل</Link>).
+      </p>
 
       <button
         type="button"

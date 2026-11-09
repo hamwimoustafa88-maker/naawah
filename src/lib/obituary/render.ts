@@ -6,8 +6,8 @@ import {
 } from "./grammar"
 import { surnameFromWords } from "./familyNames"
 import { formatDualDate, formatWeekdayName } from "./hijri"
-import { DEFAULT_PRINT_FOOTER_TEXT, MOURNING_OPENINGS, SINGLE_HIDDEN_RELATIVE_CATEGORIES } from "./defaults"
-import type { DeceasedInfo, FormatPrefs, FuneralInfo, ObituaryData, Person, RelativeGroup } from "./types"
+import { CATEGORY_REQUIRES_DECEASED_GENDER, DEFAULT_PRINT_FOOTER_TEXT, MOURNING_OPENINGS, SINGLE_HIDDEN_RELATIVE_CATEGORIES } from "./defaults"
+import type { DeceasedInfo, FormatPrefs, FuneralInfo, ObituaryData, Person, RelativeCategoryKey, RelativeGroup } from "./types"
 
 // تُستعمل فقط حين يُستدعى identityLine بلا format صريح (توافقاً مع استدعاءات
 // قديمة/اختبارات لا تمرّره — راجع تعليق identityLine أسفل). مطابقة لافتراضيات
@@ -60,7 +60,7 @@ export function deceasedNameLine(deceased: DeceasedInfo): string {
 }
 
 /**
- * سطر الهوية: زوجة/أرملة المرحوم فلان — أو "المتوفي/المتوفاة [في {مكان}] [بتاريخ
+ * سطر الهوية: زوجة/أرملة المرحوم فلان — أو "المتوفى/المتوفاة [في {مكان}] [بتاريخ
  * {تاريخ}]" حين يُفعِّل المستخدم showDeathInfo صراحةً (بنفس نمط showBirthInfo:
  * تاريخ الوفاة ومكانه مخفيّان من الطباعة افتراضياً، ويظهران معاً حين التفعيل —
  * لا مكان الوفاة وحده بلا تحكّم كما كان). format بارامتر اختياري (لتنسيق
@@ -68,7 +68,8 @@ export function deceasedNameLine(deceased: DeceasedInfo): string {
  * هذا الفرع تحديداً). null إن لم ينطبق شيء.
  */
 export function identityLine(deceased: DeceasedInfo, format: FormatPrefs = DEFAULT_FORMAT_PREFS): string | null {
-  if (deceased.gender === "female" && deceased.spouseName) {
+  // !isSingle: خيار "عازبة" يُخفي حقول الزوج بلا مسح قيمتها، فاسم مكتوب قبل تفعيله يبقى مخزَّناً ولا يجوز طبعه.
+  if (deceased.gender === "female" && deceased.spouseName && !deceased.isSingle) {
     const style = deceased.widowStyle ?? "زوجة"
     // "حرم المغفور له" تحمل معنى الوفاة داخل العبارة نفسها — لا نُضيف "المرحوم" بعدها.
     // ولا نُضيفها أيضاً إن كتبها المستخدم بالفعل داخل حقل لقب الزوج الحر.
@@ -83,7 +84,7 @@ export function identityLine(deceased: DeceasedInfo, format: FormatPrefs = DEFAU
     return [style, marker, deceased.spouseHonorific, deceased.spouseName].filter(Boolean).join(" ")
   }
   if (deceased.showDeathInfo && (deceased.deathPlaceNote || deceased.deathDateISO)) {
-    const word = deceased.gender === "male" ? "المتوفي" : "المتوفاة"
+    const word = deceased.gender === "male" ? "المتوفى" : "المتوفاة"
     const dateStr = deceased.deathDateISO
       ? formatDualDate(deceased.deathDateISO, {
           hijriOffsetDays: deceased.hijriOffsetDays,
@@ -115,13 +116,18 @@ function renderedMembers(members: Person[]): Pick<RenderedRelativeGroup, "text" 
 
 /**
  * فئات القرابة الفعليّة الواجب عرضها/طباعتها — تستبعد الفئات المخفية بخيار "عازب/ة"
- * (SINGLE_HIDDEN_RELATIVE_CATEGORIES) حين مفعّل، بلا حذف بياناتها من data.relatives
- * نفسها (إلغاء الخيار يُعيدها فوراً). يستهلكها كل من relativesBlocks هنا (الطباعة)
- * وStep3Relatives.tsx/MobileEditorView.tsx (عرض المحرر) — فلترة واحدة مصدرها هنا.
+ * والفئات التي لا تنطبق على جنس الفقيد (بطاقة "أرملته" الجاهزة افتراضياً لا معنى لها
+ * لفقيدة أنثى)، بلا حذف بياناتها من data.relatives نفسها (التراجع عن الخيار يُعيدها
+ * فوراً). يستهلكها كل من relativesBlocks هنا (الطباعة) وStep3Relatives.tsx/
+ * MobileEditorView.tsx (عرض المحرر) — فلترة واحدة مصدرها هنا.
  */
 export function visibleRelativeGroups(data: ObituaryData): RelativeGroup[] {
-  if (!data.deceased.isSingle) return data.relatives
-  return data.relatives.filter((g) => !SINGLE_HIDDEN_RELATIVE_CATEGORIES.includes(g.categoryKey))
+  const { gender, isSingle } = data.deceased
+  return data.relatives.filter((g) => {
+    if (isSingle && SINGLE_HIDDEN_RELATIVE_CATEGORIES.includes(g.categoryKey)) return false
+    const requiredGender = CATEGORY_REQUIRES_DECEASED_GENDER[g.categoryKey]
+    return !requiredGender || requiredGender === gender
+  })
 }
 
 export function relativesBlocks(data: ObituaryData): RenderedRelativeGroup[] {
@@ -255,12 +261,21 @@ export function closingDua(data: ObituaryData): string {
  * المطبوع فعلياً في قائمة الأقارب (renderPersonCore في grammar.ts) — الكنية تبقى
  * ظاهرة هناك كما كتبها المستخدم، الاستبعاد هنا فقط.
  */
-function lastNameOf(fullName: string): string {
+export function lastNameOf(fullName: string): string {
   const withoutParens = fullName.replace(/\([^)]*\)/g, " ")
   return surnameFromWords(withoutParens.trim().split(/\s+/).filter(Boolean))
 }
 
 export const FAMILIES_LINE_PREFIX = "الراضون بقضاء الله وقدره: "
+
+/**
+ * أقارب يحملون لقب أب الفقيد بالضرورة، فآخر كلمة في اسمهم الثنائي غالباً اسم أبيهم
+ * لا عائلة أخرى ("عمر خالد"). أبناء الفقيدة مستثنون: يحملون لقب زوجها لا لقبها.
+ */
+function sharesDeceasedSurname(categoryKey: RelativeCategoryKey, gender: DeceasedInfo["gender"]): boolean {
+  if (categoryKey === "brothers" || categoryKey === "sisters") return true
+  return gender === "male" && (categoryKey === "sons" || categoryKey === "daughters")
+}
 
 /**
  * تُشتق تلقائياً: عائلة الفقيد أولاً، ثم عائلات كل الأقارب المُدخَلين في (٣. الأقارب)
@@ -277,7 +292,7 @@ export function defaultFamiliesLine(data: ObituaryData): string {
   addSurname(data.deceased.name)
   for (const group of visibleRelativeGroups(data)) {
     for (const member of group.members) {
-      addSurname(member.name)
+      if (!sharesDeceasedSurname(group.categoryKey, data.deceased.gender)) addSurname(member.name)
       addSurname(member.spouseName)
     }
   }
@@ -364,6 +379,6 @@ export function printFooterText(data: ObituaryData, templateSuggestsFooter: bool
 export function shareMessage(data: ObituaryData): string {
   const name = deceasedNameLine(data.deceased)
   const openingLine = name ? `انتقل إلى رحمته تعالى ${name}` : "انتقل إلى رحمته تعالى"
-  const funeralParagraph = [processionLine(data), funeralSentence(data)].filter(Boolean).join(" ")
+  const funeralParagraph = [processionLine(data), funeralSentence(data)].filter(Boolean).join(". ")
   return [openingLine, funeralParagraph, DEFAULT_PRINT_FOOTER_TEXT].filter(Boolean).join("\n\n")
 }

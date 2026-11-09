@@ -7,6 +7,7 @@
 import { useState } from "react"
 import { Minus, Plus } from "lucide-react"
 import { cn } from "@/lib/utils/cn"
+import { AYAT } from "@/lib/obituary/ayat"
 import { honorificForGender, QURAN_VERSES, todayISO } from "@/lib/obituary/defaults"
 import type { Gender } from "@/lib/obituary/types"
 import { formatDualDate } from "@/lib/obituary/hijri"
@@ -224,7 +225,7 @@ export function DeathDateFields() {
               hint={
                 placeDetectState === "detecting"
                   ? "جارٍ اكتشاف موقعك تلقائياً…"
-                  : "فارغ افتراضياً — انقر على الحقل ليُقتَرح مكانك الحالي تلقائياً (قابل للتعديل الكامل). مثال: كاليفورنيا ← يظهر «المتوفي/المتوفاة في كاليفورنيا»"
+                  : "فارغ افتراضياً — انقر على الحقل ليُقتَرح مكانك الحالي تلقائياً (قابل للتعديل الكامل). مثال: كاليفورنيا ← يظهر «المتوفى/المتوفاة في كاليفورنيا»"
               }
             >
               <Input
@@ -398,6 +399,20 @@ export function QuranFields() {
 
       {deceased.quranVerseId === "custom" && (
         <div className="flex flex-col gap-3 rounded-lg border border-black/10 bg-black/2 p-3">
+          <FieldGroup label="ابدأ من آية جاهزة (اختياري)">
+            <Select
+              value=""
+              onChange={(e) => {
+                const verse = QURAN_VERSES.find((v) => v.id === e.target.value)
+                if (verse) update({ customTopText: verse.lines.join("\n") })
+              }}
+            >
+              <option value="">اختر آية لتظهر في الحقل أدناه…</option>
+              {AYAT.map((a) => (
+                <option key={a.id} value={a.id}>{a.title}</option>
+              ))}
+            </Select>
+          </FieldGroup>
           <FieldGroup label="النص المخصّص" hint="يحلّ محلّ الآية أعلى النعوة — يُعرض بخط فني قابل للاختيار أدناه">
             <Textarea
               value={deceased.customTopText ?? ""}

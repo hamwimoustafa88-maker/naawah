@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { ContactForm } from "@/components/landing/ContactForm"
 import { InfoPageShell } from "@/components/landing/InfoPageShell"
 import { GITHUB_URL, SCOUTHUB_URL, SITE_NAME } from "@/lib/seo/site"
 
@@ -12,9 +13,11 @@ export default function ContactPage() {
   return (
     <InfoPageShell title="اتصل بنا" crumb="اتصل بنا">
       <p>
-        يسعدنا سماع ملاحظاتك. المشروع مفتوح المصدر، وأسرع طريقة للوصول إلينا هي
-        عبر صفحة المشكلات (Issues) في المستودع.
+        يسعدنا سماع ملاحظاتك واقتراحاتك. أرسل لنا رسالة مباشرة من النموذج أدناه.
       </p>
+
+      <h2>تواصل معنا</h2>
+      <ContactForm />
 
       <h2>اقتراح أو إبلاغ عن مشكلة</h2>
       <ul>

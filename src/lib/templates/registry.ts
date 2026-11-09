@@ -1,7 +1,7 @@
 // مسجّل القوالب — ٦ قوالب متمايزة في: الإطار، الخلفية، الخط، تخطيط الاسم، والفواصل.
 
 import {
-  GoldFrame, NewspaperFrame, MinimalFrame, OliveFrame, RoyalFrame, ThuluthFrame,
+  GoldFrame, MidnightFrame, NewspaperFrame, MinimalFrame, OliveFrame, RoyalFrame, ThuluthFrame,
 } from "@/components/canvas/frames/frames"
 import type { TemplateDefinition } from "./types"
 
@@ -134,9 +134,7 @@ export const TEMPLATES: TemplateDefinition[] = [
       bodyFont: "var(--font-amiri)",
       calligraphyFont: "var(--font-amiri-quran)",
     },
-    // إعادة استعمال RoyalFrame — الإطارات مبنية على متغيّرات CSS للقالب فقط (--tpl-accent/--tpl-ink)
-    // فتعمل بصرياً على أي خلفية بلا أي تعديل.
-    Frame: RoyalFrame,
+    Frame: MidnightFrame,
     divider: "✦",
     showPrintFooter: false,
     nameLayout: "plain",

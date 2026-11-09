@@ -6,7 +6,9 @@ export default function manifest(): MetadataRoute.Manifest {
     short_name: "النعوة الإلكترونية",
     description:
       "أنشئ نعوة إلكترونية عربية إسلامية وقورة تليق بمقام الفقيد خلال دقائق، وصدّرها PNG أو PDF جاهزة للطباعة والمشاركة.",
-    start_url: "/",
+    id: "/",
+    // المحرر هو الصفحة المضمونة في ذاكرة العمل بلا إنترنت.
+    start_url: "/create",
     display: "standalone",
     lang: "ar",
     dir: "rtl",

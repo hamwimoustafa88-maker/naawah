@@ -73,8 +73,8 @@ export default async function TemplatePage({
           <span className="text-(--home-fg)">{template.name}</span>
         </nav>
 
-        <div className="grid grid-cols-1 gap-8 sm:grid-cols-[280px_1fr] sm:items-start">
-          <TemplatePreviewCard template={template} />
+        <div className="grid grid-cols-1 gap-8 sm:grid-cols-[360px_1fr] sm:items-start">
+          <TemplatePreviewCard templateId={template.id} />
 
           <div>
             <span className="rounded-full bg-(--home-accent)/10 px-3 py-1 text-xs font-bold text-(--home-accent)">
@@ -114,7 +114,7 @@ export default async function TemplatePage({
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
             {related.map((t) => (
               <Link key={t.id} href={`/templates/${t.id}`} className="group flex flex-col gap-2">
-                <TemplatePreviewCard template={t} />
+                <TemplatePreviewCard templateId={t.id} />
                 <span className="text-sm font-bold group-hover:text-(--home-accent)">{t.name}</span>
               </Link>
             ))}

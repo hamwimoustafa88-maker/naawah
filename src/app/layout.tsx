@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next"
 import Script from "next/script"
 import { AnalyticsConsent } from "@/components/common/AnalyticsConsent"
+import { ServiceWorkerRegister } from "@/components/common/ServiceWorkerRegister"
 import {
   Amiri, Amiri_Quran, Aref_Ruqaa_Ink, Cairo, Reem_Kufi_Ink, Scheherazade_New, Tajawal,
 } from "next/font/google"
@@ -118,6 +119,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           {THEME_INIT_SCRIPT}
         </Script>
         {children}
+        <ServiceWorkerRegister />
         {GA_MEASUREMENT_ID && <AnalyticsConsent gaId={GA_MEASUREMENT_ID} />}
       </body>
     </html>

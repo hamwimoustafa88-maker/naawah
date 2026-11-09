@@ -138,6 +138,16 @@ exports.Prisma.TemplateScalarFieldEnum = {
   createdAt: 'createdAt'
 };
 
+exports.Prisma.ContactMessageScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  contact: 'contact',
+  message: 'message',
+  ipHash: 'ipHash',
+  readAt: 'readAt',
+  createdAt: 'createdAt'
+};
+
 exports.Prisma.ArchivedObituaryScalarFieldEnum = {
   id: 'id',
   archiveKey: 'archiveKey',
@@ -177,6 +187,7 @@ exports.Prisma.NullsOrder = {
 exports.Prisma.ModelName = {
   ObituaryStat: 'ObituaryStat',
   Template: 'Template',
+  ContactMessage: 'ContactMessage',
   ArchivedObituary: 'ArchivedObituary'
 };
 

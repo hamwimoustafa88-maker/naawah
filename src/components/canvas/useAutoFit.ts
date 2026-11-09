@@ -23,7 +23,7 @@ import { useLayoutEffect, useRef, useState } from "react"
 const BASE_FONT_PX = 16
 const MAX_SCALE = 1.0
 const SOFT_MIN_FONT_PX = 12
-const SOFT_MIN_SCALE = SOFT_MIN_FONT_PX / BASE_FONT_PX // 0.75 — الحد المفضّل
+export const SOFT_MIN_SCALE = SOFT_MIN_FONT_PX / BASE_FONT_PX // 0.75 — الحد المفضّل
 const HARD_MIN_FONT_PX = 10
 const HARD_MIN_SCALE = HARD_MIN_FONT_PX / BASE_FONT_PX // 0.625 — أقصى كسر مقبول للحد المفضّل
 

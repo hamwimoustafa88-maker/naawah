@@ -9,7 +9,7 @@ import type { ExportKind } from "@/lib/export/actions"
 export interface ArchivePayload {
   data: ObituaryData
   archiveKey: string
-  exportKind: ExportKind
+  exportKind: ExportKind | "link"
   /** JPEG جاهزة مسبقاً (PDF يلتقطها أصلاً لبناء الملف) — تُعاد استعمالها بدل
    * التقاط الكانفاس مرة ثانية. PNG/المشاركة يلتقطانها هنا من الصفر. */
   jpegDataUrl: string
@@ -46,8 +46,8 @@ function condolencesSummary(funeral: FuneralInfo): string {
   return parts.join(" | ")
 }
 
-export async function archiveExport({ data, archiveKey, exportKind, jpegDataUrl }: ArchivePayload): Promise<void> {
-  if (!archiveKey || !data.deceased.name.trim()) return
+export async function archiveExport({ data, archiveKey, exportKind, jpegDataUrl }: ArchivePayload): Promise<{ publicId?: string }> {
+  if (!archiveKey || !data.deceased.name.trim()) return {}
 
   const deathDateAr = formatDualDate(data.deceased.deathDateISO, {
     hijriOffsetDays: data.deceased.hijriOffsetDays,
@@ -68,5 +68,7 @@ export async function archiveExport({ data, archiveKey, exportKind, jpegDataUrl 
   form.set("deathPlaceNote", data.deceased.deathPlaceNote ?? "")
   form.set("condolencesInfo", condolencesSummary(data.funeral))
 
-  await fetch("/api/archive", { method: "POST", body: form })
+  const response = await fetch("/api/archive", { method: "POST", body: form })
+  const result = (await response.json().catch(() => null)) as { publicId?: string } | null
+  return { publicId: result?.publicId }
 }

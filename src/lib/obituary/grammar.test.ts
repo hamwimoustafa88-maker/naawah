@@ -2,12 +2,57 @@
 
 import { describe, expect, it } from "vitest"
 import { relativeCategoryLabel, renderPersonCore, renderRelativeList, renderRelativeParts } from "./grammar"
+import { guideFieldValues } from "./guideFill"
 import { calculateAge, formatDualDate, formatWeekdayName, toNumerals } from "./hijri"
 import {
-  closingDua, deceasedNameLine, defaultFamiliesLine, familiesLine, funeralSentence, identityLine, marhoomWord, mourningLine, relativesBlocks,
+  closingDua, deceasedNameLine, defaultFamiliesLine, familiesLine, funeralSentence, identityLine, marhoomWord, mourningLine, relativesBlocks, shareMessage,
 } from "./render"
+import { parseBulkNames } from "./bulkNames"
+import { exportIssues } from "./exportChecks"
 import { SAMPLE_OBITUARY_DATA } from "./defaults"
 import type { ObituaryData, Person } from "./types"
+
+describe("guideFieldValues — تعبئة صيغ الأدلّة من نعوة محفوظة", () => {
+  const data: ObituaryData = {
+    deceased: {
+      gender: "male", honorific: "الحاج", name: "محمد علاء الدين", deathDateISO: "2026-03-24", birthDateISO: "1950-01-10",
+      hijriOffsetDays: 0, country: "لبنان", hasBasmala: false, hasInnaLillah: false,
+    },
+    funeral: { prayerLocation: "مسجد النور", prayerTimeNote: "بعد صلاة الظهر", burialLocation: "جبانة البلدة" },
+    format: { numerals: "western", months: "levantine", dateOrder: "hijri-first" },
+    templateId: "modern-minimal",
+    relatives: [
+      { id: "s", categoryKey: "sons", members: [
+        { id: "1", name: "سامي", isDeceased: false, gender: "male" },
+        { id: "2", name: "وليد", isDeceased: true, gender: "male" },
+      ] },
+    ],
+  }
+
+  it("يبني القيم من بيانات النعوة", () => {
+    const values = guideFieldValues(data)
+    expect(values.fullName).toBe("الحاج محمد علاء الدين")
+    expect(values.age).toBe("76")
+    expect(values.mosque).toBe("مسجد النور")
+    expect(values.relatives).toBe("أولاده: سامي والمرحوم وليد، وعموم آل علاء الدين وأصهارهم.")
+    expect(values.timeAndPlace).toBe("بعد صلاة الظهر يوم الثلاثاء في مسجد النور")
+  })
+
+  it("الحقول غير المُدخلة تبقى فارغة ليظهر قالبها الأصلي", () => {
+    const empty: ObituaryData = {
+      ...data,
+      deceased: { ...data.deceased, name: "", honorific: undefined, birthDateISO: undefined, deathDateISO: "" },
+      funeral: { prayerLocation: "" },
+      relatives: [],
+    }
+    const values = guideFieldValues(empty)
+    expect(values.fullName).toBe("")
+    expect(values.age).toBe("")
+    expect(values.deathDate).toBe("")
+    expect(values.relatives).toBeUndefined()
+    expect(values.timeAndPlace).toBe("")
+  })
+})
 
 describe("renderRelativeParts — تمييز الأسماء عن الصفات والروابط", () => {
   it("الأسماء فقط isName، ولا تدخل فيها (المرحوم) و(زوجته) وحرف الواو", () => {
@@ -236,8 +281,84 @@ describe("identityLine — القاعدة: زوجة/أرملة تتغيّر حس
       hasBasmala: false, hasInnaLillah: false, deathPlaceNote: "كاليفورنيا",
       showDeathInfo: true,
     })
-    expect(line).toContain("المتوفي في كاليفورنيا")
+    expect(line).toContain("المتوفى في كاليفورنيا")
     expect(line).toContain("بتاريخ")
+  })
+
+  it("عازبة: لا يُطبع سطر الزوج حتى لو بقي اسمه مخزَّناً من قبل تفعيل الخيار", () => {
+    const line = identityLine({
+      gender: "female", name: "فلانة", deathDateISO: "2026-07-14", hijriOffsetDays: 0, country: "لبنان",
+      hasBasmala: false, hasInnaLillah: false, spouseName: "كمال قباني", spouseIsDeceased: true, isSingle: true,
+    })
+    expect(line).toBeNull()
+  })
+})
+
+describe("visibleRelativeGroups — الفئات المرتبطة بجنس الفقيد", () => {
+  const withGroup = (gender: ObituaryData["deceased"]["gender"]): ObituaryData => ({
+    deceased: { gender, name: "فلان", deathDateISO: "", hijriOffsetDays: 0, country: "لبنان", hasBasmala: false, hasInnaLillah: false },
+    funeral: { prayerLocation: "" },
+    format: { numerals: "arabic-indic", months: "levantine", dateOrder: "hijri-first" },
+    templateId: "modern-minimal",
+    relatives: [{ id: "w", categoryKey: "wives", members: [{ id: "m", name: "سعاد كرم", isDeceased: false, gender: "female" }] }],
+  })
+
+  it("لا تُطبع 'أرملته' لفقيدة أنثى", () => {
+    expect(relativesBlocks(withGroup("female"))).toEqual([])
+  })
+
+  it("تبقى الفئة مطبوعة لفقيد ذكر", () => {
+    expect(relativesBlocks(withGroup("male")).map((b) => b.label)).toEqual(["أرملته"])
+  })
+})
+
+describe("shareMessage", () => {
+  it("يفصل جملة التشييع عن جملة الصلاة بنقطة", () => {
+    const message = shareMessage({
+      deceased: { gender: "male", name: "فلان", deathDateISO: "", hijriOffsetDays: 0, country: "لبنان", hasBasmala: false, hasInnaLillah: false },
+      funeral: { prayerLocation: "", processionFrom: "منزله" },
+      format: { numerals: "arabic-indic", months: "levantine", dateOrder: "hijri-first" },
+      templateId: "modern-minimal",
+      relatives: [],
+    })
+    expect(message).toContain("سيُشيَّع الجثمان من منزله. سيصلى")
+  })
+})
+
+describe("parseBulkNames — لصق عدة أسماء دفعة واحدة", () => {
+  it("يفصل بالأسطر والفواصل و' و ' بلا كسر الأسماء التي تبدأ بالواو", () => {
+    expect(parseBulkNames("خالد\nوليد، وسام و عمر").map((e) => e.name)).toEqual(["خالد", "وليد", "وسام", "عمر"])
+  })
+
+  it("يزيل ترقيم القوائم ويلتقط المرحوم/المرحومة كمتوفى", () => {
+    expect(parseBulkNames("١- خالد\n2. والمرحوم عمر شهاب\n• المرحومة هالة")).toEqual([
+      { name: "خالد", isDeceased: false },
+      { name: "عمر شهاب", isDeceased: true },
+      { name: "هالة", isDeceased: true },
+    ])
+  })
+
+  it("يتجاهل الأسطر الفارغة", () => {
+    expect(parseBulkNames(" \n،،\n")).toEqual([])
+  })
+})
+
+describe("exportIssues — التحقق قبل التصدير", () => {
+  const base: ObituaryData = {
+    deceased: { gender: "male", name: "فلان", deathDateISO: "2026-01-01", hijriOffsetDays: 0, country: "لبنان", hasBasmala: false, hasInnaLillah: false },
+    funeral: { prayerLocation: "مسجد" },
+    format: { numerals: "arabic-indic", months: "levantine", dateOrder: "hijri-first" },
+    templateId: "modern-minimal",
+    relatives: [],
+  }
+
+  it("نعوة مكتملة بلا تنبيهات", () => {
+    expect(exportIssues(base, "ok")).toEqual([])
+  })
+
+  it("ينبّه لغياب الاسم ومكان الصلاة والتاريخ والفيض", () => {
+    const empty = { ...base, deceased: { ...base.deceased, name: " ", deathDateISO: "" }, funeral: { prayerLocation: "" } }
+    expect(exportIssues(empty, "overflow")).toHaveLength(4)
   })
 })
 
@@ -384,6 +505,26 @@ describe("defaultFamiliesLine — يُشتق تلقائياً: عائلة الف
       ],
     }
     expect(defaultFamiliesLine(data)).toBe("الراضون بقضاء الله وقدره: آل الحموي، شهاب")
+  })
+
+  it("الأبناء الذكور لفقيد ذكر والإخوة لا يضيفون اسم أبيهم كعائلة", () => {
+    const data: ObituaryData = {
+      ...baseData,
+      relatives: [
+        { id: "g1", categoryKey: "sons", members: [{ id: "s1", name: "عمر خالد", isDeceased: false, gender: "male" }] },
+        { id: "g2", categoryKey: "brothers", members: [{ id: "b1", name: "يوسف أحمد", isDeceased: false, gender: "male" }] },
+      ],
+    }
+    expect(defaultFamiliesLine(data)).toBe("الراضون بقضاء الله وقدره: آل الحموي")
+  })
+
+  it("أبناء الفقيدة يضيفون عائلتهم لأنهم يحملون لقب زوجها", () => {
+    const data: ObituaryData = {
+      ...withDeceasedName("فلانة الحموي"),
+      deceased: { ...baseData.deceased, name: "فلانة الحموي", gender: "female" },
+      relatives: [{ id: "g1", categoryKey: "sons", members: [{ id: "s1", name: "عمر قباني", isDeceased: false, gender: "male" }] }],
+    }
+    expect(defaultFamiliesLine(data)).toBe("الراضون بقضاء الله وقدره: آل الحموي، قباني")
   })
 
   it("بلا أي اسم عائلة ← نص فارغ", () => {

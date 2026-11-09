@@ -8,11 +8,12 @@ import {
   SortableContext, arrayMove, useSortable, verticalListSortingStrategy,
 } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
-import { GripVertical, Plus, Trash2 } from "lucide-react"
+import { ClipboardList, GripVertical, Plus, Trash2 } from "lucide-react"
 import {
   CATEGORY_REQUIRES_DECEASED_GENDER, FIXED_GENDER_BY_CATEGORY, RELATIVE_CATEGORY_OPTIONS, SINGLE_HIDDEN_RELATIVE_CATEGORIES,
   honorificForGender,
 } from "@/lib/obituary/defaults"
+import { parseBulkNames } from "@/lib/obituary/bulkNames"
 import { relativeCategoryLabel } from "@/lib/obituary/grammar"
 import { defaultFamiliesLine, FAMILIES_LINE_PREFIX, visibleRelativeGroups } from "@/lib/obituary/render"
 import { useEditorStore } from "@/store/editorStore"
@@ -20,7 +21,8 @@ import type { Person, RelativeCategoryKey } from "@/lib/obituary/types"
 import { CustomTextOverride } from "@/components/editor/CustomTextOverride"
 import { HonorificSelect } from "@/components/editor/HonorificSelect"
 import { Card, CardTitle } from "@/components/ui/Card"
-import { Checkbox, Input, Select, Toggle } from "@/components/ui/Field"
+import { Button } from "@/components/ui/Button"
+import { Checkbox, Input, Select, Textarea, Toggle } from "@/components/ui/Field"
 
 /**
  * تلميحا مكان (placeholder) — لا سطر منفصل — يظهران فقط في فئة "الوالدين"
@@ -239,10 +241,39 @@ export function FamiliesField() {
   )
 }
 
+/** صندوق لصق عدة أسماء — يُطوى بعد الإضافة، ويبقى النص إن لم يُستخرج منه أي اسم. */
+function BulkNamesBox({ groupId, onDone }: { groupId: string; onDone: () => void }) {
+  const addPersons = useEditorStore((s) => s.addPersons)
+  const [text, setText] = useState("")
+
+  const submit = () => {
+    const entries = parseBulkNames(text)
+    if (entries.length === 0) return
+    addPersons(groupId, entries)
+    onDone()
+  }
+
+  return (
+    <div className="mb-2 flex flex-col gap-1.5">
+      <Textarea
+        aria-label="أسماء متعددة"
+        rows={4}
+        placeholder={"اكتب كل اسم في سطر أو افصل بفاصلة\nاكتب «المرحوم» قبل اسم المتوفى"}
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+      />
+      <Button onClick={submit} disabled={text.trim() === ""} size="sm" className="self-start">
+        إضافة الأسماء
+      </Button>
+    </div>
+  )
+}
+
 export function GroupCard({ groupId }: { groupId: string }) {
   const group = useEditorStore((s) => s.data.relatives.find((g) => g.id === groupId))
   const deceasedGender = useEditorStore((s) => s.data.deceased.gender)
   const addPerson = useEditorStore((s) => s.addPerson)
+  const [showBulk, setShowBulk] = useState(false)
   const removeRelativeGroup = useEditorStore((s) => s.removeRelativeGroup)
   const updateRelativeGroup = useEditorStore((s) => s.updateRelativeGroup)
   const reorderPersons = useEditorStore((s) => s.reorderPersons)
@@ -285,6 +316,18 @@ export function GroupCard({ groupId }: { groupId: string }) {
         {/* "إضافة اسم" انتقل إلى هنا (أيقونة فقط) بجانب حذف الفئة — بدل زر نصّي
             منفصل أسفل البطاقة، تجميعاً لأزرار الفعل في زاوية واحدة وتخفيفاً للتفاصيل. */}
         <div className="flex items-center gap-1">
+          {group.categoryKey !== "parents" && (
+            <button
+              type="button"
+              onClick={() => setShowBulk((open) => !open)}
+              aria-label="لصق عدة أسماء"
+              aria-expanded={showBulk}
+              title="لصق عدة أسماء"
+              className="text-black/30 hover:text-accent"
+            >
+              <ClipboardList size={16} />
+            </button>
+          )}
           <button
             type="button"
             onClick={() => addPerson(groupId)}
@@ -305,6 +348,8 @@ export function GroupCard({ groupId }: { groupId: string }) {
           </button>
         </div>
       </div>
+
+      {showBulk && <BulkNamesBox groupId={groupId} onDone={() => setShowBulk(false)} />}
 
       {group.categoryKey === "custom" && (
         <Input

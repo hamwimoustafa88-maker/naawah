@@ -29,6 +29,14 @@ const nextConfig: NextConfig = {
         ],
       },
       {
+        // عامل الخدمة يجب أن يُعاد فحصه عند كل زيارة، وإلا علق المستخدمون على نسخة قديمة.
+        source: "/sw.js",
+        headers: [
+          { key: "Cache-Control", value: "no-cache, no-store, must-revalidate" },
+          { key: "Content-Security-Policy", value: "default-src 'self'; script-src 'self'" },
+        ],
+      },
+      {
         // CORP بصرامة same-site على كل المسارات عدا صور المعاينة الاجتماعية
         // (OG/Twitter) التي يجب أن تُحمَّل من مواقع أخرى عمداً.
         source: "/((?!opengraph-image|twitter-image).*)",

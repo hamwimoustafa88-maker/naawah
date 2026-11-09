@@ -3,7 +3,6 @@ import { JsonLd } from "@/components/common/JsonLd"
 import { LandingHeader } from "@/components/landing/LandingHeader"
 import { Hero } from "@/components/landing/Hero"
 import { HowItWorks, STEPS } from "@/components/landing/HowItWorks"
-import { FeatureBento } from "@/components/landing/FeatureBento"
 import { TemplateGallery } from "@/components/landing/TemplateGallery"
 import { SadaqahSection } from "@/components/landing/SadaqahSection"
 import { OpenSourceSection } from "@/components/landing/OpenSourceSection"
@@ -61,7 +60,6 @@ export default async function HomePage() {
         <main>
           <Hero count={count} />
           <HowItWorks />
-          <FeatureBento />
           <TemplateGallery />
           <SadaqahSection />
           <OpenSourceSection />

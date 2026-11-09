@@ -1,5 +1,6 @@
 "use client"
 
+import { TemplatePreviewCard } from "@/components/templates/TemplatePreviewCard"
 import { VISIBLE_TEMPLATES } from "@/lib/templates/registry"
 import { useEditorStore } from "@/store/editorStore"
 import { cn } from "@/lib/utils/cn"
@@ -18,27 +19,24 @@ export function Step4Template() {
           key={t.id}
           type="button"
           onClick={() => setTemplate(t.id)}
+          aria-pressed={templateId === t.id}
           className={cn(
-            "flex flex-col gap-2 rounded-xl border-2 p-4 text-right transition-colors",
-            templateId === t.id ? "border-accent bg-accent/5" : "border-black/10 hover:border-black/25"
+            "flex min-w-0 flex-col gap-2.5 rounded-xl border-2 p-2.5 text-right transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40",
+            templateId === t.id ? "border-accent bg-accent/5" : "border-black/10 bg-white hover:border-black/25"
           )}
-          style={{ background: templateId === t.id ? undefined : t.tokens.bg }}
         >
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-bold">
-              {t.name}
-              {t.id === DEFAULT_TEMPLATE_ID && <span className="mr-1 font-normal text-black/50">(افتراضي)</span>}
-            </span>
-            <span className="rounded-full bg-black/5 px-2 py-0.5 text-[10px] text-black/60">{t.category}</span>
-          </div>
-          <p className="text-xs leading-relaxed text-black/55">
-            {t.id === DEFAULT_TEMPLATE_ID ? "هذا الشكل هو المستعمل في الرزنامة الرسمية لبيروت وجبل لبنان." : t.description}
-          </p>
-          <div
-            className="mt-1 h-10 rounded-md border"
-            style={{ borderColor: t.tokens.accent, color: t.tokens.ink, fontFamily: t.tokens.nameFont }}
-          >
-            <div className="flex h-full items-center justify-center text-sm">{t.divider || "الاسم"} فلان الفلاني {t.divider}</div>
+          <TemplatePreviewCard templateId={t.id} />
+          <div className="flex flex-col gap-1 px-1 pb-1">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-sm font-bold">
+                {t.name}
+                {t.id === DEFAULT_TEMPLATE_ID && <span className="mr-1 font-normal text-black/50">(افتراضي)</span>}
+              </span>
+              <span className="shrink-0 rounded-full bg-black/5 px-2 py-0.5 text-[10px] text-black/60">{t.category}</span>
+            </div>
+            <p className="text-xs leading-relaxed text-black/55">
+              {t.id === DEFAULT_TEMPLATE_ID ? "هذا الشكل هو المستعمل في الرزنامة الرسمية لبيروت وجبل لبنان." : t.description}
+            </p>
           </div>
         </button>
       ))}

@@ -5,6 +5,7 @@
 
 const TOKEN_URL = "https://oauth2.googleapis.com/token"
 const UPLOAD_URL = "https://www.googleapis.com/upload/drive/v3/files"
+const FILES_URL = "https://www.googleapis.com/drive/v3/files"
 
 interface CachedToken {
   accessToken: string
@@ -80,6 +81,17 @@ export interface UploadArchiveArgs {
 export interface UploadArchiveResult {
   fileId: string
   webViewLink: string
+}
+
+/** يجلب ملف صورة مؤرشف لخدمته عبر الرابط العام. يرمي إن تعذّر الوصول إليه. */
+export async function downloadArchiveJpeg(fileId: string): Promise<Response> {
+  const accessToken = await getAccessToken()
+  const res = await fetch(`${FILES_URL}/${encodeURIComponent(fileId)}?alt=media`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+    cache: "no-store",
+  })
+  if (!res.ok) throw new Error(`فشل جلب الأرشيف من Drive: ${res.status}`)
+  return res
 }
 
 /** يرفع (أو يُحدِّث) صورة JPEG واحدة في مجلد الأرشيف. يرمي عند أي فشل — المستدعي
