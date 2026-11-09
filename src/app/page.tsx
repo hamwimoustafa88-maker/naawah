@@ -10,6 +10,7 @@ import { FaqPreview } from "@/components/landing/FaqPreview"
 import { DeveloperSection } from "@/components/landing/DeveloperSection"
 import { LandingFooter } from "@/components/landing/LandingFooter"
 import { TemplateShowcaseProvider } from "@/components/landing/TemplateShowcaseProvider"
+import { MotionProvider } from "@/components/landing/MotionProvider"
 import { SITE_DESCRIPTION } from "@/lib/seo/site"
 import {
   organizationNode, webApplicationNode, webSiteNode, softwareSourceCodeNode, howToNode, faqPageNode,
@@ -55,17 +56,22 @@ export default async function HomePage() {
   return (
     <div className="home-scope min-h-screen bg-(--home-bg) text-(--home-fg)">
       <JsonLd data={jsonLd} />
+      <noscript>
+        <style>{"[data-reveal]{opacity:1!important;transform:none!important;clip-path:none!important;filter:none!important}"}</style>
+      </noscript>
       <TemplateShowcaseProvider>
         <LandingHeader />
-        <main>
-          <Hero count={count} />
-          <HowItWorks />
-          <TemplateGallery />
-          <SadaqahSection />
-          <OpenSourceSection />
-          <FaqPreview />
-          <DeveloperSection />
-        </main>
+        <MotionProvider>
+          <main>
+            <Hero count={count} />
+            <HowItWorks />
+            <TemplateGallery />
+            <SadaqahSection />
+            <OpenSourceSection />
+            <FaqPreview />
+            <DeveloperSection />
+          </main>
+        </MotionProvider>
       </TemplateShowcaseProvider>
       <LandingFooter />
     </div>

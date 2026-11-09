@@ -1,10 +1,10 @@
 "use client"
 
-// "رابط النعوة" و"PDF للمطبعة" — مشتركان بين شريط التصدير (سطح المكتب) وأسفل معاينة الجوال.
+// "رابط النعوة" — مشترك بين شريط التصدير (سطح المكتب) وأسفل معاينة الجوال.
 
 import { useEffect, useState } from "react"
 import { createPortal } from "react-dom"
-import { Check, Copy, Link2, Loader2, Printer, X } from "lucide-react"
+import { Check, Copy, Link2, Loader2, X } from "lucide-react"
 import { Button } from "@/components/ui/Button"
 import { useGuardedExport } from "@/components/editor/useGuardedExport"
 import { useEditorStore } from "@/store/editorStore"
@@ -98,10 +98,6 @@ export function ExtraExportActions() {
         <Button onClick={() => run("link")} disabled={busy !== null} variant="outline" size="sm" className="text-xs">
           {busy === "link" ? <Loader2 size={16} className="animate-spin" /> : <Link2 size={16} />}
           رابط ورمز QR
-        </Button>
-        <Button onClick={() => run("print")} disabled={busy !== null} variant="outline" size="sm" className="text-xs">
-          {busy === "print" ? <Loader2 size={16} className="animate-spin" /> : <Printer size={16} />}
-          PDF للمطبعة
         </Button>
       </div>
       {error && <p className="text-xs font-medium text-red-600">{error}</p>}

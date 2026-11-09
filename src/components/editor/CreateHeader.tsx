@@ -20,7 +20,8 @@
 // رفع الترويسة لموضع positioned بز-إندكس أعلى من الشيت (٦٠ > ٥٠) يبقيها فوقه دائماً.
 
 import { useState } from "react"
-import { Download, FileJson, FileText, Loader2, Redo2, Share2, Undo2, Upload } from "lucide-react"
+import { Download, FileJson, FileText, Loader2, Redo2, RotateCcw, Share2, Undo2, Upload } from "lucide-react"
+import { isBlankObituary } from "@/lib/drafts/useObituaryAutosave"
 import { useEditorStore } from "@/store/editorStore"
 import { cn } from "@/lib/utils/cn"
 import { exportObituaryJson, importObituaryJson } from "@/lib/export/tempDataIO"
@@ -42,6 +43,8 @@ export function CreateHeader() {
   const canRedo = useEditorStore((s) => s.future.length > 0)
   const undo = useEditorStore((s) => s.undo)
   const redo = useEditorStore((s) => s.redo)
+  const reset = useEditorStore((s) => s.reset)
+  const isBlank = useEditorStore((s) => isBlankObituary(s.data))
   const { busy, error, run, dialog } = useGuardedExport()
 
   // ⚠️ مؤقت للاختبار — راجع lib/export/tempDataIO.ts. احذف هذا البلوك بالكامل
@@ -123,6 +126,21 @@ export function CreateHeader() {
           </button>
 
           <SavedObituaries />
+
+          {/* بلا تأكيد: النعوة الحالية تبقى محفوظة في «نعواتي» ويمكن فتحها من جديد. */}
+          {!isBlank && (
+            <button
+              type="button"
+              onClick={reset}
+              aria-label="العودة إلى الوضع الافتراضي"
+              title="يبدأ نعوة فارغة، وتبقى الحالية محفوظة في «نعواتي»"
+              className="inline-flex h-9 items-center gap-1.5 whitespace-nowrap rounded-full border border-(--home-border) px-3 text-sm font-medium text-(--home-fg) transition-colors hover:bg-(--home-bg)"
+            >
+              <RotateCcw size={16} />
+              <span className="lg:hidden">مسح</span>
+              <span className="hidden lg:inline">العودة إلى الوضع الافتراضي</span>
+            </button>
+          )}
 
           <button type="button" onClick={() => run("png")} disabled={busy !== null} aria-label="تحميل صورة PNG" className={exportButtonClass}>
             {busy === "png" ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}

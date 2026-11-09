@@ -96,6 +96,32 @@ test("الحفظ التلقائي يستعيد النعوة، ونعوة جدي�
   await expect(page.getByRole("button", { name: "تراجع" })).toBeDisabled()
 })
 
+test("زر الوضع الافتراضي يفرّغ النعوة ويبقى المسح بعد إعادة الفتح", async ({ page }) => {
+  const clear = page.getByRole("button", { name: "العودة إلى الوضع الافتراضي" })
+  await expect(clear).toHaveCount(0)
+
+  await nameInput(page).fill("نعوة سابقة")
+  await page.waitForTimeout(500)
+  await clear.click()
+  await expect(nameInput(page)).toHaveValue("")
+  await expect(clear).toHaveCount(0)
+
+  await page.reload()
+  await page.waitForLoadState("networkidle")
+  await page.waitForTimeout(400)
+  await expect(nameInput(page)).toHaveValue("")
+
+  await page.getByRole("button", { name: "نعواتي المحفوظة" }).click()
+  await expect(page.getByRole("dialog", { name: "نعواتي المحفوظة" })).toContainText("نعوة سابقة")
+})
+
+test("قسم القالب يعرض بقية القوالب بنعوة المستخدم ويخفي القالب الحالي", async ({ page }) => {
+  await nameInput(page).fill("اسم حقيقي للمعاينة")
+  const previews = page.locator('[id^="template-preview-"]:visible')
+  await expect(previews).toHaveCount(6)
+  for (let i = 0; i < 6; i++) await expect(previews.nth(i)).toContainText("اسم حقيقي للمعاينة")
+})
+
 test("تنبيه الخط الصغير يظهر مع المحتوى الكثيف", async ({ page }) => {
   const sons = relativeCard(page, 2)
   await sons.getByRole("button", { name: "لصق عدة أسماء" }).click()

@@ -13,6 +13,32 @@ const SAVE_DELAY_MS = 200
 const blankFingerprint = (data: ObituaryData) => JSON.stringify({ ...data, templateId: "" })
 const BLANK_OBITUARY = blankFingerprint(createEmptyData())
 
+/** الاسم والصورة يحسمان معظم الحالات قبل تسلسل البيانات، فالفحص يعمل مع كل تغيّر في المتجر. */
+export function isBlankObituary(data: ObituaryData): boolean {
+  if (data.deceased.name || data.deceased.photoDataUrl) return false
+  return blankFingerprint(data) === BLANK_OBITUARY
+}
+
+// النعوة الفارغة لا تُحفظ، فبعد المسح كانت إعادة الفتح تستعيد النعوة السابقة من جديد.
+const START_BLANK_KEY = "naawah-start-blank"
+
+function setStartBlank(startBlank: boolean) {
+  try {
+    if (startBlank) localStorage.setItem(START_BLANK_KEY, "1")
+    else localStorage.removeItem(START_BLANK_KEY)
+  } catch {
+    // التخزين معطّل: تبقى استعادة آخر نعوة هي السلوك.
+  }
+}
+
+function shouldStartBlank(): boolean {
+  try {
+    return localStorage.getItem(START_BLANK_KEY) === "1"
+  } catch {
+    return false
+  }
+}
+
 /** يستعيد آخر نعوة عند فتح المحرر، ثم يحفظ كل تعديل تلقائياً في المتصفح. */
 export function useObituaryAutosave() {
   useEffect(() => {
@@ -27,8 +53,9 @@ export function useObituaryAutosave() {
       timer = undefined
       const { data, archiveKey } = getState()
       if (!archiveKey) return
-      if (storedId !== archiveKey && blankFingerprint(data) === BLANK_OBITUARY) return
+      if (storedId !== archiveKey && isBlankObituary(data)) return
       storedId = archiveKey
+      setStartBlank(false)
       saveObituary({ id: archiveKey, data, lastUsedAt: Date.now() })
         .then(() => {
           setState({ draftSaveFailed: false })
@@ -49,6 +76,7 @@ export function useObituaryAutosave() {
     }
 
     const unsubscribe = subscribe((state, previous) => {
+      if (previous.archiveKey && state.archiveKey !== previous.archiveKey && isBlankObituary(state.data)) setStartBlank(true)
       if (state.data === previous.data) return
       clearTimeout(timer)
       timer = setTimeout(save, SAVE_DELAY_MS)
@@ -63,7 +91,7 @@ export function useObituaryAutosave() {
       })
       .then((saved) => {
         if (cancelled) return
-        const latest = saved[0]
+        const latest = shouldStartBlank() ? undefined : saved[0]
         if (latest) getState().openObituary(latest.id, latest.data)
         else if (!getState().archiveKey) getState().regenerateArchiveKey()
         setState({ draftsReady: true })

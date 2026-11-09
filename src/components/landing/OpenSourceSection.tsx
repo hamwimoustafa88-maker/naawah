@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { Reveal } from "@/components/landing/Reveal"
+import { ClearingBlock } from "@/components/landing/SectionMotion"
 import { GitHubIcon } from "@/components/landing/BrandIcons"
 import { GITHUB_URL, LICENSE_URL } from "@/lib/seo/site"
 
@@ -10,12 +11,14 @@ import { GITHUB_URL, LICENSE_URL } from "@/lib/seo/site"
 export function OpenSourceSection() {
   return (
     <section id="open-source" className="w-full scroll-mt-20 bg-(--home-bg) py-16">
-      <Reveal className="mx-auto flex max-w-3xl flex-col items-center gap-5 px-6 text-center">
-        <span className="rounded-full bg-(--home-accent)/10 px-4 py-1.5 text-sm font-bold text-(--home-accent)">
-          مفتوح المصدر
-        </span>
-        <h2 className="text-2xl font-bold sm:text-3xl">مشروع مفتوح المصدر، صدقة جارية</h2>
-        <p className="max-w-xl leading-relaxed text-(--home-muted)">
+      <div className="mx-auto flex max-w-3xl flex-col items-center gap-5 px-6 text-center">
+        <Reveal className="flex flex-col items-center gap-5">
+          <span className="inline-block rounded-full bg-(--home-accent)/10 px-4 py-1.5 text-sm font-bold text-(--home-accent)">
+            مفتوح المصدر
+          </span>
+          <h2 className="text-2xl font-bold sm:text-3xl">مشروع مفتوح المصدر، صدقة جارية</h2>
+        </Reveal>
+        <ClearingBlock className="max-w-xl leading-relaxed text-(--home-muted)">
           الكود المصدري لهذا التطبيق كامل ومنشور علناً على GitHub برخصة GPL-3.0 — لأي
           مطوّر أن يفحصه، أو ينسخه، أو يشغّله على خادمه الخاص، أو يبني عليه مشروعاً
           جديداً بحرّية تامّة. الشفافية هنا ليست شعاراً: ما يبقى في متصفحك وما
@@ -23,8 +26,8 @@ export function OpenSourceSection() {
           الدليل على ذلك — يمكن لأي أحد التحقّق بنفسه بقراءته مباشرة بدل الثقة
           بوصف مكتوب وحده. طُوِّر هذا التطبيق ونُشر مجاناً للناس كافة، صدقةً جارية عن
           أرواح المسلمين، نسأل الله أن يتقبّلها خالصةً لوجهه.
-        </p>
-        <div className="flex flex-wrap items-center justify-center gap-3">
+        </ClearingBlock>
+        <Reveal delayMs={150} className="flex flex-wrap items-center justify-center gap-3">
           <a
             href={GITHUB_URL}
             target="_blank"
@@ -48,8 +51,8 @@ export function OpenSourceSection() {
           >
             تفاصيل أكثر
           </Link>
-        </div>
-      </Reveal>
+        </Reveal>
+      </div>
     </section>
   )
 }

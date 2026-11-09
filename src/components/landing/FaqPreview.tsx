@@ -16,16 +16,18 @@ export function FaqPreview() {
         </Reveal>
 
         <div className="flex flex-col divide-y divide-(--home-border) border-y border-(--home-border)">
-          {top5.map((item) => (
-            <details key={item.question} className="group">
-              <summary className="cursor-pointer list-none py-4 text-sm font-bold text-(--home-fg) marker:content-none">
-                <span className="flex items-center justify-between gap-3">
-                  {item.question}
-                  <span className="shrink-0 text-(--home-accent) transition-transform group-open:rotate-45">+</span>
-                </span>
-              </summary>
-              <p className="-mt-1 max-w-xl pb-4 text-sm leading-relaxed text-(--home-muted)">{item.answer}</p>
-            </details>
+          {top5.map((item, i) => (
+            <Reveal key={item.question} delayMs={i * 60}>
+              <details className="faq-item group">
+                <summary className="cursor-pointer list-none py-4 text-sm font-bold text-(--home-fg) marker:content-none">
+                  <span className="flex items-center justify-between gap-3">
+                    {item.question}
+                    <span className="shrink-0 text-(--home-accent) transition-transform group-open:rotate-45">+</span>
+                  </span>
+                </summary>
+                <p className="-mt-1 max-w-xl pb-4 text-sm leading-relaxed text-(--home-muted)">{item.answer}</p>
+              </details>
+            </Reveal>
           ))}
         </div>
 

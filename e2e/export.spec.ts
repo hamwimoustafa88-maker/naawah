@@ -50,7 +50,8 @@ test("PDF المطبعة أكبر من A4 بهوامش النزف والقص", a
   await page.locator("input[type=date]:visible").first().fill("2026-03-05")
 
   const download = page.waitForEvent("download")
-  await page.getByRole("button", { name: "PDF للمطبعة" }).click()
+  await page.getByRole("button", { name: "تحميل", exact: true }).click()
+  await page.getByRole("menuitem", { name: "PDF للمطبعة" }).click()
   const file = await download
   expect(file.suggestedFilename()).toContain("للمطبعة")
 

@@ -1,6 +1,7 @@
 import Image from "next/image"
 import { Mail } from "lucide-react"
 import { Reveal } from "@/components/landing/Reveal"
+import { PortraitRing } from "@/components/landing/SectionMotion"
 import { WhatsAppIcon, LinkedInIcon } from "@/components/landing/BrandIcons"
 
 const LINKS = [
@@ -15,7 +16,7 @@ export function DeveloperSection() {
       <Reveal className="mx-auto flex max-w-2xl flex-col items-center gap-4 px-6 text-center">
         <h2 className="text-sm tracking-widest text-[#c9a94a]">المطوّر</h2>
 
-        <div className="overflow-hidden rounded-full ring-2 ring-[#c9a94a]" style={{ width: 96, height: 96 }}>
+        <PortraitRing size={96}>
           <Image
             src="/developer.webp"
             alt="مصطفى الحموي"
@@ -23,7 +24,7 @@ export function DeveloperSection() {
             height={96}
             className="h-full w-full object-cover"
           />
-        </div>
+        </PortraitRing>
 
         <div>
           <h3 className="text-lg font-bold">مصطفى الحموي</h3>

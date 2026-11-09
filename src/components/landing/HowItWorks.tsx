@@ -1,4 +1,5 @@
 import { Reveal } from "@/components/landing/Reveal"
+import { StepsTrack } from "@/components/landing/SectionMotion"
 
 // مُصدَّرة لاستهلاك src/app/page.tsx إياها في بناء عقدة HowTo المهيكلة (JSON-LD)
 // — نفس النص المرئي هنا يُعاد استعماله حرفياً هناك، بلا تكرار الكتابة.
@@ -29,19 +30,7 @@ export function HowItWorks() {
           <h2 className="text-2xl font-bold sm:text-3xl">كيف يعمل التطبيق؟</h2>
         </Reveal>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3">
-          {STEPS.map((s, i) => (
-            <Reveal
-              key={s.n}
-              delayMs={i * 80}
-              className="flex flex-col gap-2 border-(--home-border) py-6 not-first:border-t sm:py-0 sm:ps-8 sm:pe-8 sm:first:ps-0 sm:last:pe-0 sm:not-first:border-t-0 sm:not-first:border-s"
-            >
-              <span className="text-4xl font-bold text-(--home-accent)">{s.n}</span>
-              <h3 className="text-base font-bold">{s.title}</h3>
-              <p className="text-sm leading-relaxed text-(--home-muted)">{s.desc}</p>
-            </Reveal>
-          ))}
-        </div>
+        <StepsTrack steps={STEPS} />
       </div>
     </section>
   )

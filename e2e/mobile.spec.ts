@@ -27,8 +27,11 @@ test("لصق الأسماء متاح داخل الشاشة المنفردة", as
   await expect(page.locator("#obituary-canvas-mobile")).toContainText("خالد وعمر")
 })
 
-test("زرا الرابط والمطبعة ظاهران تحت المعاينة", async ({ page }) => {
+test("قائمة التحميل تجمع الصيغ الثلاث تحت المعاينة", async ({ page }) => {
   await page.getByRole("button", { name: "إغلاق" }).first().click()
   await expect(page.getByRole("button", { name: "رابط ورمز QR" })).toBeVisible()
-  await expect(page.getByRole("button", { name: "PDF للمطبعة" })).toBeVisible()
+  await page.getByRole("button", { name: "تحميل", exact: true }).click()
+  for (const name of ["صورة PNG", "PDF (A4)", "PDF للمطبعة"]) {
+    await expect(page.getByRole("menuitem", { name })).toBeVisible()
+  }
 })
