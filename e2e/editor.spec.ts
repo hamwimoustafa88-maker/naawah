@@ -122,6 +122,29 @@ test("قسم القالب يعرض بقية القوالب بنعوة المست
   for (let i = 0; i < 6; i++) await expect(previews.nth(i)).toContainText("اسم حقيقي للمعاينة")
 })
 
+test("فوتر المطبعة سطر واحد يملأ العرض، قصيراً كان نصه أو طويلاً", async ({ page }) => {
+  const line = canvas(page).locator("[data-fit-line]")
+  const fill = async () =>
+    line.evaluate((node) => {
+      const el = node as HTMLElement
+      const box = el.parentElement as HTMLElement
+      return { ratio: el.offsetWidth / box.clientWidth, oneLine: el.offsetHeight < parseFloat(getComputedStyle(el).fontSize) * 2.5 }
+    })
+
+  await expect.poll(async () => (await fill()).ratio, { timeout: 10_000 }).toBeGreaterThan(0.9)
+  expect((await fill()).ratio).toBeLessThanOrEqual(1)
+  expect((await fill()).oneLine).toBe(true)
+
+  const footerSettings = page.locator("div.mt-3:visible", { hasText: "نص فوتر المطبعة" })
+  await footerSettings.getByText("تخصيص", { exact: true }).click()
+  for (const text of ["نص طويل جداً في الفوتر ".repeat(20), "مشروع خيري"]) {
+    await footerSettings.locator("textarea").fill(text)
+    await expect(line).toHaveText(text)
+    await expect.poll(async () => (await fill()).ratio, { timeout: 10_000 }).toBeLessThanOrEqual(1)
+    expect((await fill()).oneLine).toBe(true)
+  }
+})
+
 test("تنبيه الخط الصغير يظهر مع المحتوى الكثيف", async ({ page }) => {
   const sons = relativeCard(page, 2)
   await sons.getByRole("button", { name: "لصق عدة أسماء" }).click()

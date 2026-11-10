@@ -3,6 +3,7 @@
 
 import type { CSSProperties } from "react"
 import { Calligraphy } from "@/components/canvas/Calligraphy"
+import { FitOneLine } from "@/components/canvas/blocks/FitOneLine"
 import {
   BASMALA_WIDTH_PX, CALLIGRAPHY_DEFAULT_WIDTH_PX, INNA_LILLAH_FOOTER_WIDTH_PX, QURAN_CORNER_WIDTH_PX, QURAN_VERSES,
 } from "@/lib/obituary/defaults"
@@ -599,11 +600,11 @@ export function ObituaryContent({
             حصراً): عائلة الأب وعائلة الأم فقط، لا كل عائلات الأقارب والأصهار. */}
         <p style={{ fontSize: "1.1em", fontWeight: 700, margin: 0 }}>{familiesLine(data, familiesLineScope)}</p>
 
-        {/* ١٤. فوتر المطبعة — قابل للتفعيل والتحرير من المحرر. الحجم ٠.٧٨em (كان
-            ٠.٦٥em) — مكبَّر ٢٠٪ بطلب صريح. */}
+        {/* ١٤. فوتر المطبعة — قابل للتفعيل والتحرير من المحرر. سطر واحد دائماً يملأ
+            عرض الصفحة: يكبَّر النص القصير ويصغَّر الطويل (FitOneLine). */}
         {footerText && (
-          <div style={{ paddingTop: "0.6em", borderTop: `1px solid ${tokens.ink}`, fontSize: "min(0.78em, 12.5px)", color: tokens.muted }}>
-            {footerText}
+          <div style={{ paddingTop: "0.6em", borderTop: `1px solid ${tokens.ink}`, color: tokens.muted }}>
+            <FitOneLine text={footerText} />
           </div>
         )}
       </div>
