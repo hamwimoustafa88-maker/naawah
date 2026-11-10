@@ -120,3 +120,4 @@ npx tsx scripts/verify-prisma.ts     # تحقّق الاتصال
 - لا تستخدم `import` داخل سطر الأوامر (Terminal/PowerShell).
 - حافظ على `.env` داخل `.gitignore` ولا تطبع محتواه أبداً.
 - عند تعديل `src/lib/obituary/grammar.ts` أو `render.ts`: شغّل `npm run test` فوراً — الاختبارات مبنية على نصوص حرفية من نعوات حقيقية (راجع تعليقات `grammar.test.ts`)، وأي كسر فيها يعني نصاً خاطئاً فعلياً في الإنتاج.
+- **النشر الإنتاجي على Vercel (مشروع `enaawah`) يبدأ من دفع commit جديد إلى `main`.** دمج فرع بـfast-forward لا يطلق نشراً إنتاجياً: الـcommit نفسه سبق أن بُني نشراً تجريبياً على الفرع، فلا يُبنى ثانية (حدث هذا فعلاً مع `ac00d3c`)، وترقية ذلك النشر التجريبي رفضها Vercel بخطأ 422. أدمج بـ`git merge --no-ff` أو أضف commit فوق الدمج، ثم تحقّق من آخر نشر `production` عبر `list_deployments`.
