@@ -207,7 +207,7 @@ export const MOURNING_OPENINGS = [
 ]
 
 export const DEFAULT_PRINT_FOOTER_TEXT =
-  "النعوة الإلكترونية — مشروع خيري مجاني لجميع المسلمين — enaawah.scouthub.dev"
+  "النعوة الإلكترونية — مشروع خيري لجميع المسلمين — enaawah.scouthub.dev"
 
 export const ARAB_COUNTRIES = [
   "لبنان", "سوريا", "الأردن", "فلسطين", "مصر", "العراق",

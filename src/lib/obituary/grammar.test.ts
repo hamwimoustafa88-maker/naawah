@@ -566,6 +566,16 @@ describe("funeralSentence", () => {
     expect(sentence).toContain(SAMPLE_OBITUARY_DATA.funeral.prayerLocation)
   })
 
+  it("«سيصلى» لا تتأنّث مع الفقيدة، و«جثمانها» وحدها تتبع الجنس", () => {
+    const data: ObituaryData = {
+      ...SAMPLE_OBITUARY_DATA,
+      deceased: { ...SAMPLE_OBITUARY_DATA.deceased, gender: "female" },
+    }
+    const sentence = funeralSentence(data)
+    expect(sentence).toContain("سيصلى على جثمانها")
+    expect(sentence).not.toContain("ستصلى")
+  })
+
   it("يلحق «ويوارى الثرى في…» بفاصلة كسطر مكمّل، لا فقرة منفصلة", () => {
     const data: ObituaryData = {
       ...SAMPLE_OBITUARY_DATA,

@@ -27,7 +27,8 @@ export const DECEASED_WORDS: Record<Gender, Record<string, string>> = {
     maghfoor: "المغفور لها",
     faqeed: "الفقيدة",
     jasad: "جثمانها",
-    sayusalla: "ستصلى",
+    // "سيصلى" مبني للمجهول، نائب فاعله "على جثمانها" فلا يُؤنَّث بجنس الفقيدة.
+    sayusalla: "سيصلى",
     wafatuhu: "وفاتها",
     lahu: "لها",
   },
